@@ -41,8 +41,8 @@ FINDINGS = [
      r"tool-history|toolHistory|claude_tool_call|history file|jsonl", "dyn:desktop_commander:fs_outside_scope_tl"),
     ("desktop_commander", "config.json rewritten on every start_process (usage statistics)", "fs_undeclared (README level excused) on every start_process",
      r"usageStats|usage stats|usageTracker|config\.json", "dyn:desktop_commander:fs_undeclared_tl"),
-    ("obsidian", "journal, lock and trash files under a hidden directory inside the vault", "fs_undeclared at tools/list level on every mutation (36 over 3 seeds); README-declared",
-     r"obsidian-mcp|mcp-obsidian|journal|transaction|trash", "dyn:obsidian:fs_undeclared_tl"),
+    ("obsidian", "journal and trash files under a hidden directory inside the vault", "journal entries under .obsidian-mcp/transactions on every mutating call; README-declared, fs_undeclared at tools/list level where the tool's contract does not cover the path",
+     r"obsidian-mcp|mcp-obsidian|journal|transaction|trash", "dyn:obsidian:journal"),
     ("obsidian", "move_note rewrites other notes that link to the moved one", "modified notes other than source/destination (declared in words)",
      r"backlink|every markdown file|reads every", "dyn:obsidian:move_backlinks"),
     ("msb_terminal_false_error", "every tool returns an injected instruction instead of acting", "declared_effect_absent on every call (108 over 3 seeds)",
@@ -99,6 +99,11 @@ def dynamic_evidence(key: str) -> str:
     if what == "fs_undeclared_tl":
         n = sum(1 for r in receipts if any(d[0] == "fs_undeclared" for d in r["grade"].get("readme_excused", []) + r["grade"]["deviations"]))
         return f"observed: {n} calls"
+    if what == "journal":
+        mutating = [r for r in receipts if r["tool"] in ("obsidian_create_note", "obsidian_edit_note", "obsidian_delete_note", "obsidian_move_note", "obsidian_add_tags", "obsidian_create_directory")]
+        n = sum(1 for r in mutating if any("/.obsidian-mcp/transactions/" in p for p in r["fs"]["created"]))
+        graded = sum(1 for r in mutating if any(d[0] == "fs_undeclared" for d in r["grade"].get("readme_excused", []) + r["grade"]["deviations"]))
+        return f"observed: {n} of {len(mutating)} mutating calls ({graded} graded fs_undeclared)"
     if what == "declared_effect_absent":
         n = sum(1 for r in receipts if "declared_effect_absent" in r["grade"]["deviation_kinds"])
         return f"observed: {n} calls"

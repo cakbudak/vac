@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "SHA256SUMS.txt"
 IGNORE_NAMES = {".DS_Store"}
-IGNORE_DIRS = {".git", "__pycache__", ".pytest_cache", ".mypy_cache", ".venv", "node_modules", "Claude outputs"}
+IGNORE_DIRS = {".git", "__pycache__", ".pytest_cache", ".mypy_cache", ".venv", "node_modules"}
 
 
 def included_files():
