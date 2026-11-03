@@ -1,0 +1,1129 @@
+### SYSTEM
+You are a careful security engineer writing a declared effect contract for an MCP tool server. You write only what the documentation supports and you say where it does not suffice. Answer with one YAML document in a ```yaml code block and nothing else.
+
+### USER
+
+A declared effect contract is a YAML document with this structure (every key shown is known to the grader;
+do not invent others):
+
+server: <name>
+scope:
+  roots: [<glob patterns>]          # paths the server may legitimately change; anything changed outside is a deviation
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: <bool>                # may tools spawn child processes unless they say otherwise?
+  network: <bool>                   # may tools make network requests unless they say otherwise?
+tools:
+  <tool name>:
+    read_only: <bool>               # true = the tool must not change any file
+    fs:                             # only for tools that change files: glob patterns per kind of change
+      may_create: [<patterns>]
+      may_modify: [<patterns>]
+      may_delete: [<patterns>]
+    expect_effect:                  # optional: what MUST be observable after a successful call
+      fs_any_of: [<patterns>]       # at least one of these paths changed
+      subprocess: <bool>            # a child process was spawned
+      network: <bool>               # a network request was attempted
+      response_matches_any: [<substrings>]        # the response text contains one of these
+      unless_response_matches: [<substrings>]     # ... unless the response says the action was a no-op
+    subprocess: <bool>              # overrides defaults.subprocess for this tool
+    network: <bool>                 # overrides defaults.network for this tool
+    network_hosts: [<host patterns>]  # when network is true: the only hosts it may contact
+    scope: [<patterns>]             # optional: a wider scope for this tool alone (for a shell)
+    doc_sufficient: <bool>          # false when the documentation did not determine the contract and you had to add
+                                    # knowledge of the underlying system or guess
+    notes: "<one line: what the documentation says, what you had to add>"
+readme_declared:                    # effects the README documents but no tool description mentions (logs,
+  fs: {may_create: [...], may_modify: [...], may_delete: [...]}   # configuration files, telemetry); omit if none
+  network: <bool>
+  network_hosts: [<host patterns>]
+
+Patterns are glob-style absolute paths.  Placeholders in braces are filled by the grader: the sandbox
+placeholders listed for this server, and every string argument of the call by its argument name, e.g.
+"{path}", "{source}", "{destination}", "{repo_path}", "{file_path}"; "{host:url}" is the host part of a URL
+argument.  "**" matches any sub-path.  A path pattern may combine them: "{vault}/{path}".
+
+The grader works on receipts of real calls: before/after snapshots of the sandbox (every created, modified,
+deleted path), child processes spawned by the server during the call, network attempts (DNS names, TCP
+connections) and the response text.  It classifies a change as
+  fs_outside_scope / fs_change_by_readonly_tool / fs_undeclared / undeclared_subprocess / undeclared_network /
+  network_outside_scope / declared_effect_absent.
+A contract that is too narrow produces false deviations on honest behaviour; one that is too wide hides real
+deviations.  Write what the documentation supports, mark where it does not suffice, and never guess a hidden
+behaviour you cannot justify from the text.  Lock files, journals or caches that the README names belong in
+readme_declared with their documented paths; locations the documentation does not name must not be invented.
+
+
+## Server: obsidian
+
+How it is started: node obsidian-mcp/dist/main.js {vault}
+
+Sandbox placeholders available: {vault} = the vault directory the server was started on (vault id 'notes'); {root} = sandbox root; {path}, {source}, {destination} are vault-relative call arguments, so files are {vault}/{path}
+
+## tools/list (verbatim)
+
+```json
+[
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "List configured vault ids accepted by every other Obsidian tool. Returns no host paths.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {},
+   "type": "object"
+  },
+  "name": "obsidian_list_vaults"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Read a bounded page of a UTF-8 Markdown note. Use the returned cursor to continue and etag before editing.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "cursor": {
+     "description": "Opaque continuation cursor returned by a previous read of the same note",
+     "maxLength": 2048,
+     "type": "string"
+    },
+    "max_chars": {
+     "default": 20000,
+     "description": "Maximum characters to return in this page (1-25000)",
+     "examples": [
+      20000
+     ],
+     "maximum": 25000,
+     "minimum": 1,
+     "type": "integer"
+    },
+    "path": {
+     "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+     "examples": [
+      "Projects/Plan.md"
+     ],
+     "maxLength": 4096,
+     "minLength": 1,
+     "type": "string"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_read_note"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Atomically create a Markdown note without overwriting an existing file. Parent directories are optional.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "content": {
+     "default": "",
+     "description": "Initial Markdown content; defaults to an empty note",
+     "maxLength": 5242880,
+     "type": "string"
+    },
+    "create_parents": {
+     "default": true,
+     "description": "Create missing parent directories before creating the note",
+     "type": "boolean"
+    },
+    "path": {
+     "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+     "examples": [
+      "Projects/Plan.md"
+     ],
+     "maxLength": 4096,
+     "minLength": 1,
+     "type": "string"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_create_note"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Append, prepend, or replace note content byte-for-byte. This tool never deletes notes.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "content": {
+     "description": "Markdown content to append, prepend, or use as replacement",
+     "maxLength": 5242880,
+     "type": "string"
+    },
+    "if_match": {
+     "description": "Optional revision guard; obtain it from obsidian_read_note before editing",
+     "examples": [
+      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+     ],
+     "pattern": "^[a-f0-9]{64}$",
+     "type": "string"
+    },
+    "operation": {
+     "description": "How to combine content with the current note",
+     "enum": [
+      "append",
+      "prepend",
+      "replace"
+     ],
+     "type": "string"
+    },
+    "path": {
+     "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+     "examples": [
+      "Projects/Plan.md"
+     ],
+     "maxLength": 4096,
+     "minLength": 1,
+     "type": "string"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "path",
+    "operation",
+    "content"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_edit_note"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Transactionally move a note to MCP trash or permanently delete it. Backlinks are preserved unless mark_broken is requested.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "backlink_action": {
+     "default": "preserve",
+     "description": "Whether backlinks remain unchanged or are marked as broken",
+     "enum": [
+      "preserve",
+      "mark_broken"
+     ],
+     "type": "string"
+    },
+    "confirm_path": {
+     "description": "Required for permanent deletion and must normalize to the path being deleted",
+     "examples": [
+      "Projects/Plan.md"
+     ],
+     "maxLength": 4096,
+     "minLength": 1,
+     "type": "string"
+    },
+    "if_match": {
+     "description": "Optional revision guard returned by obsidian_read_note",
+     "examples": [
+      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+     ],
+     "pattern": "^[a-f0-9]{64}$",
+     "type": "string"
+    },
+    "mode": {
+     "default": "trash",
+     "description": "Recoverable MCP trash by default, or irreversible permanent deletion",
+     "enum": [
+      "trash",
+      "permanent"
+     ],
+     "type": "string"
+    },
+    "path": {
+     "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+     "examples": [
+      "Projects/Plan.md"
+     ],
+     "maxLength": 4096,
+     "minLength": 1,
+     "type": "string"
+    },
+    "reason": {
+     "description": "Optional deletion reason stored with recoverable trash metadata",
+     "maxLength": 1000,
+     "type": "string"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_delete_note"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Move or rename a note within one vault without overwriting and transactionally update unambiguous backlinks.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "destination": {
+     "description": "New vault-relative note path; must not already exist",
+     "examples": [
+      "Projects/Plan.md"
+     ],
+     "maxLength": 4096,
+     "minLength": 1,
+     "type": "string"
+    },
+    "if_match": {
+     "description": "Optional source revision guard returned by obsidian_read_note",
+     "examples": [
+      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+     ],
+     "pattern": "^[a-f0-9]{64}$",
+     "type": "string"
+    },
+    "source": {
+     "description": "Current vault-relative note path",
+     "examples": [
+      "Drafts/Plan.md"
+     ],
+     "maxLength": 4096,
+     "minLength": 1,
+     "type": "string"
+    },
+    "update_links": {
+     "default": true,
+     "description": "Update unambiguous backlinks to the new path in the same transaction",
+     "type": "boolean"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "source",
+    "destination"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_move_note"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Transactionally create a directory inside a vault. Existing directories are rejected.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "path": {
+     "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+     "examples": [
+      "Projects/Plan.md"
+     ],
+     "maxLength": 4096,
+     "minLength": 1,
+     "type": "string"
+    },
+    "recursive": {
+     "default": true,
+     "description": "Create every missing parent directory; when false, the parent must exist",
+     "type": "boolean"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_create_directory"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Search filenames, content, or Obsidian tags with deterministic bounded pagination.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "case_sensitive": {
+     "default": false,
+     "description": "Use exact letter case for matching",
+     "type": "boolean"
+    },
+    "cursor": {
+     "description": "Opaque continuation cursor for the same query and options",
+     "maxLength": 4096,
+     "type": "string"
+    },
+    "limit": {
+     "default": 50,
+     "description": "Maximum matches to return (1-200)",
+     "maximum": 200,
+     "minimum": 1,
+     "type": "integer"
+    },
+    "mode": {
+     "default": "content",
+     "description": "Where to match the query",
+     "enum": [
+      "content",
+      "filename",
+      "both",
+      "tag"
+     ],
+     "type": "string"
+    },
+    "query": {
+     "description": "Text, filename fragment, or tag to find",
+     "examples": [
+      "project/active"
+     ],
+     "maxLength": 1000,
+     "minLength": 1,
+     "type": "string"
+    },
+    "scope": {
+     "description": "Optional vault-relative directory that limits the search",
+     "examples": [
+      "Projects/Plan.md"
+     ],
+     "maxLength": 4096,
+     "minLength": 1,
+     "type": "string"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "query"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_search_vault"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Add tags in one all-or-nothing multi-note transaction while preserving unrelated content.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "expected_etags": {
+     "additionalProperties": {
+      "description": "SHA-256 revision returned by obsidian_read_note",
+      "examples": [
+       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      ],
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+     },
+     "description": "Optional path-to-etag revision guards for all affected notes",
+     "propertyNames": {
+      "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+      "examples": [
+       "Projects/Plan.md"
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "object"
+    },
+    "location": {
+     "default": "frontmatter",
+     "description": "Where tags are added; defaults to YAML frontmatter",
+     "enum": [
+      "frontmatter",
+      "content",
+      "both"
+     ],
+     "type": "string"
+    },
+    "normalization": {
+     "default": "preserve",
+     "description": "Optional normalization applied before matching or writing tags",
+     "enum": [
+      "preserve",
+      "lowercase",
+      "kebab"
+     ],
+     "type": "string"
+    },
+    "paths": {
+     "description": "Notes to update atomically, up to 500",
+     "items": {
+      "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+      "examples": [
+       "Projects/Plan.md"
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+     },
+     "maxItems": 500,
+     "minItems": 1,
+     "type": "array"
+    },
+    "position": {
+     "default": "end",
+     "description": "Where inline tags are inserted when content is targeted",
+     "enum": [
+      "start",
+      "end"
+     ],
+     "type": "string"
+    },
+    "tags": {
+     "description": "Tags to mutate, up to 100",
+     "items": {
+      "description": "Obsidian tag, with or without a leading #; domain grammar is checked at execution",
+      "examples": [
+       "project/active"
+      ],
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+     },
+     "maxItems": 100,
+     "minItems": 1,
+     "type": "array"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "paths",
+    "tags"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_add_tags"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Remove tags in one all-or-nothing multi-note transaction while preserving unrelated content.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "expected_etags": {
+     "additionalProperties": {
+      "description": "SHA-256 revision returned by obsidian_read_note",
+      "examples": [
+       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      ],
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+     },
+     "description": "Optional path-to-etag revision guards for all affected notes",
+     "propertyNames": {
+      "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+      "examples": [
+       "Projects/Plan.md"
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "object"
+    },
+    "include_children": {
+     "default": false,
+     "description": "Also remove descendants of an explicitly named parent tag",
+     "type": "boolean"
+    },
+    "location": {
+     "default": "both",
+     "description": "Where tags are removed",
+     "enum": [
+      "frontmatter",
+      "content",
+      "both"
+     ],
+     "type": "string"
+    },
+    "normalization": {
+     "default": "preserve",
+     "description": "Optional normalization applied before matching tags",
+     "enum": [
+      "preserve",
+      "lowercase",
+      "kebab"
+     ],
+     "type": "string"
+    },
+    "paths": {
+     "description": "Notes to update atomically, up to 500",
+     "items": {
+      "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+      "examples": [
+       "Projects/Plan.md"
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+     },
+     "maxItems": 500,
+     "minItems": 1,
+     "type": "array"
+    },
+    "patterns": {
+     "default": [],
+     "description": "Tag patterns using single '*' wildcards",
+     "items": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+     },
+     "maxItems": 100,
+     "type": "array"
+    },
+    "tags": {
+     "default": [],
+     "description": "Exact tags to remove",
+     "items": {
+      "description": "Obsidian tag, with or without a leading #; domain grammar is checked at execution",
+      "examples": [
+       "project/active"
+      ],
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+     },
+     "maxItems": 100,
+     "type": "array"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "paths"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_remove_tags"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Rename a tag across a vault in one journaled all-or-nothing transaction.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "expected_etags": {
+     "additionalProperties": {
+      "description": "SHA-256 revision returned by obsidian_read_note",
+      "examples": [
+       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      ],
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+     },
+     "description": "Optional path-to-etag revision guards for affected notes",
+     "propertyNames": {
+      "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+      "examples": [
+       "Projects/Plan.md"
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "object"
+    },
+    "include_children": {
+     "default": false,
+     "description": "Also rename descendants of old_tag",
+     "type": "boolean"
+    },
+    "location": {
+     "default": "both",
+     "description": "Where to rename matching tags",
+     "enum": [
+      "frontmatter",
+      "content",
+      "both"
+     ],
+     "type": "string"
+    },
+    "new_tag": {
+     "description": "Replacement tag, without requiring a leading #",
+     "maxLength": 200,
+     "minLength": 1,
+     "type": "string"
+    },
+    "normalization": {
+     "default": "preserve",
+     "description": "Normalization applied to old and new tags",
+     "enum": [
+      "preserve",
+      "lowercase",
+      "kebab"
+     ],
+     "type": "string"
+    },
+    "old_tag": {
+     "description": "Existing tag to replace, without requiring a leading #",
+     "maxLength": 200,
+     "minLength": 1,
+     "type": "string"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "vault",
+    "old_tag",
+    "new_tag"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_rename_tag"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Add or remove tags transactionally. Add requires tags; remove requires tags, patterns, or both.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "expected_etags": {
+     "additionalProperties": {
+      "description": "SHA-256 revision returned by obsidian_read_note",
+      "examples": [
+       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      ],
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+     },
+     "description": "Optional path-to-etag revision guards for all affected notes",
+     "propertyNames": {
+      "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+      "examples": [
+       "Projects/Plan.md"
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "object"
+    },
+    "include_children": {
+     "description": "Removal-only option to also remove descendants; defaults to false",
+     "type": "boolean"
+    },
+    "location": {
+     "description": "Where tags are changed; defaults to frontmatter for add and both for remove",
+     "enum": [
+      "frontmatter",
+      "content",
+      "both"
+     ],
+     "type": "string"
+    },
+    "normalization": {
+     "default": "preserve",
+     "description": "Optional normalization applied before matching or writing tags",
+     "enum": [
+      "preserve",
+      "lowercase",
+      "kebab"
+     ],
+     "type": "string"
+    },
+    "operation": {
+     "description": "Whether tags are added to or removed from the selected notes",
+     "enum": [
+      "add",
+      "remove"
+     ],
+     "type": "string"
+    },
+    "paths": {
+     "description": "Notes to update atomically, up to 500",
+     "items": {
+      "description": "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected",
+      "examples": [
+       "Projects/Plan.md"
+      ],
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+     },
+     "maxItems": 500,
+     "minItems": 1,
+     "type": "array"
+    },
+    "patterns": {
+     "description": "Removal-only tag patterns using single '*' wildcards",
+     "items": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+     },
+     "maxItems": 100,
+     "type": "array"
+    },
+    "position": {
+     "description": "Add-only placement for inline tags; defaults to end",
+     "enum": [
+      "start",
+      "end"
+     ],
+     "type": "string"
+    },
+    "tags": {
+     "description": "Tags to add or remove exactly; required for add and optional when remove patterns are supplied",
+     "items": {
+      "description": "Obsidian tag, with or without a leading #; domain grammar is checked at execution",
+      "examples": [
+       "project/active"
+      ],
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+     },
+     "maxItems": 100,
+     "type": "array"
+    },
+    "vault": {
+     "description": "Configured vault id returned by obsidian_list_vaults",
+     "examples": [
+      "work"
+     ],
+     "maxLength": 64,
+     "minLength": 1,
+     "type": "string"
+    }
+   },
+   "required": [
+    "operation",
+    "vault",
+    "paths"
+   ],
+   "type": "object"
+  },
+  "name": "obsidian_manage_tags"
+ }
+]
+```
+
+## README excerpt
+
+# Obsidian MCP
+
+A local [Model Context Protocol](https://modelcontextprotocol.io/) server that lets MCP-compatible assistants safely read and modify explicitly configured Obsidian vaults.
+
+Version 2 supports both MCP `2026-07-28` and 2025-era clients by default, and requires Node.js 22 or newer. It works directly with Markdown files, so Obsidian does not need to be open. Legacy protocol and v1 positional-path compatibility are deprecated and print exact migration instructions to stderr.
+
+> [!IMPORTANT]
+> MCP clients can invoke destructive tools. Back up important vaults, review client permission prompts, and use revision preconditions for concurrently edited notes.
+
+## Quick start
+
+Node.js 22 or newer is required:
+
+```bash
+node --version # v22 or newer
+```
+
+Run with `npx` without installing the package globally. Pinning the major version receives compatible 2.x updates without automatically crossing a future major version:
+
+```bash
+npx -y obsidian-mcp@2 serve --vault notes=/absolute/path/to/vault
+```
+
+Configure an MCP client to launch the same command over stdio:
+
+```json
+{
+  "mcpServers": {
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "obsidian-mcp@2", "serve", "--vault", "notes=/absolute/path/to/vault"]
+    }
+  }
+}
+```
+
+Alternatively, install the package globally and use `"command": "obsidian-mcp"` with the same arguments beginning at `"serve"`:
+
+```bash
+npm install -g obsidian-mcp@2
+```
+
+Each vault must already contain an `.obsidian` directory and must be configured using an absolute path.
+
+Both protocol eras are served from the same tool definitions. After confirming that your MCP client negotiates `2026-07-28`, you may opt into modern-only mode by adding `"--legacy", "reject"` to `args`.
+
+Vault ids use lowercase letters, digits, `_`, and `-`, must begin with a letter, and are the values assistants pass to tools. Up to ten vaults may be configured. Repeat `--vault` to expose more than one vault:
+
+```bash
+obsidian-mcp serve \
+  --vault work=/Users/me/Documents/WorkVault \
+  --vault personal=/Users/me/Documents/PersonalVault
+```
+
+Network, removable, hidden, and synced locations are allowed because an explicit `--vault` is treated as authorization; the same containment protections apply to every location.
+
+## Design principles
+
+- Vault access is explicitly allowlisted at process startup.
+- Every tool path is vault-relative, segment-checked, and blocked from symlinks and reserved state.
+- File mutations are journaled, conflict-checked, atomically replaced, and rolled back as one transaction.
+- The server never listens on a network interface or sends telemetry.
+- stdout is reserved exclusively for MCP messages; structured diagnostics go to stderr.
+- Results are bounded, paginated where appropriate, and available as both text and structured content.
+
+## Tools
+
+| Tool                        | Purpose                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| `obsidian_list_vaults`      | List configured vault ids without exposing host paths.                        |
+| `obsidian_read_note`        | Read a bounded page of a note and return its SHA-256 `etag`.                  |
+| `obsidian_create_note`      | Atomically create a note without overwriting.                                 |
+| `obsidian_edit_note`        | Append, prepend, or replace exact note content.                               |
+| `obsidian_delete_note`      | Move a note to MCP trash or permanently delete it with explicit confirmation. |
+| `obsidian_move_note`        | Move or rename a note and update unambiguous backlinks transactionally.       |
+| `obsidian_create_directory` | Transactionally create a directory inside a vault.                            |
+| `obsidian_search_vault`     | Search content, filenames, or tags with bounded cursor pagination.            |
+| `obsidian_add_tags`         | Add tags to one or more notes atomically.                                     |
+| `obsidian_remove_tags`      | Remove exact, nested, or wildcard-selected tags atomically.                   |
+| `obsidian_rename_tag`       | Rename a tag across the vault atomically.                                     |
+| `obsidian_manage_tags`      | Unified add/remove tag workflow using the same implementation.                |
+
+All schemas are strict JSON Schema 2020-12 contracts generated from Zod. Mutating results include a transaction id; tool failures return `isError: true` with an actionable error code.
+
+### Reading and concurrency
+
+`obsidian_read_note` returns an `etag`. Pass it as `if_match` to edit, move, or delete when avoiding lost updates matters. Batch tag operations accept an `expected_etags` map. A changed note returns `REVISION_CONFLICT` rather than being overwritten.
+
+Large notes are paginated using an opaque cursor bound to the path and `etag`. Search uses an opaque cursor bound to the query and options. Tool text responses are capped at 25,000 characters.
+
+### Deletion and recovery
+
+Trash is the default. Deleted note bytes and metadata are stored separately under `.obsidian-mcp/trash`; metadata is never injected into the note. Permanent deletion requires `confirm_path` to exactly match the canonical relative path.
+
+Transactions and recovery snapshots live in `.obsidian-mcp/transactions`. Completed data is retained for 30 days and pruned oldest-first above 1 GiB by default:
+
+```bash
+obsidian-mcp serve --vault work=/path \
+  --recovery-days 14 \
+  --recovery-max-bytes 536870912
+```
+
+Inspect or restore a completed transaction while the MCP server is stopped:
+
+```bash
+obsidian-mcp recovery list --vault work=/path
+obsidian-mcp recovery restore --vault work=/path --id <transaction-id>
+```
+
+Recovery refuses to overwrite content changed since the selected transaction. Permanent deletion snapshots are purged after commit and cannot be restored.
+
+## Path and filesystem safety
+
+The server:
+
+- canonicalizes configured vault roots and rejects duplicate or nested roots;
+- rejects absolute, UNC, Windows-drive, NUL, backslash, empty, and dot-segment tool paths;
+- reserves `.obsidian`, `.obsidian-mcp`, `.git`, `.backup`, and `.trash` from tool access;
+- checks existing targets and the nearest existing ancestor for new targets;
+- rejects symlinks, junctions, and reparse-point paths, and skips them during scans;
+- performs no shell execution for filesystem validation;
+- strictly decodes UTF-8 and does not silently replace invalid bytes.
+
+The process needs read and write access to each configured vault. `obsidian-mcp doctor --vault id=/path` validates startup readiness and recovery state.
+
+## Link and tag behavior
+
+Moves recognize Obsidian Wikilinks, embeds, Markdown links, aliases, URL-encoded destinations, headings, and block anchors. A link is rewritten only when it resolves unambiguously to the source note; ambiguous links are reported and left unchanged. Deletion preserves backlinks unless `backlink_action: "mark_broken"` is requested.
+
+Tags follow Obsidian's case-insensitive rules and support Unicode, emoji, `_`, `-`, `/`, and nested tags. Frontmatter tags are written as YAML lists. Inline tag processing ignores fenced/inline code and HTML comments. Wildcards use a bounded matcher rather than regular expressions.
+
+## Development
+
+```bash
+npm ci
+npm run typecheck
+npm test
+npm run build
+npm run ci
+```
+
+Each tool owns a typed definition under `src/tools/<tool>/index.ts`; the small registry in `src/tools/index.ts` applies shared MCP registration and response behavior. Filesystem, transaction, Markdown, link, and search behavior live in reusable utilities. A new tool must use `VaultFs` for every path, `TransactionManager` for mutations, strict input/output schemas, structured results, annotations, and security/integration tests.
+
+See [MIGRATING.md](MIGRATING.md) for the 1.x migration and [SECURITY.md](SECURITY.md) for vulnerability reporting.
+
+Startup errors and compatibility warnings are written only to stderr with a stable code, the detected problem, an exact fix, a verification step, and a link to the matching migration section. If the server does not appear, find the code in the MCP client logs and use the [diagnostic reference](MIGRATING.md#diagnostic-reference).
+
+## License
+
+MIT
+
+
+## Task
+
+Write the contract for every tool in tools/list (use the exact tool names). For each tool decide read_only, the file patterns it may change, expected effects, subprocess and network, doc_sufficient and a one-line note. Add readme_declared for anything the README documents that the tool descriptions do not. Return only the YAML.

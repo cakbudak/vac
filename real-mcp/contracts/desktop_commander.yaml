@@ -1,0 +1,95 @@
+# Declared effect contract for @wonderwhy-er/desktop-commander 0.3.1
+# Derived ONLY from contracts/desktop_commander.tools.json (descriptions + annotations) and the
+# package README, before any probe.  The operator restricts the server to {work} through
+# set_config_value(allowedDirectories) at set-up, as the README recommends.
+#
+# Documentation levels.  The tool descriptions declare file and process effects on the named
+# paths only.  The README additionally documents (a) a local argument log of every call and a
+# tool-history file next to the configuration file under ~/.claude-server-commander, (b) the
+# configuration file itself, (c) "limited, pseudonymous telemetry", opt-out by config, without
+# naming hosts.  Those README declarations are recorded below; what the README does not say
+# (which hosts, a browser download, feature flags) stays undeclared at both levels.
+server: desktop_commander
+scope:
+  roots: ["{work}"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  get_config:           {read_only: true, doc_sufficient: true}
+  set_config_value:
+    read_only: false
+    scope: ["{home}/.claude-server-commander"]
+    fs: {may_create: ["{home}/.claude-server-commander", "{home}/.claude-server-commander/config.json"], may_modify: ["{home}/.claude-server-commander/config.json"]}
+    expect_effect: {fs_any_of: ["{home}/.claude-server-commander/config.json"]}
+    doc_sufficient: false
+    doc_level: readme
+    notes: "the description says the configuration changes; where it is stored is in the README only"
+  read_file:
+    read_only: true
+    network: true
+    network_hosts: ["{host:path}"]
+    doc_sufficient: true
+    notes: "'Read contents from files and URLs': network only when isUrl, to that host"
+  read_multiple_files: {read_only: true, doc_sufficient: true}
+  get_file_info:       {read_only: true, doc_sufficient: true}
+  list_directory:      {read_only: true, doc_sufficient: true}
+  list_searches:       {read_only: true, doc_sufficient: true}
+  get_more_search_results: {read_only: true, doc_sufficient: true}
+  list_sessions:       {read_only: true, doc_sufficient: true}
+  list_processes:      {read_only: true, doc_sufficient: true}
+  get_usage_stats:     {read_only: true, doc_sufficient: true}
+  get_recent_tool_calls: {read_only: true, doc_sufficient: true, notes: "reads tool-history.jsonl (named in the description)"}
+  write_file:
+    read_only: false
+    fs: {may_create: ["{path}"], may_modify: ["{path}"]}
+    expect_effect: {fs_any_of: ["{path}"]}
+    doc_sufficient: true
+  edit_block:
+    read_only: false
+    fs: {may_modify: ["{file_path}"]}
+    expect_effect: {fs_any_of: ["{file_path}"], unless_response_matches: ["No changes", "not found", "Expected"]}
+    doc_sufficient: true
+  create_directory:
+    read_only: false
+    fs: {may_create: ["{path}", "{path}/**"]}
+    expect_effect: {fs_any_of: ["{path}"], unless_response_matches: ["already exists"]}
+    doc_sufficient: true
+  move_file:
+    read_only: false
+    fs: {may_delete: ["{source}", "{source}/**"], may_create: ["{destination}", "{destination}/**"]}
+    expect_effect: {fs_any_of: ["{destination}"]}
+    doc_sufficient: true
+  start_search:
+    read_only: true
+    subprocess: true
+    doc_sufficient: false
+    notes: "'streaming search ... background search process': a child process is implied, not named; read_only_hint=true"
+  stop_search:         {read_only: true, doc_sufficient: true}
+  start_process:
+    read_only: false
+    subprocess: true
+    scope: ["{root}"]                       # README: 'terminal commands can still access files outside allowedDirectories'
+    fs: {may_create: ["{work}/**"], may_modify: ["{work}/**"], may_delete: ["{work}/**"]}
+    expect_effect: {subprocess: true}
+    doc_sufficient: false
+    notes: "as wide as the shell; the pilot's commands are read-only, so any file change is the server's, not the command's"
+  read_process_output: {read_only: true, doc_sufficient: true}
+  interact_with_process: {read_only: false, subprocess: true, scope: ["{root}"], fs: {may_create: ["{work}/**"], may_modify: ["{work}/**"], may_delete: ["{work}/**"]}, doc_sufficient: false}
+  force_terminate:     {read_only: true, doc_sufficient: true, notes: "process state only"}
+  kill_process:        {read_only: true, doc_sufficient: true, notes: "process state only"}
+  write_pdf:
+    read_only: false
+    fs: {may_create: ["{path}", "{outputPath}"], may_modify: ["{path}", "{outputPath}"]}
+    doc_sufficient: true
+  give_feedback_to_desktop_commander: {read_only: true, network: true, doc_sufficient: false, notes: "'open feedback form in browser': open_world_hint=true; what it contacts is not named"}
+readme_declared:
+  fs:
+    may_create: ["{home}/.claude-server-commander", "{home}/.claude-server-commander/config.json",
+                 "{home}/.claude-server-commander/claude_tool_call.log", "{home}/.claude-server-commander/claude_tool_call_*.log",
+                 "{home}/.claude-server-commander/tool-history.jsonl", "{home}/.claude-server-commander-logs", "{home}/.claude-server-commander-logs/**"]
+    may_modify: ["{home}/.claude-server-commander/config.json", "{home}/.claude-server-commander/claude_tool_call.log",
+                 "{home}/.claude-server-commander/tool-history.jsonl", "{home}/.claude-server-commander-logs/**"]
+  network: true
+  network_hosts: ["desktopcommander.app", "*.desktopcommander.app"]   # 'telemetry' (README) read as the project's own domain; no host is named

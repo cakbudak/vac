@@ -1,0 +1,137 @@
+```yaml
+server: filesystem
+scope:
+  roots:
+    - "{work}/**"
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Deprecated alias for read_text_file; read_only_hint=true, openWorldHint=false, no fs changes."
+  read_text_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Pure read; read_only_hint=true, openWorldHint=false, no fs changes."
+  read_media_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Pure read returning base64; read_only_hint=true, openWorldHint=false, no fs changes."
+  read_multiple_files:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Pure read of multiple files; read_only_hint=true, openWorldHint=false, no fs changes."
+  write_file:
+    read_only: false
+    fs:
+      may_create:
+        - "{work}/**"
+      may_modify:
+        - "{work}/**"
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{work}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Creates or overwrites a file in place; read_only_hint=false, destructiveHint=true; no subprocess or network."
+  edit_file:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify:
+        - "{work}/**"
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{work}/**"
+      unless_response_matches:
+        - "dry run"
+        - "dryRun"
+        - "preview"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Modifies existing file in place; dryRun=true makes it a no-op; read_only_hint=false, idempotentHint=false."
+  create_directory:
+    read_only: false
+    fs:
+      may_create:
+        - "{work}/**"
+      may_modify: []
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{work}/**"
+      unless_response_matches:
+        - "already exists"
+        - "exists"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Creates directory and parents; silent no-op if already exists; read_only_hint=false, destructiveHint=false."
+  list_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Pure directory listing; read_only_hint=true, openWorldHint=false, no fs changes."
+  list_directory_with_sizes:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Pure directory listing with sizes; read_only_hint=true, openWorldHint=false, no fs changes."
+  directory_tree:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Pure recursive directory tree read; read_only_hint=true, openWorldHint=false, no fs changes."
+  move_file:
+    read_only: false
+    fs:
+      may_create:
+        - "{work}/**"
+      may_modify:
+        - "{work}/**"
+      may_delete:
+        - "{work}/**"
+    expect_effect:
+      fs_any_of:
+        - "{work}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Moves/renames source to destination; deletes source, creates destination; cross-fs copy+delete documented."
+  search_files:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Pure recursive search; read_only_hint=true, openWorldHint=false, no fs changes."
+  get_file_info:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Pure metadata read; read_only_hint=true, openWorldHint=false, no fs changes."
+  list_allowed_directories:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns in-memory list of allowed directories; pure read, no fs changes, no network."
+```

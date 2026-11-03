@@ -1,0 +1,987 @@
+{
+  "background_net": [
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407006.868335
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407006.891491
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407006.894372
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407006.909276
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407006.910488
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407006.921419
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407006.922528
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "googlechromelabs.github.io",
+      "qtype": "A",
+      "t": 1793407006.934514
+    },
+    {
+      "before_index": 12,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407008.924428
+    },
+    {
+      "before_index": 12,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407008.924497
+    },
+    {
+      "before_index": 12,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407008.936288
+    },
+    {
+      "before_index": 31,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407011.401715
+    },
+    {
+      "before_index": 55,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407026.785315
+    },
+    {
+      "before_index": 55,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407026.790587
+    },
+    {
+      "before_index": 55,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407026.797517
+    },
+    {
+      "before_index": 62,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407027.786568
+    },
+    {
+      "before_index": 62,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407027.791102
+    },
+    {
+      "before_index": 62,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407027.798714
+    },
+    {
+      "before_index": 68,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407028.663139
+    },
+    {
+      "before_index": 70,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407028.951159
+    },
+    {
+      "before_index": 70,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407028.951254
+    },
+    {
+      "before_index": 70,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407028.957576
+    },
+    {
+      "before_index": 82,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407030.790186
+    },
+    {
+      "before_index": 82,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407030.794694
+    },
+    {
+      "before_index": 82,
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "between_calls",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407030.801675
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "shutdown",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793407031.955126
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "shutdown",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407031.955175
+    },
+    {
+      "dst": "10.200.168.1:53",
+      "kind": "dns",
+      "phase": "shutdown",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793407031.961494
+    }
+  ],
+  "channel_observations": {
+    "background_net_attempts": 28,
+    "background_net_names": [
+      "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "desktopcommander.app",
+      "googlechromelabs.github.io",
+      "telemetry.desktopcommander.app"
+    ],
+    "calls_with_children": 89,
+    "calls_with_fs_change": 89,
+    "mean_sampler_samples_per_call": 18.2,
+    "net_attempts": 205,
+    "net_names": [
+      "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "example.com",
+      "example.org",
+      "telemetry.desktopcommander.app"
+    ],
+    "proxy_requests": 0,
+    "remote_sockets": 89
+  },
+  "contract_digest": "7226879fae35e2d8d6fd8854cc79d4b751ecf606d831478d511fe74bf5e83bac",
+  "description": "Desktop Commander, a widely installed third-party file/terminal server, restricted by the operator to the work directory.",
+  "deviation_kinds_total": {
+    "network_outside_scope": 2,
+    "undeclared_network": 21,
+    "undeclared_subprocess": 72
+  },
+  "deviation_kinds_total_tools_list": {
+    "fs_outside_scope": 76,
+    "fs_undeclared": 12,
+    "network_outside_scope": 2,
+    "undeclared_network": 44,
+    "undeclared_subprocess": 72
+  },
+  "finished": "2026-10-31T00:37:14.609356+00:00",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "heldout": {
+    "actions": 44,
+    "per_tool": {
+      "create_directory": {
+        "actions": 3,
+        "deviations": 3,
+        "deviations_tools_list": 3,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 3
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 3,
+            "review": 0
+          }
+        }
+      },
+      "edit_block": {
+        "actions": 3,
+        "deviations": 3,
+        "deviations_tools_list": 3,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 3
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 3,
+            "review": 0
+          }
+        }
+      },
+      "get_config": {
+        "actions": 1,
+        "deviations": 1,
+        "deviations_tools_list": 1,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 1,
+            "review": 0
+          }
+        }
+      },
+      "get_file_info": {
+        "actions": 4,
+        "deviations": 4,
+        "deviations_tools_list": 4,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 4
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 4,
+            "review": 0
+          }
+        }
+      },
+      "get_recent_tool_calls": {
+        "actions": 1,
+        "deviations": 1,
+        "deviations_tools_list": 1,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 1,
+            "review": 0
+          }
+        }
+      },
+      "get_usage_stats": {
+        "actions": 1,
+        "deviations": 1,
+        "deviations_tools_list": 1,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 1,
+            "review": 0
+          }
+        }
+      },
+      "list_directory": {
+        "actions": 2,
+        "deviations": 2,
+        "deviations_tools_list": 2,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 2,
+            "review": 0
+          }
+        }
+      },
+      "list_searches": {
+        "actions": 1,
+        "deviations": 1,
+        "deviations_tools_list": 1,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 1,
+            "review": 0
+          }
+        }
+      },
+      "list_sessions": {
+        "actions": 1,
+        "deviations": 1,
+        "deviations_tools_list": 1,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 1,
+            "review": 0
+          }
+        }
+      },
+      "move_file": {
+        "actions": 3,
+        "deviations": 3,
+        "deviations_tools_list": 3,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 3
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 3,
+            "review": 0
+          }
+        }
+      },
+      "read_file": {
+        "actions": 7,
+        "deviations": 7,
+        "deviations_tools_list": 7,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 7
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 7,
+            "review": 0
+          }
+        }
+      },
+      "read_multiple_files": {
+        "actions": 1,
+        "deviations": 1,
+        "deviations_tools_list": 1,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 1,
+            "review": 0
+          }
+        }
+      },
+      "start_process": {
+        "actions": 6,
+        "deviations": 3,
+        "deviations_tools_list": 6,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 6
+          },
+          "3-junta": {
+            "allow": 6,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "start_search": {
+        "actions": 2,
+        "deviations": 0,
+        "deviations_tools_list": 2,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          },
+          "3-junta": {
+            "allow": 2,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "write_file": {
+        "actions": 8,
+        "deviations": 8,
+        "deviations_tools_list": 8,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 8
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 8,
+            "review": 0
+          }
+        }
+      }
+    },
+    "tallies": {
+      "2-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 39,
+        "errors": 0,
+        "safe_allowed": 0,
+        "safe_blocked": 0,
+        "safe_reviewed": 5
+      },
+      "3-junta": {
+        "dev_allowed": 3,
+        "dev_blocked": 36,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 5,
+        "safe_blocked": 0,
+        "safe_reviewed": 0
+      }
+    }
+  },
+  "install_digest": "dde2e5d59db252b2b473c931b92ee20c25a5f7f963c9c2be3051201a6151d6dc",
+  "kind": "third_party",
+  "label_level": "readme",
+  "learners": [
+    "2-junta",
+    "3-junta"
+  ],
+  "net_isolation": "netns_veth_tcpdump",
+  "per_tool_train": {
+    "create_directory": {
+      "deviation_kinds": {
+        "undeclared_network": 1,
+        "undeclared_subprocess": 3
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 3,
+        "undeclared_network": 2,
+        "undeclared_subprocess": 3
+      },
+      "deviations": 3,
+      "deviations_tools_list": 3,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 3
+    },
+    "edit_block": {
+      "deviation_kinds": {
+        "undeclared_subprocess": 3
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 3,
+        "undeclared_network": 1,
+        "undeclared_subprocess": 3
+      },
+      "deviations": 3,
+      "deviations_tools_list": 3,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 3
+    },
+    "get_config": {
+      "deviation_kinds": {
+        "undeclared_subprocess": 1
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 1,
+        "undeclared_subprocess": 1
+      },
+      "deviations": 1,
+      "deviations_tools_list": 1,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 1
+    },
+    "get_file_info": {
+      "deviation_kinds": {
+        "undeclared_network": 2,
+        "undeclared_subprocess": 4
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 4,
+        "undeclared_network": 3,
+        "undeclared_subprocess": 4
+      },
+      "deviations": 4,
+      "deviations_tools_list": 4,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 4
+    },
+    "get_recent_tool_calls": {
+      "deviation_kinds": {
+        "undeclared_subprocess": 1
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 1,
+        "undeclared_network": 1,
+        "undeclared_subprocess": 1
+      },
+      "deviations": 1,
+      "deviations_tools_list": 1,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 1
+    },
+    "get_usage_stats": {
+      "deviation_kinds": {
+        "undeclared_subprocess": 1
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 1,
+        "undeclared_subprocess": 1
+      },
+      "deviations": 1,
+      "deviations_tools_list": 1,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 1
+    },
+    "list_directory": {
+      "deviation_kinds": {
+        "undeclared_network": 1,
+        "undeclared_subprocess": 2
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 2,
+        "undeclared_network": 2,
+        "undeclared_subprocess": 2
+      },
+      "deviations": 2,
+      "deviations_tools_list": 2,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 2
+    },
+    "list_searches": {
+      "deviation_kinds": {
+        "undeclared_subprocess": 1
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 1,
+        "undeclared_network": 1,
+        "undeclared_subprocess": 1
+      },
+      "deviations": 1,
+      "deviations_tools_list": 1,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 1
+    },
+    "list_sessions": {
+      "deviation_kinds": {
+        "undeclared_subprocess": 1
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 1,
+        "undeclared_network": 1,
+        "undeclared_subprocess": 1
+      },
+      "deviations": 1,
+      "deviations_tools_list": 1,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 1
+    },
+    "move_file": {
+      "deviation_kinds": {
+        "undeclared_subprocess": 3
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 3,
+        "undeclared_network": 2,
+        "undeclared_subprocess": 3
+      },
+      "deviations": 3,
+      "deviations_tools_list": 3,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 3
+    },
+    "read_file": {
+      "deviation_kinds": {
+        "network_outside_scope": 1,
+        "undeclared_subprocess": 7
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 7,
+        "network_outside_scope": 1,
+        "undeclared_subprocess": 7
+      },
+      "deviations": 7,
+      "deviations_tools_list": 7,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 7
+    },
+    "read_multiple_files": {
+      "deviation_kinds": {
+        "undeclared_network": 1,
+        "undeclared_subprocess": 1
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 1,
+        "undeclared_network": 1,
+        "undeclared_subprocess": 1
+      },
+      "deviations": 1,
+      "deviations_tools_list": 1,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 1
+    },
+    "start_process": {
+      "deviation_kinds": {
+        "undeclared_network": 2
+      },
+      "deviation_kinds_tools_list": {
+        "fs_undeclared": 6,
+        "undeclared_network": 4
+      },
+      "deviations": 2,
+      "deviations_tools_list": 6,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": 2,
+      "flags": {},
+      "probes": 6
+    },
+    "start_search": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 2
+      },
+      "deviations": 0,
+      "deviations_tools_list": 2,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 2
+    },
+    "write_file": {
+      "deviation_kinds": {
+        "undeclared_network": 3,
+        "undeclared_subprocess": 8
+      },
+      "deviation_kinds_tools_list": {
+        "fs_outside_scope": 8,
+        "undeclared_network": 6,
+        "undeclared_subprocess": 8
+      },
+      "deviations": 8,
+      "deviations_tools_list": 8,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 1,
+      "flags": {},
+      "probes": 8
+    }
+  },
+  "sandbox": "/vac/vac-next/real-mcp/sandboxes/desktop-commander-2",
+  "seed": 2,
+  "served_definition_digest": "42e66684ce2d8c4a98838faa4c9458b38cb330165773652dc4977f359564d12f",
+  "server": "desktop_commander",
+  "setup": {
+    "calls": 1,
+    "deviations": 1,
+    "deviations_tools_list": 1,
+    "kinds_tools_list": [
+      "fs_undeclared",
+      "undeclared_network",
+      "undeclared_subprocess"
+    ]
+  },
+  "source": "npm @wonderwhy-er/desktop-commander@0.3.1",
+  "started": "2026-10-31T00:36:46.081827+00:00",
+  "tools_listed": [
+    "get_config",
+    "set_config_value",
+    "read_file",
+    "read_multiple_files",
+    "write_file",
+    "write_pdf",
+    "create_directory",
+    "list_directory",
+    "move_file",
+    "start_search",
+    "get_more_search_results",
+    "stop_search",
+    "list_searches",
+    "get_file_info",
+    "edit_block",
+    "start_process",
+    "read_process_output",
+    "interact_with_process",
+    "force_terminate",
+    "list_sessions",
+    "list_processes",
+    "kill_process",
+    "get_usage_stats",
+    "get_recent_tool_calls",
+    "give_feedback_to_desktop_commander"
+  ],
+  "train": {
+    "deviations": 38,
+    "deviations_tools_list": 44,
+    "errors": 0,
+    "hypotheses_remaining": {
+      "2-junta": 0,
+      "3-junta": 16
+    },
+    "observed_by_learner": {
+      "2-junta": 44,
+      "3-junta": 44
+    },
+    "probes": 44
+  },
+  "vocabulary": {
+    "distinct_after_merge": 78,
+    "generated": 449,
+    "names": [
+      "tool:create_directory",
+      "tool:edit_block",
+      "tool:get_config",
+      "tool:get_file_info",
+      "tool:get_recent_tool_calls",
+      "tool:get_usage_stats",
+      "tool:list_directory",
+      "tool:list_searches",
+      "tool:list_sessions",
+      "tool:move_file",
+      "tool:read_file",
+      "tool:read_multiple_files",
+      "tool:start_process",
+      "tool:start_search",
+      "tool:write_file",
+      "command.token_cs:A-Z",
+      "command.token_cs:a",
+      "command.token_cs:cat",
+      "command.token_cs:desktop-commander-2",
+      "command.token_cs:echo",
+      "command.token_cs:hello",
+      "command.token_cs:l",
+      "command.token_cs:ls",
+      "command.len_ge:10",
+      "command.len_ge:14",
+      "command.len_ge:23",
+      "content.token_cs:1",
+      "content.token_cs:AUDIT",
+      "content.token_cs:URGENT",
+      "content.token_cs:body",
+      "content.token_cs:content",
+      "content.token_cs:ok",
+      "content.token_cs:request",
+      "content.token_cs:update",
+      "content.token_cs:urgent",
+      "content.token_ci:urgent",
+      "content.len_ge:12",
+      "content.len_ge:14",
+      "content.len_ge:15",
+      "content.len_ge:16",
+      "content.len_ge:17",
+      "content.len_ge:19",
+      "content.has_upper",
+      "content.has_char:#",
+      "depth.token_cs:1",
+      "depth.token_cs:2",
+      "destination.token_cs:moved-alpha-0",
+      "destination.token_cs:moved-budget-1",
+      "destination.token_cs:moved-notes-2",
+      "file_path.token_cs:audit-5",
+      "file_path.token_cs:memo-4",
+      "file_path.token_cs:plan-6",
+      "file_path.token_cs:txt",
+      "has_arg:isUrl",
+      "mode.token_cs:append",
+      "mode.token_cs:rewrite",
+      "has_arg:path",
+      "path.token_cs:alpha-0",
+      "path.token_cs:audit-5",
+      "path.token_cs:budget-1",
+      "path.token_cs:desktop-commander-2",
+      "path.token_cs:dir-alpha-0",
+      "path.token_cs:dir-budget-1",
+      "path.token_cs:dir-notes-2",
+      "path.token_cs:md",
+      "path.token_cs:memo-4",
+      "path.token_cs:notes-2",
+      "path.token_cs:sprint-3",
+      "path.token_cs:txt",
+      "path.len_ge:68",
+      "path.len_ge:69",
+      "path.len_ge:70",
+      "path.len_ge:73",
+      "path.has_char:.",
+      "pattern.token_cs:alpha",
+      "pattern.token_cs:md",
+      "source.token_cs:txt",
+      "has_arg:timeout_ms"
+    ]
+  }
+}

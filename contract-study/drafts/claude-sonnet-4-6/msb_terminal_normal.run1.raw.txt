@@ -1,0 +1,46 @@
+```yaml
+server: msb_terminal_normal
+scope:
+  roots: ["/**"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: true
+  network: true
+tools:
+  execute_command:
+    read_only: false
+    fs:
+      may_create: ["/**"]
+      may_modify: ["/**"]
+      may_delete: ["/**"]
+    expect_effect:
+      subprocess: true
+    subprocess: true
+    network: true
+    scope: ["/**"]
+    doc_sufficient: false
+    notes: "Executes arbitrary shell commands; fs/network/subprocess scope is unbounded by documentation — declared maximally wide because the command argument is unconstrained."
+
+  get_command_history:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Returns stored history of past commands; documentation does not specify where history is persisted or whether any file is read, so read_only is assumed true and no fs patterns are declared."
+
+  get_current_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    expect_effect:
+      response_matches_any: ["/"]
+    doc_sufficient: true
+    notes: "Returns the current working directory path; purely informational, no side effects documented."
+
+  change_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Changes the server process's internal working directory; no file system mutations expected, but documentation does not clarify whether any state file is written — treated as read_only with no fs changes declared."
+```

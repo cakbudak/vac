@@ -1,0 +1,451 @@
+```json
+{
+  "server": "desktop_commander",
+  "startup": [
+    {
+      "behaviour": "Telemetry enabled by default, sends events to https://telemetry.desktopcommander.app/mp/collect (with fallback to Cloud Run URL). Captures tool calls, errors, file operations, process executions, and system metadata (platform, container info, runtime source, client info).",
+      "evidence": "utils/capture.js: capture() function called throughout; TELEMETRY_PROXY_URL constant; config-manager.js: getDefaultConfig() sets telemetryEnabled: true",
+      "kind": "network",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "network",
+      "security_relevance": "high"
+    },
+    {
+      "behaviour": "UV_THREADPOOL_SIZE environment variable set to 16 if not already set, before any filesystem operations.",
+      "evidence": "bootstrap.js: process.env.UV_THREADPOOL_SIZE = String(DEFAULT_THREADPOOL_SIZE)",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Configuration loaded from ~/.claude-server-commander/config.json on startup. File is created if missing, recovered if corrupt, and watched for changes via fs.watch.",
+      "evidence": "config-manager.js: ConfigManager.init(), loadStartupConfig(), startConfigWatcher(); config.js: CONFIG_FILE path",
+      "kind": "file_read",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Chrome browser preloaded in background for PDF generation via ensureChromeAvailable().",
+      "evidence": "index.js: server.oninitialized callback calls ensureChromeAvailable()",
+      "kind": "subprocess",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Excel, DOCX, and PDF support packages preloaded via preloadFileSupport() after initialization.",
+      "evidence": "index.js: server.oninitialized callback calls preloadFileSupport()",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Tool call history persisted to ~/.claude-server-commander/tool-history.jsonl. Keeps last 1000 entries in memory, trims file when over 5MB. Outputs over 4KB replaced with omission marker.",
+      "evidence": "utils/toolHistory.js: ToolHistory class, historyFile path, MAX_ENTRIES, MAX_HISTORY_FILE_SIZE_BYTES",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Installation tracking sends telemetry event 'package_installed' to proxy URLs during npm install, including installation source detection (smithery, npx, npm, docker, etc.).",
+      "evidence": "track-installation.js: trackInstallation() function, detectInstallationSource()",
+      "kind": "network",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "network",
+      "security_relevance": "medium"
+    }
+  ],
+  "tools": {
+    "get_config": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns additional config fields not listed in description: clientId, usageStats, feedbackGiven, sawOnboardingPage, pendingWelcomeOnboarding, welcomeOnboardingEligible",
+          "evidence": "config-manager.js: getDefaultConfig() includes these fields; getConfig() returns full config object",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "set_config_value": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Can set undocumented config keys: clientId, usageStats, feedbackGiven, sawOnboardingPage, pendingWelcomeOnboarding, welcomeOnboardingEligible",
+          "evidence": "config-manager.js: setValue() accepts any key; config stores these fields",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Captures telemetry event 'server_telemetry_opt_out' when telemetryEnabled is set to false",
+          "evidence": "config-manager.js: setValue() calls capture('server_telemetry_opt_out', ...)",
+          "kind": "network",
+          "trigger": "conditional on input",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "read_file": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Captures telemetry event 'server_read_file' with fileExtension, offset, length, fileSize",
+          "evidence": "filesystem.js: readFileFromDisk() calls capture('server_read_file', ...)",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "3-minute timeout (READ_OPERATION_TIMEOUT_MS) for read operations, cancellable via AbortSignal",
+          "evidence": "filesystem.js: READ_OPERATION_TIMEOUT_MS constant, runWithAbortableTimeout() call",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Falls back to directory listing if path is a directory instead of returning error",
+          "evidence": "filesystem.js: readFileFromDisk() checks stats.isDirectory() and calls listDirectory()",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Resolves symlinks and Windows junctions to real paths during validation",
+          "evidence": "filesystem.js: validatePath() calls resolveRealPath() which follows symlinks",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "read_multiple_files": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Each file read captures telemetry via readFile() internal calls",
+          "evidence": "filesystem.js: readMultipleFiles() calls readFile() which captures telemetry",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "write_file": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Captures telemetry event 'server_write_file' with fileExtension, mode, contentBytes, lineCount",
+          "evidence": "filesystem.js: writeFile() calls capture('server_write_file', ...)",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects write to existing non-empty file if mode not explicitly specified (prevents accidental data loss)",
+          "evidence": "filesystem-handlers.js: handleWriteFile() checks existing file size when mode not provided",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "write_pdf": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Captures telemetry event 'server_write_pdf' with fileExtension, contentLength/operationCount, mode",
+          "evidence": "filesystem.js: writePdf() calls capture('server_write_pdf', ...)",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "create_directory": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "list_directory": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns [FILE] for a path that is a file instead of erroring",
+          "evidence": "filesystem.js: listDirectory() checks stats.isFile() and returns file entry",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "move_file": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates both source and destination paths with symlink resolution before moving",
+          "evidence": "filesystem.js: moveFile() calls validatePath() with entry: true for both paths",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "start_search": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Uses ripgrep for file searches with fallback to Node.js implementation if ripgrep fails",
+          "evidence": "filesystem.js: searchFiles() imports searchManager which uses ripgrep",
+          "kind": "subprocess",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "process",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "get_more_search_results": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "stop_search": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "list_searches": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "get_file_info": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Uses file handler to get type-specific metadata (Excel sheets, PDF pages, image info, text line counts)",
+          "evidence": "filesystem.js: getFileInfo() calls getFileHandler() and handler.getInfo()",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "edit_block": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Captures telemetry event 'server_edit_block' with fileExtension, string lengths, expectedReplacements",
+          "evidence": "edit.js: performSearchReplace() calls capture('server_edit_block', ...)",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Performs fuzzy search with 0.7 similarity threshold when exact match not found, logs results to fuzzy-search.log",
+          "evidence": "edit.js: performSearchReplace() calls runFuzzySearchInWorker(), fuzzySearchLogger.log()",
+          "kind": "file_write",
+          "trigger": "conditional on input",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Routes to handler.editRange() for structured files (Excel, DOCX) instead of text replacement",
+          "evidence": "edit.js: handleEditBlock() checks hasEditRange and calls handler.editRange()",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "start_process": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Captures telemetry event 'server_start_process' with command and commands (extracted first words)",
+          "evidence": "improved-process-tools.js: startProcess() calls capture('server_start_process', ...)",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Automatically enhances SSH commands by adding -t flag if not present",
+          "evidence": "terminal-manager.js: executeCommand() adds ' -t' to ssh commands",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Repairs corrupted PATHEXT environment variable on Windows before spawning shell",
+          "evidence": "terminal-manager.js: getRepairedPathExt() called in executeCommand()",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "process",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Creates virtual Node.js session for 'node:local' command instead of spawning process",
+          "evidence": "improved-process-tools.js: startProcess() checks for 'node:local' and creates virtual session",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "read_process_output": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Waits for new output to arrive when offset=0 and session is active (polls every 50ms)",
+          "evidence": "improved-process-tools.js: readProcessOutput() calls waitForOutput() when offset === 0",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Reports buffer cap eviction when output exceeds 50MB per session",
+          "evidence": "improved-process-tools.js: readProcessOutput() checks result.evictedLines",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "interact_with_process": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Captures telemetry event 'server_interact_with_process' with pid and inputLength",
+          "evidence": "improved-process-tools.js: interactWithProcess() calls capture('server_interact_with_process', ...)",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Executes Node.js code via temp file for virtual node:local sessions",
+          "evidence": "improved-process-tools.js: interactWithProcess() calls executeNodeCode() for virtual sessions",
+          "kind": "subprocess",
+          "trigger": "conditional on input",
+          "observable_from_outside": "process",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Cleans output by removing REPL prompts and input echoes",
+          "evidence": "improved-process-tools.js: interactWithProcess() calls cleanProcessOutput()",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "force_terminate": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Clears virtual Node.js session from map instead of terminating process",
+          "evidence": "improved-process-tools.js: forceTerminate() checks virtualNodeSessions.has(pid)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "list_sessions": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Includes virtual Node.js sessions in output alongside real process sessions",
+          "evidence": "improved-process-tools.js: listSessions() includes virtualSessions from virtualNodeSessions map",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "list_processes": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "kill_process": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "get_usage_stats": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "get_recent_tool_calls": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Trims history file when over 5MB to target of 4MB, keeping most recent entries",
+          "evidence": "utils/toolHistory.js: trimHistoryFileIfTooLarge() called in loadFromDisk() and flushToDisk()",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "give_feedback_to_desktop_commander": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "substantial",
+    "summary": "Every tool call captures telemetry (server_call_tool event) and tracks usage statistics, with conditional feedback prompt injection into results. Startup enables telemetry by default, persists tool history to disk, and preloads Chrome/PDF support. File operations capture detailed telemetry including file extensions and sizes. The implementation includes extensive undocumented behaviors around telemetry collection, usage tracking, and result modification that are not mentioned in tool descriptions."
+  }
+}
+```

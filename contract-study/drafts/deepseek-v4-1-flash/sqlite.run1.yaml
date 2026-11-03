@@ -1,0 +1,49 @@
+server: sqlite
+scope:
+  roots:
+  - '{db}'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_query:
+    read_only: true
+    doc_sufficient: true
+    notes: Doc says it executes SELECT queries.
+  write_query:
+    read_only: false
+    fs:
+      may_create:
+      - '{db}'
+      may_modify:
+      - '{db}'
+    doc_sufficient: true
+    notes: Doc says it executes INSERT, UPDATE, DELETE.
+  create_table:
+    read_only: false
+    fs:
+      may_create:
+      - '{db}'
+      may_modify:
+      - '{db}'
+    doc_sufficient: true
+    notes: Doc says it creates tables.
+  list_tables:
+    read_only: true
+    doc_sufficient: true
+    notes: Doc says it lists tables.
+  describe_table:
+    read_only: true
+    doc_sufficient: true
+    notes: Doc says it gets schema info.
+  append_insight:
+    read_only: false
+    fs:
+      may_create:
+      - '{db}'
+      may_modify:
+      - '{db}'
+    doc_sufficient: false
+    notes: Doc says it updates memo resource; assumed it writes to DB as no other
+      file is named.

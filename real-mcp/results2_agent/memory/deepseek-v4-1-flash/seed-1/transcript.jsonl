@@ -1,0 +1,17 @@
+{"content": "", "step": 0, "task_id": 0, "tool_calls": [{"arguments": "{\"entities\":[{\"name\":\"Beta Smith\",\"entityType\":\"person\",\"observations\":[\"works on the forecast project\"]},{\"name\":\"forecast project\",\"entityType\":\"project\",\"observations\":[\"is due in December\"]}]}", "name": "create_entities"}]}
+{"content": "I've recorded that Beta Smith works on the forecast project and that the project is due in December.", "step": 1, "task_id": 0, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 1, "tool_calls": [{"arguments": "{\"query\":\"Beta Smith\"}", "name": "search_nodes"}]}
+{"content": "", "step": 1, "task_id": 1, "tool_calls": [{"arguments": "{\"observations\":[{\"entityName\":\"Beta Smith\",\"contents\":[\"prefers morning meetings\"]}]}", "name": "add_observations"}]}
+{"content": "", "step": 2, "task_id": 1, "tool_calls": [{"arguments": "{\"query\":\"forecast project\"}", "name": "search_nodes"}]}
+{"content": "", "step": 3, "task_id": 1, "tool_calls": [{"arguments": "{\"relations\":[{\"from\":\"Beta Smith\",\"to\":\"forecast project\",\"relationType\":\"leads\"}]}", "name": "create_relations"}]}
+{"content": "Added the observation 'prefers morning meetings' to Beta Smith and created a 'leads' relation from Beta Smith to the forecast project.", "step": 4, "task_id": 1, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 2, "tool_calls": [{"arguments": "{\"query\":\"forecast\"}", "name": "search_nodes"}]}
+{"content": "Beta Smith leads the forecast project, which is due in December.", "step": 1, "task_id": 2, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 3, "tool_calls": [{"arguments": "{\"entities\":[{\"name\":\"ledger team\",\"entityType\":\"organization\",\"observations\":[\"A team responsible for maintaining the ledger.\",\"Part of the finance division.\"]}]}", "name": "create_entities"}]}
+{"content": "", "step": 1, "task_id": 3, "tool_calls": [{"arguments": "{\"relations\":[{\"from\":\"ledger team\",\"to\":\"forecast project\",\"relationType\":\"sponsors\"}]}", "name": "create_relations"}]}
+{"content": "Created the \"ledger team\" organization entity with two observations and related it to the \"forecast project\" with a \"sponsors\" relation.", "step": 2, "task_id": 3, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 4, "tool_calls": [{"arguments": "{}", "name": "read_graph"}]}
+{"content": "There are 10 entities and 4 relations in the knowledge graph.", "step": 1, "task_id": 4, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 5, "tool_calls": [{"arguments": "{\"deletions\":[{\"entityName\":\"Beta Smith\",\"observations\":[\"prefers morning meetings\"]}]}", "name": "delete_observations"}]}
+{"content": "", "step": 1, "task_id": 5, "tool_calls": [{"arguments": "{\"entityNames\":[\"ledger team\"]}", "name": "delete_entities"}]}
+{"content": "Removed the observation 'prefers morning meetings' from Beta Smith and deleted the ledger team entity.", "step": 2, "task_id": 5, "tool_calls": []}

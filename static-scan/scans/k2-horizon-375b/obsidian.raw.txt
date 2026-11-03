@@ -1,0 +1,666 @@
+Let me analyze the implementation carefully against the tool descriptions.
+
+The server is "obsidian" (obsidian-mcp). I need to compare each tool's description with its implementation and report undocumented behaviors.
+
+Let me go through the tools:
+
+1. **obsidian_list_vaults** - "List configured vault ids accepted by every other Obsidian tool. Returns no host paths."
+   - Implementation: returns `runtime.registry.ids()` and count. Matches description. No undocumented behaviors.
+
+2. **obsidian_read_note** - "Read a bounded page of a UTF-8 Markdown note. Use the returned cursor to continue and etag before editing."
+   - Implementation: reads note, slices by offset/max_chars, returns etag, total_characters, offset, has_more, next_cursor. Cursor is validated against path and etag. Matches description. No undocumented behaviors.
+
+3. **obsidian_create_note** - "Atomically create a Markdown note without overwriting an existing file. Parent directories are optional."
+   - Implementation: resolveNew with markdown:true (appends .md if missing), checks create_parents, runs transaction with requireMissing. Matches. No undocumented behaviors.
+
+4. **obsidian_edit_note** - "Append, prepend, or replace note content byte-for-byte. This tool never deletes notes."
+   - Implementation: reads, combines, writes with expectedEtag. Matches. No undocumented behaviors.
+
+5. **obsidian_delete_note** - "Transactionally move a note to MCP trash or permanently delete it. Backlinks are preserved unless mark_broken is requested."
+   - Implementation: trash mode writes a copy of the note bytes plus a JSON metadata file into `<stateRoot>/trash/<uuid>.md` and `.json`, then deletes the original with retainSnapshot. Permanent mode deletes with retainSnapshot: false.
+   - Undocumented behaviors:
+     - Trash copies are stored inside the vault at the internal state directory (`.obsidian` internal directory presumably — INTERNAL_DIRECTORY constant). The description says "MCP trash" but doesn't state that trash copies are stored inside the vault directory itself (in the internal directory). This is a file write inside the vault. Observable from outside: file. Security relevance: low/medium. Actually the trash storage location is inside the vault root (stateRoot = path.join(root, INTERNAL_DIRECTORY)). The description doesn't mention where trash is stored. This is an undocumented behavior: "Trash copies and metadata are written into the vault's internal state directory."
+     - The trash JSON metadata includes original_path, deleted_at, reason. The description mentions "Optional deletion reason stored with recoverable trash metadata" — that's documented in the input schema description. So reason storage is documented.
+     - Backlink handling: mark_broken rewrites links in other notes — documented ("Backlinks are preserved unless mark_broken is requested"). The output includes updated_backlinks and ambiguous_links — that's output, not behavior per se.
+     - The delete retains a snapshot in the transaction journal for recovery (retainSnapshot: mode !== "permanent"). The transaction journal is stored in the vault's internal directory. This is part of the journaling described in other tools ("journaled all-or-nothing transaction" for rename_tag). For delete_note, the description says "Transactionally move a note to MCP trash or permanently delete it" — the journaling is implied by "transactionally". Hmm, but the recovery journal storage is a file write inside the vault. The description doesn't state that a recovery journal is kept. But "transactionally" implies it. I'd say the trash storage location is the main undocumented behavior.
+     - Also: permanent deletion requires confirm_path — documented in schema.
+     - Note: trash mode writes the note copy with `.md` extension appended to trashBase — the trash file is named `<uuid>.md`. Fine.
+
+6. **obsidian_move_note** - "Move or rename a note within one vault without overwriting and transactionally update unambiguous backlinks."
+   - Implementation: resolveExisting source, resolveNew destination, read, planLinkUpdates (reads ALL markdown notes in the vault to build index and scan for links), then transaction: write to dest, delete source, plus link changes.
+   - Undocumented behaviors:
+     - The move reads every note in the vault (to plan link updates) even when update_links is false? No — planLinkUpdates is only called when update_links is true. When update_links is false, no scanning. OK.
+     - When update_links is true, it reads all notes in the vault — that's implied by "update unambiguous backlinks". Documented behavior.
+     - The move is implemented as write+delete in a transaction, meaning the note content is rewritten (new inode) — not really observable behavior difference.
+     - Destination must not exist — documented ("must not already exist").
+     - No undocumented behaviors really. Maybe: the tool appends .md if missing (resolveNew with markdown: true) — the schema says "New vault-relative note path" — the .md appending is a behavior not stated in the description. Hmm, the description says "Move or rename a note within one vault". The input schema description for destination says "New vault-relative note path; must not already exist". The .md auto-append is not stated. But is it "undocumented behavior"? It's a path normalization behavior. The read_note/create_note descriptions also don't mention .md appending. The path schema says "Portable path relative to the vault root". I could note it as a minor undocumented behavior for create_note, edit_note, delete_note, move_note, read_note — all use resolveExisting/resolveNew with markdown: true, which appends ".md" if the path doesn't end with .md. The descriptions don't state this. It's a conditional-on-input behavior. Security relevance: low. Observable from outside: file (the file created/read has .md appended). I think it's worth noting once per tool or as a general behavior. The task says "report, per tool and for start-up, all behaviour the descriptions do not state." So I should list it per tool where it occurs.
+
+7. **obsidian_create_directory** - "Transactionally create a directory inside a vault. Existing directories are rejected."
+   - Implementation: resolveNew, walks components, collects missing, if none missing throws ALREADY_EXISTS, if !recursive and missing.length > 1 throws NOTE_NOT_FOUND, runs mkdir transaction for each missing dir.
+   - Undocumented behaviors:
+     - When recursive is false and the parent doesn't exist, error is NOTE_NOT_FOUND ("The parent directory does not exist.") — that's documented ("when false, the parent must exist").
+     - If a file exists in the directory path, throws ALREADY_EXISTS — reasonable.
+     - Matches description. No undocumented behaviors.
+
+8. **obsidian_search_vault** - "Search filenames, content, or Obsidian tags with deterministic bounded pagination."
+   - Implementation: searchVault — lists markdown files (skipping dotfiles and symlinks), matches per mode, cursor-based pagination, warnings for unreadable notes.
+   - Undocumented behaviors:
+     - Unreadable notes are skipped with warnings — the output schema includes warnings ("Notes skipped because they were unreadable") — documented in output schema. The description doesn't mention it but the output schema does. Hmm, the task says compare tool descriptions with implementation. The output schema is part of the tool definition. I'd say warnings are documented in the output schema.
+     - Search skips dotfiles and symlinks (walk skips names starting with "." and symlinks). Not stated in description. Minor. Observable: file (search results). Security relevance: low.
+     - Search reads every note in the vault (or scope) — implied by content search.
+     - The search is case-insensitive by default — documented (case_sensitive param).
+     - Tag mode matches tag or tag prefix (tag === query || tag.startsWith(query + "/")) — the description says "Search filenames, content, or Obsidian tags". The prefix matching for tags is a behavior not stated. Minor. Hmm, is it worth reporting? "Text, filename fragment, or tag to find" — for tag mode, matching descendants of a tag is arguably implied. I'll consider it minor; maybe not report. Let me focus on more significant ones.
+     - The cursor signature includes query, scope, mode, case_sensitive — documented as "Opaque continuation cursor for the same query and options".
+     - No major undocumented behaviors. Maybe the dotfile/symlink skipping.
+
+9. **obsidian_add_tags** - "Add tags in one all-or-nothing multi-note transaction while preserving unrelated content."
+   - Implementation: executeTagMutation — for each path, resolveExisting with markdown:true, read, mutateTags, collect changes, run transaction.
+   - Undocumented behaviors:
+     - Paths that don't exist cause NOTE_NOT_FOUND error (resolveExisting throws) — the whole operation fails. Documented? The description says "multi-note transaction" — all-or-nothing implies failure if a note is missing. Fine.
+     - Duplicate paths are deduplicated (unique(input.paths)) — unchanged_count counts unique paths. Minor, not worth reporting.
+     - The .md auto-append applies here too.
+     - Matches description.
+
+10. **obsidian_remove_tags** - "Remove tags in one all-or-nothing multi-note transaction while preserving unrelated content."
+    - Similar. Matches.
+
+11. **obsidian_rename_tag** - "Rename a tag across a vault in one journaled all-or-nothing transaction."
+    - Implementation: normalizes old/new tags (validates), lists ALL markdown notes in the vault, reads each, applies renameTag, collects changes, runs transaction. Returns updated list and transaction_id (null if no changes).
+    - Undocumented behaviors:
+      - The rename scans the entire vault (all notes), not just specified paths — the description says "across a vault", so that's documented.
+      - If no notes contain the tag, returns transaction_id: null — output schema documents this ("transaction_id must be null exactly when no notes were updated"). Documented in output schema.
+      - Matches description.
+
+12. **obsidian_manage_tags** - "Add or remove tags transactionally. Add requires tags; remove requires tags, patterns, or both."
+    - Implementation: dispatches to executeTagMutation with defaults (location frontmatter for add, both for remove). Matches.
+
+Now start-up behaviors (the "startup" array):
+
+- **Node version check**: main.js checks Node >= 22, exits with error otherwise. Not stated in any tool description (it's server startup, not a tool). Kind: config. Observable: process. Security relevance: low.
+- **Vault registry creation** (VaultRegistry.create): validates vault ids, resolves realpaths, requires .obsidian directory, checks read/write access, rejects overlapping vault roots. Kind: config. Observable: file (checks). Security relevance: medium (path validation). Not stated in tool descriptions.
+- **Runtime initialization** (runtime.initialize()): creates state directories (transactions, trash, locks) inside each vault's internal directory, recovers incomplete transactions, prunes old recovery journals. Kind: file_write/state. Observable: file. Security relevance: medium. This is a significant undocumented startup behavior: the server writes a state directory into each vault (INTERNAL_DIRECTORY — likely ".obsidian" or similar; the constant isn't shown but stateRoot = path.join(root, INTERNAL_DIRECTORY)). Also recovery of incomplete transactions and pruning based on --recovery-days/--recovery-max-bytes.
+- **Legacy protocol warning**: if client uses legacy MCP protocol, writes a warning to stderr. Kind: other. Observable: process (stderr). Security relevance: none/low.
+- **Signal handlers**: SIGINT/SIGTERM close the server. Kind: other. Observable: process. Security relevance: none.
+- **Stdio transport**: maxBufferSize 10MB. Kind: other.
+- **Logging**: Logger writes JSON log lines to stderr. Kind: other. Observable: process. Security relevance: none.
+- **Lock file with heartbeat**: TransactionManager.acquireLock creates a lock directory with owner.json containing pid, and a heartbeat interval that updates utimes every 5 seconds (unref'd). This happens per transaction, not startup. But it's a behavior: file writes in the vault state dir, and process.kill(pid, 0) to check dead locks. Kind: file_write/state. Observable: file/process. Security relevance: low/medium. This is per-transaction though. The task says "for start-up" — the startup array is for server startup behaviors. But maybe I should include transaction-related behaviors in the tools that trigger them? The instructions: "report, per tool and for start-up, all behaviour the descriptions do not state." So startup behaviors go in "startup", and per-tool behaviors in "tools". Transaction journaling is triggered by tools but is a general mechanism. Hmm.
+
+Let me think about what's genuinely undocumented and security-relevant:
+
+**Startup:**
+1. Node >= 22 requirement check (main.js) — config, process, low.
+2. Vault configuration validation: realpath resolution, .obsidian directory requirement, read/write access check, overlap rejection (vault.js VaultRegistry.create) — config, file, medium.
+3. State directory creation + transaction recovery + pruning at startup (transaction.js initialize, called from runtime.initialize in cli.js) — file_write/state, file, medium. The server writes into each vault's internal directory (transactions/, trash/, locks/) and may roll back incomplete transactions from previous runs, and deletes old recovery journals.
+4. Legacy protocol warning to stderr (cli.js) — other, process, none/low.
+5. JSON logging to stderr (logger.js) — other, process, none.
+6. Signal handlers for graceful shutdown — other, process, none.
+
+**Per-tool undocumented behaviors:**
+
+- **obsidian_delete_note**: 
+  - Trash copies (note bytes + JSON metadata with original_path, deleted_at, reason) are written into the vault's internal state directory (`<vault>/.obsidian.../trash/` — actually INTERNAL_DIRECTORY constant; stateRoot = path.join(root, INTERNAL_DIRECTORY)). The description says "MCP trash" but doesn't state trash is stored inside the vault. Kind: file_write. Trigger: every call with mode=trash. Observable: file. Security relevance: medium (data duplication inside vault; also the trash copy persists).
+  - The transaction journal retains a snapshot of the deleted note for recovery (retainSnapshot: mode !== "permanent") — stored in the vault state dir. The description says "Transactionally" which implies journaling, but the retention of deleted content for recovery is not stated. Kind: file_write/state. Trigger: every call. Observable: file. Security relevance: medium (deleted content recoverable — actually that's a feature, but it's undocumented that permanent deletion... wait, for permanent mode retainSnapshot is false, so no snapshot retained. For trash mode, snapshot retained. Hmm, actually for trash mode the note is copied to trash anyway. The retainSnapshot for trash mode means the journal also keeps a copy. For permanent mode, no snapshot. So the journal keeps deleted content for trash mode. This is part of "recoverable trash" — arguably documented. I'll mention the trash storage location as the main one.)
+  - Also: permanent deletion requires confirm_path — documented in schema.
+  - mark_broken rewrites links in other notes — documented.
+
+- **obsidian_move_note**:
+  - When update_links is true, the tool reads every note in the vault to find backlinks (planLinkUpdates calls listMarkdown and readText on each). The description says "transactionally update unambiguous backlinks" — reading all notes is implied. Not really undocumented.
+  - The move is implemented as copy+delete; the destination gets a new etag? No — etag returned is read.etag (same content hash). Fine.
+  - .md auto-append on source and destination (resolveExisting/resolveNew with markdown: true). The description doesn't state that paths are normalized to .md. Kind: other/file. Trigger: conditional on input (path lacking .md). Observable: file. Security relevance: low. This applies to read_note, create_note, edit_note, delete_note, move_note, add_tags, remove_tags, manage_tags, rename_tag (rename_tag uses listMarkdown which returns .md files; paths in expected_etags go through resolveExisting? No — rename_tag doesn't resolve paths; it lists all notes. But add/remove/manage tags use resolveExisting with markdown: true).
+
+  Should I report the .md appending per tool? It's a real behavior not stated in descriptions. The path schema description says "Portable path relative to the vault root, using forward slashes; absolute paths, backslashes, dot segments, and reserved roots are rejected" — doesn't mention .md appending. I'll report it for the tools where it matters: read_note, create_note, edit_note, delete_note, move_note, add_tags, remove_tags, manage_tags. For create_note, the description says "Atomically create a Markdown note" — appending .md is consistent. Hmm. It's a minor normalization. I'll include it as low relevance for the main file tools. Actually, let me be careful not to over-report trivia. The instruction: "report, per tool and for start-up, all behaviour the descriptions do not state." So yes, report it. But keep security_relevance low.
+
+- **obsidian_search_vault**:
+  - Skips dotfiles and symlinks during walk (vault.js walk). Not stated. Kind: other. Trigger: every call. Observable: file (results). Security relevance: low.
+  - Tag mode matches tag descendants (prefix match). Not stated explicitly. Kind: other. Trigger: conditional on input (mode=tag). Observable: none (output only). Security relevance: low. Hmm, observable_from_outside: "none" since it's just result content. Actually results are observable... the enum is file|process|network|none. Search results are returned to the caller; from outside the server, the behavior is observable only via the tool output. I'd say "none" for output-content differences. Let me use "none" for things only visible in output content, and "file" for actual file system effects.
+  - Unreadable notes are skipped with warnings — documented in output schema ("Notes skipped because they were unreadable"). Not undocumented.
+  - The search reads all notes in the vault (or scope) — implied.
+
+- **obsidian_create_directory**:
+  - Matches description. The recursive=false parent-missing error is NOTE_NOT_FOUND — documented ("when false, the parent must exist"). No undocumented behaviors. Maybe: it creates each missing directory as a separate change in one transaction — documented ("Transactionally create a directory"). Fine.
+
+- **obsidian_list_vaults**: matches. No undocumented behaviors.
+
+- **obsidian_read_note**: 
+  - .md auto-append (resolveExisting with markdown: true). Low.
+  - Cursor validation ties cursor to path+etag — documented ("Opaque continuation cursor returned by a previous read of the same note"). Fine.
+
+- **obsidian_create_note**:
+  - .md auto-append. Low.
+  - If create_parents is false and parent missing → NOTE_NOT_FOUND — documented.
+  - Matches otherwise.
+
+- **obsidian_edit_note**:
+  - .md auto-append. Low.
+  - The combined content is byte-limit checked again (assertByteLimit(next)) — the 5 MiB limit applies to the result, not just input. The schema says content max 5 MiB; the description says "Append, prepend, or replace note content byte-for-byte". The fact that append can fail because the result exceeds 5 MiB is not stated. Kind: other. Trigger: conditional on input/state. Observable: none. Security relevance: low. Hmm, is this worth reporting? It's a validation behavior. The input schema documents the 5 MiB limit on content. The result limit is an implementation detail. I'll include it as low.
+
+- **obsidian_add_tags / remove_tags / manage_tags**:
+  - .md auto-append on paths. Low.
+  - Duplicate paths deduplicated via unique() — unchanged_count reflects unique paths. Minor; skip or include? I'll skip — too trivial. Actually "all behaviour the descriptions do not state" — dedup is a behavior. But it's really minor. I'll skip it to avoid noise. Hmm. Let me think about what a security auditor would care about. The dedup means if you pass the same path twice, it's only updated once and unchanged_count counts it once. Not security-relevant. Skip.
+  - For remove_tags: patterns with single '*' wildcards — documented.
+  - add_tags: tags are added to frontmatter by default; inline tags appended at end of content when location=content/both — documented via location/position params.
+  - The tag mutation writes via transaction with expectedEtag — documented ("all-or-nothing").
+
+- **obsidian_rename_tag**:
+  - Scans entire vault — documented ("across a vault").
+  - Returns transaction_id null when no changes — documented in output schema.
+  - Validates old_tag and new_tag even if no notes match (normalizeTag called upfront) — so an invalid new_tag fails even if old_tag doesn't exist anywhere. Kind: other. Trigger: every call. Observable: none. Security relevance: low. Minor. Maybe include.
+  - Reads every note in the vault — implied by "across a vault".
+
+Now, the transaction mechanism itself: every mutating tool runs changes through TransactionManager.run, which:
+- Creates a transaction directory in the vault state dir with snapshots of pre-change file contents (for files), manifest.json, etc.
+- Uses a lock file with heartbeat (utimes every 5s) and stale-lock detection via process.kill(pid, 0).
+- On commit, scrubs snapshots for non-recoverable changes (e.g., permanent deletes).
+- Prunes old journals at startup and... prune is only called at initialize. 
+
+Is the journaling "undocumented"? The descriptions say "transactionally" / "all-or-nothing" / "journaled" (rename_tag says "journaled"). So the existence of journaling is documented. But the details — snapshots of file contents stored in the vault, lock files, heartbeat — are not stated. The storage of pre-change snapshots inside the vault is a file_write behavior observable from outside. For a security auditor, the fact that every mutation writes snapshot copies of file contents into a state directory inside the vault is worth reporting. But which tool to attach it to? It's shared infrastructure. I could report it in startup (the state dir creation) and mention in each mutating tool that transactions write snapshot journals into the vault. Hmm, that might be repetitive. The instructions say to report per tool all behaviors the descriptions do not state. The journaling is arguably covered by "transactionally" in the descriptions. I'll mention the state-directory writes in startup, and for delete_note specifically the trash storage. For other tools, I'll note the .md normalization and skip the journaling as documented-by-implication.
+
+Actually wait — let me reconsider. "Transactionally" in a description tells the user the operation is atomic. It doesn't tell them that the server writes a journal containing full snapshots of their notes into a hidden directory inside the vault, keeps it for 30 days (default --recovery-days), up to 1 GiB (--recovery-max-bytes). That's a genuine undocumented behavior with file-system observability. I think it's worth one entry per mutating tool, or at least in startup. Let me put the general mechanism in startup (state dir creation, recovery, pruning) and add a brief note in each mutating tool's undocumented_behaviours about snapshot journaling. Hmm, but that could be seen as over-reporting since "transactionally" implies it. The task says "Behaviours that the description states (e.g. 'executes the command') are not undocumented." "Transactionally" states atomicity, not journaling-to-disk. I'll include it but mark security_relevance low/medium and note it's implied by "transactionally" but the on-disk journal with content snapshots is not stated.
+
+Let me decide: I'll include a concise entry for the transaction journal in each mutating tool (create_note, edit_note, delete_note, move_note, create_directory, add_tags, remove_tags, rename_tag, manage_tags). Actually that's a lot of repetition. Alternatively, include it once in startup and reference it. The schema has "startup" for server-level behaviors and "tools" for per-tool. The journal is created per-transaction, so it's per-tool behavior. But to keep the report readable, I'll include it for the tools where it's most relevant and note it's shared. Hmm, the instruction says "List every tool" and report per tool. I'll include a short entry per mutating tool. Let me keep each entry brief.
+
+Actually, let me reconsider the significance. The journal stores snapshots of file contents (pre-change) in `<vault>/<INTERNAL>/.transactions/<uuid>/`. For permanent deletes, snapshots are scrubbed after commit. For trash deletes, snapshots retained. For writes, snapshots retained (recoverable: true for writes). So after any edit, the previous version of the note is stored in the journal for 30 days. That's a real privacy/observability consideration: the server keeps 30 days of note history inside the vault. The descriptions never mention this. I'll report it.
+
+What's INTERNAL_DIRECTORY? It's imported from constants.js which isn't shown. stateRoot = path.join(root, INTERNAL_DIRECTORY). Likely ".obsidian" or ".obsidian-mcp" or similar. I can't see the constant value, so I'll say "the vault's internal state directory (INTERNAL_DIRECTORY)".
+
+Also the trash: stateRoot/trash/<uuid>.md and .json. The trash is inside the vault's internal directory. The description says "MCP trash" — doesn't say where. Report it.
+
+Now the lock/heartbeat: per transaction, acquireLock creates `<stateRoot>/locks/write/` with owner.json (pid, started_at) and a 5-second heartbeat updating utimes. Also clearVerifiedDeadLock uses process.kill(pid, 0) — a signal 0 check, no signal sent. Observable: file (lock dir) and process (kill(pid,0) — no actual signal). Security relevance: low. This is part of the transaction mechanism. I could fold it into the journal entry or list separately. I'll fold the lock into the transaction entry or list as separate. Let me list the transaction journal as one behavior and the lock/heartbeat as another for mutating tools? That's getting heavy. Maybe combine: "Mutations run through a transaction manager that writes a journal (snapshots of pre-change file contents, manifest) and a lock file with a 5s heartbeat into the vault's internal state directory." One entry, kind file_write, trigger every call, observable file, security medium.
+
+Hmm, but for read-only tools (read_note, search_vault, list_vaults) no transactions. Good.
+
+Now startup entries:
+
+1. Node version gate (main.js runCli entry): exits if Node < 22. kind: config, observable: process, security: low. documented_in_tool_descriptions: false.
+
+2. Vault configuration validation (VaultRegistry.create in vault.js): realpath resolution, requires .obsidian dir, R/W access check, rejects nested/overlapping vault roots, vault id pattern. kind: config, observable: file, security: medium.
+
+3. State directory creation + recovery + pruning (TransactionManager.initialize via runtime.initialize in cli.js): creates transactions/, trash/, locks/ dirs (mode 0o700) inside each vault's internal directory; rolls back incomplete transactions from prior runs; deletes recovery journals older than --recovery-days (default 30) or beyond --recovery-max-bytes (default 1 GiB). kind: file_write (and state), observable: file, security: medium. This is significant: startup writes into the vault and can delete files (prune) and restore/rollback files (recoverIncomplete).
+
+4. Legacy protocol warning (cli.js serveStdio era === "legacy"): writes a deprecation warning to stderr on first legacy handshake. kind: other, observable: process, security: none.
+
+5. JSON logging to stderr (logger.js): every server event logged as JSON to stderr. kind: other, observable: process, security: none. Note: log lines may include vault ids, transaction ids — not note content. Fine.
+
+6. Signal handlers (cli.js): SIGINT/SIGTERM graceful close. kind: other, observable: process, security: none.
+
+7. Stdio transport maxBufferSize 10MB — kind: other, observable: process, security: none. Maybe skip; it's config. I'll include briefly? It's minor. I'll skip to reduce noise. Actually "all behaviour the descriptions do not state" — the transport buffer is implementation detail, not really a behavior. Skip.
+
+Now per-tool details:
+
+**obsidian_list_vaults**: matches_description: true. undocumented_behaviours: []. 
+
+**obsidian_read_note**: matches_description: true. Undocumented:
+- .md extension auto-appended when path lacks it (resolveExisting with markdown:true in vault.js normalizeRelative). kind: other (path normalization) — or "file"? It affects which file is read. observable: file. security: low. trigger: conditional on input.
+
+**obsidian_create_note**: matches_description: true. Undocumented:
+- .md auto-append. low.
+- (create_parents documented; requireMissing documented as "without overwriting".)
+
+**obsidian_edit_note**: matches_description: true. Undocumented:
+- .md auto-append. low.
+- Resulting content is also capped at 5 MiB (assertByteLimit(next)) — an append/prepend can fail even when input content is within limit, if the note is large. kind: other. trigger: conditional on state (note size). observable: none. security: low.
+
+**obsidian_delete_note**: matches_description: true. Undocumented:
+- Trash storage: mode=trash writes a full copy of the note plus a JSON metadata file (original_path, deleted_at, reason) into the vault's internal state directory (trash/<uuid>.md/.json). kind: file_write. trigger: conditional on input (mode=trash). observable: file. security: medium.
+- Transaction journal retains a snapshot of the deleted note for recovery (retainSnapshot: mode !== "permanent") — for trash mode the pre-delete content is also in the journal; for permanent mode it's scrubbed. Actually for permanent mode, retainSnapshot=false → snapshot scrubbed after commit. For trash mode, snapshot retained. So: "the pre-delete note content is retained in the transaction journal for the recovery retention period when mode=trash". kind: file_write/state. trigger: conditional on input. observable: file. security: medium. Hmm, this overlaps with the general journal entry. I'll include the general journal entry for all mutating tools and the trash-specific one here.
+- mark_broken rewrites links in other notes — documented ("Backlinks are preserved unless mark_broken is requested"). Not undocumented.
+- Also: the tool reads the note and requires it to exist — documented.
+
+**obsidian_move_note**: matches_description: true. Undocumented:
+- .md auto-append on source and destination. low.
+- When update_links=true, every note in the vault is read to plan backlink updates (planLinkUpdates → listMarkdown + readText per note). The description says "transactionally update unambiguous backlinks" — reading all notes is implied by updating backlinks. I'd say documented by implication. Skip? Or include as low? The description doesn't explicitly say it scans the whole vault. "update unambiguous backlinks" implies finding them, which requires scanning. I'll skip.
+- The move is copy+delete: the destination is written first, then source deleted, in one transaction. If the process dies mid-transaction, recovery restores. Implied by "transactionally". Skip.
+
+**obsidian_create_directory**: matches_description: true. Undocumented: none significant. Maybe: creates each missing parent as separate mkdir changes in one transaction — documented ("Transactionally create a directory", "Create every missing parent directory"). Skip. Actually one thing: when recursive=false and parent missing, error code is NOTE_NOT_FOUND — fine, documented. No undocumented behaviors. I'll leave empty array.
+
+**obsidian_search_vault**: matches_description: true. Undocumented:
+- The vault walk skips dotfiles (names starting with ".") and symlinks (vault.js walk). kind: other. trigger: every call. observable: file (results omit such files). security: low.
+- Tag mode also matches descendant tags (tag === query || startsWith(query + "/")). kind: other. trigger: conditional on input (mode=tag). observable: none. security: low. Hmm — is this worth it? The description says "Search filenames, content, or Obsidian tags". Searching for tag "project" matching "project/active" is a reasonable interpretation. I'll include it as low since it's a matching-semantics detail not stated. Actually, let me include it; auditors want completeness.
+- Unreadable notes skipped with warnings — documented in output schema. Skip.
+
+**obsidian_add_tags**: matches_description: true. Undocumented:
+- .md auto-append on paths. low.
+- Transaction journal entry (shared). medium? Let me think about security_relevance. The journal contains pre-change snapshots of note contents, retained 30 days in the vault. For a note-taking tool, this is a privacy consideration but it's the user's own vault. I'd say low-medium. I'll say "medium" for delete_note trash (data duplication) and "low" for the journal? Hmm. The journal is the recovery mechanism implied by "transactionally". I'll mark it low and note it's implied by the transactional description but the on-disk retention is unstated. Actually, let me mark it "low" consistently.
+
+Wait — should I really repeat the journal entry for every mutating tool? The instructions emphasize reporting all undocumented behaviors per tool. The journal is triggered by every mutating tool call. I'll include a concise entry in each. To avoid excessive repetition, I'll phrase it briefly.
+
+Tools with transactions: create_note, edit_note, delete_note, move_note, create_directory, add_tags, remove_tags, rename_tag, manage_tags. That's 9 tools. Plus startup entry about state dir. OK.
+
+**obsidian_remove_tags**: matches_description: true. Undocumented:
+- .md auto-append. low.
+- Journal entry. low.
+
+**obsidian_rename_tag**: matches_description: true. Undocumented:
+- Journal entry. low.
+- Validates old_tag and new_tag grammar even when no note contains old_tag (normalizeTag called before scanning) — so invalid new_tag errors out even if nothing would change. kind: other. trigger: every call. observable: none. security: low. Include? It's minor. I'll include as low. Hmm, actually the description says "domain grammar is checked at execution" for tags in add/remove schemas. For rename_tag, the schema says "Existing tag to replace" / "Replacement tag" without the grammar note. The upfront validation is a behavior. Minor. I'll include it briefly. Actually, let me not over-report. The tag grammar validation is consistent across tools and the schemas mention "domain grammar is checked at execution" for add/remove tags. For rename_tag it's not mentioned in the schema descriptions. I'll include it as a low-severity note. Eh — I'll include it; completeness is requested.
+
+**obsidian_manage_tags**: matches_description: true. Undocumented:
+- .md auto-append. low.
+- Journal entry. low.
+- Defaults: location defaults to frontmatter for add and both for remove; position defaults to end; include_children defaults false — all documented in schema descriptions. Skip.
+
+Now, "declared_effect_not_implemented": any description claims something not implemented? Let me check:
+- list_vaults: "Returns no host paths" — implemented (only ids). OK.
+- read_note: "Read a bounded page" — implemented. "Use the returned cursor to continue and etag before editing" — cursor works, etag usable via if_match. OK.
+- create_note: "Atomically create... without overwriting" — implemented (requireMissing). "Parent directories are optional" — implemented.
+- edit_note: "Append, prepend, or replace... byte-for-byte. This tool never deletes notes." — implemented.
+- delete_note: "Transactionally move a note to MCP trash or permanently delete it. Backlinks are preserved unless mark_broken is requested." — implemented. confirm_path requirement documented.
+- move_note: "Move or rename a note within one vault without overwriting and transactionally update unambiguous backlinks." — implemented.
+- create_directory: "Transactionally create a directory inside a vault. Existing directories are rejected." — implemented.
+- search_vault: "Search filenames, content, or Obsidian tags with deterministic bounded pagination." — implemented.
+- add_tags: "Add tags in one all-or-nothing multi-note transaction while preserving unrelated content." — implemented.
+- remove_tags: "Remove tags in one all-or-nothing multi-note transaction while preserving unrelated content." — implemented.
+- rename_tag: "Rename a tag across a vault in one journaled all-or-nothing transaction." — implemented.
+- manage_tags: "Add or remove tags transactionally. Add requires tags; remove requires tags, patterns, or both." — implemented.
+
+No declared_effect_not_implemented. All null.
+
+Overall mismatch: minor (descriptions are accurate; undocumented items are mostly implementation details like journaling, .md normalization, trash storage location). I'd say "minor". Summary: two sentences.
+
+Now let me double-check some implementation details for accuracy:
+
+1. **Trash storage**: delete-note/index.js: `const trashBase = path.join(service.vault.stateRoot, "trash", trashId);` writes `${trashBase}.md` and `${trashBase}.json`. stateRoot = path.join(root, INTERNAL_DIRECTORY) (vault.js VaultRegistry.create). So trash is inside the vault's internal directory. The description says "MCP trash" — location unstated. Correct.
+
+2. **Journal**: transaction.js execute() creates transactionRoot = stateRoot/transactions/<uuid>, writes snapshots (current file data) as `<index>.bin` with mode 0o600, manifest.json. After commit, scrubs snapshots where `!snapshot.recoverable` — recoverable is `change.kind !== "delete" || change.retainSnapshot !== false`. So writes and mkdirs retain snapshots; deletes retain only if retainSnapshot !== false (trash mode passes retainSnapshot: true; permanent passes false). So after a trash delete, the journal keeps a copy of the deleted note in addition to the trash copy. After permanent delete, no copy. After any write (edit/create/move/tag), the pre-change content is kept in the journal for the retention period. prune() deletes journals older than recoveryDays (default 30) or when total exceeds recoveryMaxBytes (default 1 GiB). Correct.
+
+3. **Lock/heartbeat**: acquireLock creates lock dir + owner.json (pid, started_at), setInterval 5s utimes, unref. clearVerifiedDeadLock reads owner.json, process.kill(pid, 0), on ESRCH removes lock. Correct. This is per-transaction (run → enqueue → acquireLock). I'll fold into the journal entry or list separately. I'll list it as part of the same entry to keep it concise, or as a second entry. Let me make it a second entry for mutating tools? That doubles entries. I'll combine: "Mutations are serialized through a transaction manager that writes a journal (pre-change file snapshots and a manifest) plus a lock file with a 5-second heartbeat into the vault's internal state directory; stale locks are detected via kill(pid, 0)." One entry, kind file_write, trigger every call, observable file, security low.
+
+Hmm, but is the lock file observable from outside? Yes, file. OK.
+
+4. **.md auto-append**: vault.js normalizeRelative: `if (options.markdown === true && !value.toLowerCase().endsWith(".md")) value += ".md";`. Used by resolveExisting/resolveNew with markdown:true in read-note, create-note, edit-note, delete-note, move-note, and tag-mutation (executeTagMutation → resolveExisting(requestedPath, { markdown: true })). Also search-vault scope? search-vault passes scope to listMarkdown → resolveExisting(scope) without markdown option — so scope is not .md-appended. Fine. rename_tag doesn't resolve user paths. create_directory uses resolveNew(directory) without markdown — no append. Correct.
+
+5. **Search walk skips dotfiles/symlinks**: vault.js walk: `if (dirent.name.startsWith(".")) continue; if (dirent.isSymbolicLink()) continue;`. Correct. Note: this also means the search never sees hidden files. Also listMarkdown used by rename_tag and planLinkUpdates also skips dotfiles/symlinks — so rename_tag only renames tags in non-hidden notes, and move/delete backlink planning only considers non-hidden notes. The descriptions say "across a vault" / "update unambiguous backlinks" — the dotfile/symlink exclusion is unstated. For rename_tag, "across a vault" arguably includes all notes; hidden notes are skipped. I could add this to rename_tag and move_note/delete_note backlink planning. Hmm. For move_note, planLinkUpdates uses listMarkdown — skips dotfiles. The description "update unambiguous backlinks" — backlinks in hidden notes are not updated. Minor. I'll mention the walk exclusion in search_vault (primary) and maybe note it in rename_tag. Let me add to rename_tag: "The vault scan skips dotfiles and symlinks, so tags in hidden notes are not renamed." kind other, observable file, low. And for move_note/delete_note mark_broken: backlinks in hidden notes are not updated — but that's part of "unambiguous backlinks" semantics. I'll skip for move/delete to avoid noise, or include briefly. I'll include in search_vault and rename_tag only.
+
+6. **Edit note result size cap**: edit-note/index.js: `assertByteLimit(next);` after combining. Correct. Error: INPUT_TOO_LARGE "Content exceeds the 5 MiB limit." Trigger: conditional on state (existing note size + input). Observable: none. Low.
+
+7. **Startup recovery/prune**: cli.js runCli: `await runtime.initialize();` — runtime.js isn't shown, but TransactionManager.initialize is called presumably from Runtime.initialize. The file runtime.js isn't in the provided files! Let me check the file list: main.js, cli.js, utils/diagnostics.js, utils/errors.js, utils/hash.js, utils/links.js, utils/logger.js, utils/schemas.js, utils/search.js, utils/tags.js, utils/tool-factory.js, utils/transaction.js, utils/validation.js, utils/vault.js, tools/*. No runtime.js or server.js or constants.js. So I can't see runtime.initialize() or buildServer() or the constants (INTERNAL_DIRECTORY, DEFAULT_RECOVERY_DAYS, etc.). I should be careful: I can reference cli.js calling `runtime.initialize()` and TransactionManager.initialize (transaction.js) which does the mkdir/recover/prune. The evidence: cli.js runCli → runtime.initialize(); transaction.js TransactionManager.initialize. I can say "runtime.initialize() (cli.js) initializes each vault's TransactionManager, whose initialize() creates state directories, recovers incomplete transactions, and prunes old journals (transaction.js)". That's supported by the code shown. The constants' values (30 days, 1 GiB) are visible in cli.js help text: "--recovery-days <days> Completed journal retention (default: 30)" and "--recovery-max-bytes <bytes> Recovery storage limit (default: 1073741824)". Good, I can cite those from cli.js helpText.
+
+8. **Node version check**: main.js. Correct.
+
+9. **Vault validation**: vault.js VaultRegistry.create: vaultIdPattern, realpath, stat isDirectory, .obsidian check, access R|W, overlap check. Correct. Note: this happens at startup (cli.js runCli → VaultRegistry.create). kind config, observable file, security medium.
+
+10. **Legacy warning**: cli.js serveStdio callback era === "legacy" → writeDiagnostic warning once. kind other, observable process (stderr), security none.
+
+11. **Logging**: logger.js writes JSON to stderr. Events: server_started, transaction_committed, transaction_recovered, stale_lock_removed, server_stopping, stdio_error. kind other, observable process, security none. Note: logs include vault ids and transaction ids but not content. Fine.
+
+12. **Signal handlers**: cli.js process.once("SIGINT"/"SIGTERM") → close. kind other, observable process, security none.
+
+Now, are there any network behaviors? No network calls anywhere. No subprocess spawning. Good.
+
+Let me also double check delete_note's backlink behavior: `backlink_action === "mark_broken" ? await planLinkUpdates(service.fs, entry.relativePath, undefined, "mark_broken") : ...`. planLinkUpdates with newPath undefined and mode mark_broken → rewriteLinks with mode "mark_broken" → wraps links in ~~...~~. Documented: "Backlinks are preserved unless mark_broken is requested." The strikethrough marking is the implementation of mark_broken. Fine.
+
+Also delete_note: the trash JSON includes reason — documented ("Optional deletion reason stored with recoverable trash metadata"). OK.
+
+One more: delete_note permanent mode — `retainSnapshot: mode !== "permanent"` → false for permanent. And the description says "irreversible permanent deletion" — implemented (no snapshot, no trash copy). OK.
+
+move_note: `if (from.relativePath === to.relativePath)` after normalization — e.g., "a.md" → "a" both normalize to "a.md" → error INVALID_ARGUMENT. Also schema refine source !== destination (raw strings). Minor. Skip.
+
+create_directory: `resolveNew(directory)` — no markdown append. If path exists as file → ALREADY_EXISTS "A file exists in the directory path." Documented? Description: "Existing directories are rejected." A file at the path → rejected with ALREADY_EXISTS. Reasonable. Skip.
+
+Now the "observable_from_outside" values: file | process | network | none.
+
+- Node version check: process (exit). 
+- Vault validation: file (reads realpath/stat/access) — observable as file system checks; the .obsidian requirement etc. I'd say "file".
+- State dir creation/recovery/prune: file.
+- Legacy warning: process (stderr).
+- Logging: process (stderr).
+- Signal handlers: process.
+- .md auto-append: file (affects which file is read/written).
+- Trash storage: file.
+- Journal/lock: file.
+- Edit result cap: none (error only).
+- Search dotfile/symlink skip: file (results). Hmm — observable from outside: the search results are returned to the MCP client; from outside the server process, you can't observe results. But the behavior affects which files are read. I'd say "file" since it's about file traversal. Or "none" since it's only visible in output. The enum seems to mean "what an outside observer could see changed": file system, process, network. Search results aren't observable from outside. But the skipping of dotfiles is a file-system traversal behavior. I'll use "file" for traversal-related and "none" for pure output-content semantics (tag prefix matching, upfront tag validation). Hmm, for tag prefix matching, observable: none. For dotfile skip, the files are never read — an outside observer watching file access would see no reads of dotfiles. I'll say "file". Actually, simpler: dotfile/symlink skipping is observable in the sense that those files are never opened — "file". OK.
+
+Security relevance:
+- Node version gate: low.
+- Vault validation: medium (path safety, but it's protective). Security relevance of the behavior itself: it's a security control. "security_relevance" — I'd say medium because it enforces vault isolation. Or low since it's just validation. I'll say medium for the overlap/symlink/path checks since they're security-relevant controls. Hmm, the field seems to ask how security-relevant the undocumented behavior is. Vault validation is security-relevant (prevents path traversal, overlapping vaults). Medium.
+- State dir creation/recovery/prune: medium (writes into vault, can modify/delete files at startup — recovery can restore files, prune deletes journals). Medium.
+- Legacy warning: none.
+- Logging: none (logs metadata only). Low? It writes to stderr — could leak vault ids/transaction ids to the client host. Low. I'll say low. Hmm, "none|low|medium|high". Log lines contain vault ids, transaction ids, error messages. Not note content. Low.
+- Signal handlers: none.
+- .md auto-append: low.
+- Trash storage: medium (duplicate of note content stored in vault; also the trash copy persists until pruned — actually is trash pruned? prune() only looks at transactions dir. The trash dir is never pruned by the shown code! So trash copies accumulate indefinitely. That's worth noting: "trash copies are never pruned by the shown code" — observable file, medium. Let me verify: TransactionManager.prune reads `path.join(this.vault.stateRoot, "transactions")` only. initialize creates trash dir but nothing deletes from it. The CLI has recovery-restore but no trash-empty command. So yes, trash accumulates. I'll note it in the delete_note trash entry: "trash copies are written into the vault's internal state directory and are never pruned by the server". Good catch.
+- Journal/lock: low (snapshots retained 30 days; it's the user's own data in their own vault; but it's a hidden history). I'll say low. Hmm, for a security auditor, hidden retention of file contents could be medium. But it's the user's own vault and their own notes. Low-medium. I'll say low for journal, medium for trash accumulation? The trash is also the user's own notes. The concern is more about "undocumented data retention". I'll mark trash medium (because it's a full duplicate copy that persists indefinitely and is not mentioned) and journal low (30-day retention, implied by transactional). Actually, let me mark both low-medium... I need to pick. Trash: medium (indefinite retention, undocumented location). Journal: low (retention bounded, implied by "transactionally"/"journaled").
+- Edit result cap: low.
+- Search dotfile skip: low.
+- Tag prefix match: low.
+- Rename tag upfront validation: low.
+
+Now "documented_in_tool_descriptions": false for all startup entries (they're not in tool descriptions at all). The schema has this field only in startup entries. Set false for all.
+
+Let me also reconsider: should the transaction journal be reported per tool, or is it "documented" via words like "transactionally" and "journaled"? The rename_tag description explicitly says "journaled". Others say "transactionally" or "all-or-nothing". The on-disk journal with content snapshots and 30-day retention is not stated. I'll report it but phrase carefully: "The transaction journal (pre-change snapshots, manifest, lock file) is written into the vault's internal state directory and retained for the configured recovery period; the description's 'transactionally' does not state this on-disk retention." security low.
+
+Hmm, wait. Let me reconsider whether to include the journal entry for every mutating tool — 9 entries. It's repetitive but the task says report per tool. I'll include a compact version for each. Actually, let me reconsider: is it truly "undocumented"? "Transactionally move a note to MCP trash" — a user could reasonably infer a journal exists. But the specifics (full content snapshots stored in the vault for 30 days, lock files, heartbeat) are not stated. I'll include it as low relevance. Fine.
+
+Also for create_directory: the journal entry applies (mkdir changes are journaled with snapshots? For mkdir, snapshot is `{...base, existed: false}` — no content snapshot since directories have no content; but manifest is written). The journal still writes a manifest and lock. I'll include the entry.
+
+Let me also check: does create_note's transaction retain a snapshot? The note is new (requireMissing), so current is undefined → snapshot `{...base, existed: false}` — no content snapshot. But manifest + lock still written. So the journal entry for create_note is just manifest/lock, no content snapshot. I'll phrase the entry generally: "writes a transaction journal (manifest, and pre-change snapshots for existing files) and a lock file into the vault's internal state directory". For create_note, no pre-change snapshot exists. Fine — the entry says "for existing files".
+
+Now, one more startup thing: `serveStdio` with `maxBufferSize: 10 * 1024 * 1024` — skip.
+
+Also `parseArguments` legacy positional handling — startup config parsing. Skip (not a runtime behavior).
+
+Also: the server writes diagnostics to stderr via writeDiagnostic — covered by logging entry? writeDiagnostic is separate from Logger. Both write to stderr. I'll fold into the logging entry: "diagnostics and JSON logs are written to stderr". Kind other, process, low.
+
+Let me now also verify the read_note cursor: decodeReadCursor validates path and etag match — documented ("Opaque continuation cursor returned by a previous read of the same note"). OK.
+
+Search cursor: signature includes query/scope/mode/case_sensitive — documented ("Opaque continuation cursor for the same query and options"). OK.
+
+Now, the output schema for search includes warnings — documented. OK.
+
+Let me also check add_tags location default "frontmatter" — documented. position default "end" — documented. normalization — documented. expected_etags — documented. include_children (remove) — documented. patterns — documented. All good.
+
+manage_tags: operation required; tags required for add; tags/patterns for remove — documented. Defaults: location frontmatter for add, both for remove — documented in schema. position end — documented. include_children false — documented. OK.
+
+Now, is there anything about `obsidian_manage_tags` that's undocumented? It delegates to executeTagMutation — same as add/remove. The .md auto-append applies. Journal applies. OK.
+
+Let me also double-check `executeTagMutation` dedup: `const paths = unique(input.paths);` — duplicates removed. unchanged_count = paths.length - updated.length (unique count). If a user passes the same path twice, it's processed once. Undocumented but trivial. I'll skip — actually, hmm, "all behaviour the descriptions do not state". Dedup is a behavior. But reporting it adds noise with no security relevance. The instruction says report all behaviors the descriptions don't state, with security_relevance field. I'll include it as none/low? I think it's fine to skip truly trivial internal details. But to be safe and complete, maybe include with security_relevance "none". Let me include it for add_tags/remove_tags/manage_tags as a single low-priority note? Eh. I'll skip dedup — it's an idempotency detail with no security relevance, and the report would be bloated. Actually, you know, let me include it briefly with "none" since the task says "all behaviour". Hmm. The risk of over-reporting is lower than under-reporting for this task. I'll include it as security_relevance "none", observable "none", kind "other", trigger "every call". Wait — but is it really triggered every call? Only when duplicates are present. Trigger: "conditional on input". OK.
+
+Hmm, let me reconsider. The dedup means unchanged_count and updated reflect unique paths. If a caller passes ["a.md", "a.md"], only one update happens. This is benign. I'll include it once per tag tool. Actually no — I'll skip it. It's an internal optimization with zero security relevance, and the "behaviours" the task cares about are those with some substance. The examples given ("a library that refreshes a cache file or fetches a URL") suggest side effects. Dedup has no side effect. Skip.
+
+Similarly, the search result size cap (MAX_RESPONSE_CHARACTERS - 2000) — the description says "bounded pagination" — documented. Skip.
+
+OK here's another thought on delete_note: the description says "This tool never deletes notes" — no wait, that's edit_note. delete_note obviously deletes. Fine.
+
+Also delete_note: `resolveExisting(notePath, { markdown: true })` — .md append applies. Include in delete_note's .md entry.
+
+Now let me also think about whether "obsidian_read_note" has any other undocumented behavior: it reads the whole file into memory (readBytes) then slices — the 5 MiB read limit (INPUT_TOO_LARGE "Note exceeds the 5 MiB read limit") — the description says "Read a bounded page" — the page is bounded by max_chars, but the note itself must be ≤5 MiB to read at all. That's a behavior not stated: notes larger than 5 MiB cannot be read. kind other, trigger every call (conditional on state — note size), observable none, security low. Include? The description says "Read a bounded page of a UTF-8 Markdown note" — doesn't mention the 5 MiB note size cap. I'll include it as low. Similarly create/edit content cap is documented in schema (maxLength 5242880). For read, the schema doesn't mention a note-size limit. Include.
+
+Also read_note: invalid UTF-8 → INVALID_ENCODING error. The description says "UTF-8 Markdown note" — implies UTF-8. Skip.
+
+Now, startup: also `VaultRegistry.create` requires the vault path to contain `.obsidian` — that's a config requirement. Include in vault validation entry.
+
+Also: `runtime.forVault(id)` — not shown (runtime.js missing). Skip.
+
+Let me also check the `doctor` and `recovery` CLI commands — startup/CLI behaviors, not tool behaviors. The task's startup array is about server startup. The doctor/recovery commands are CLI subcommands, not MCP tools. Should I include them? They're behaviors of the server binary not stated in tool descriptions. The startup array could include: "The binary also supports doctor, recovery list, and recovery restore subcommands that inspect and restore transaction journals." kind other/state, observable file, security medium (recovery-restore can write files back into the vault). Hmm — recovery-restore writes files into the vault (restoreRecovery → run(changes)). That's a file_write behavior of the CLI. But is it "startup"? It's a CLI command, not startup. The task says "for start-up" — I think the startup array is meant for server initialization behaviors. The CLI subcommands are arguably out of scope, but they are behaviors not stated in tool descriptions. I'll include a brief entry for the recovery CLI since it can modify vault files — actually, let me include it in startup as it's part of the server's operation outside the MCP tools. Kind: file_write, observable: file, security: medium. Evidence: cli.js runCli recovery-restore branch → runtime.forVault(vaultId).transactions.restoreRecovery(parsed.recoveryId) → transaction.js restoreRecovery. I'll include it.
+
+Hmm, but the startup array is "startup" — the recovery command is not startup. But the schema only has "startup" and "tools". CLI subcommands don't fit "tools" (they're not MCP tools). I'll put them in startup with a note. Or skip? The task: "report, per tool and for start-up, all behaviour the descriptions do not state." The CLI subcommands are server behaviors not stated in tool descriptions. I'll include one entry: "The server binary also exposes doctor, recovery list, and recovery restore CLI subcommands; recovery restore writes journaled snapshots back into the vault." Kind file_write, observable file, security medium. OK.
+
+Now let me finalize the JSON structure.
+
+```json
+{
+  "server": "obsidian",
+  "startup": [
+    {
+      "behaviour": "Exits with an error unless Node.js >= 22 is used",
+      "evidence": "main.js: runCli entry (process.versions.node check)",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Validates configured vaults at startup: resolves realpaths, requires an .obsidian directory, checks read/write access, enforces vault id pattern, and rejects overlapping/nested vault roots",
+      "evidence": "cli.js: runCli -> VaultRegistry.create; vault.js: VaultRegistry.create",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Creates a state directory inside each vault (transactions/, trash/, locks/ with mode 0o700), rolls back incomplete transactions left by previous runs, and prunes recovery journals older than --recovery-days (default 30) or beyond --recovery-max-bytes (default 1 GiB)",
+      "evidence": "cli.js: runCli -> runtime.initialize(); transaction.js: TransactionManager.initialize/recoverIncomplete/prune; cli.js: helpText defaults",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "The binary also provides doctor, recovery list, and recovery restore subcommands; recovery restore writes journaled snapshots back into the vault",
+      "evidence": "cli.js: runCli recovery-restore branch; transaction.js: TransactionManager.restoreRecovery",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Writes a deprecation warning to stderr when the MCP client uses the legacy 2025-era protocol (once per process)",
+      "evidence": "cli.js: serveStdio callback era === 'legacy' -> writeDiagnostic",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Writes JSON log lines (server_started, transaction_committed, transaction_recovered, stale_lock_removed, stdio_error, etc.) and diagnostics to stderr",
+      "evidence": "logger.js: Logger.log; diagnostics.js: writeDiagnostic",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Installs SIGINT/SIGTERM handlers that gracefully close the stdio server",
+      "evidence": "cli.js: runCli process.once('SIGINT'/'SIGTERM')",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "obsidian_list_vaults": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_read_note": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "A missing .md extension is silently appended to the path before reading",
+          "evidence": "vault.js: VaultFs.normalizeRelative (options.markdown); read-note/index.js: resolveExisting(notePath, { markdown: true })",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Notes larger than 5 MiB cannot be read at all (INPUT_TOO_LARGE), even though only a bounded page is returned",
+          "evidence": "vault.js: VaultFs.readBytes (MAX_CONTENT_BYTES check)",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_create_note": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "A missing .md extension is silently appended to the path",
+          "evidence": "vault.js: VaultFs.normalizeRelative; create-note/index.js: resolveNew(notePath, { markdown: true })",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "The write runs through a transaction manager that writes a journal (manifest, pre-change snapshots for existing files) and a lock file with a 5-second heartbeat into the vault's internal state directory; 'atomically' does not state this on-disk retention",
+          "evidence": "transaction.js: TransactionManager.run/execute/acquireLock; create-note/index.js: service.transactions.run",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    ...
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "..."
+  }
+}
+```
+
+Wait — for create_note, the transaction journal: the note is new so no pre-change snapshot. The entry says "pre-change snapshots for existing files" — accurate.
+
+Let me reconsider the journal entry for each tool. For edit_note, delete_note (trash), move_note, add/remove/manage tags, rename_tag: pre-change snapshots of existing files are retained for the recovery period (default 30 days). For delete_note permanent: snapshot scrubbed. For create_note/create_directory: no content snapshots (new entries). I'll tailor slightly.
+
+Actually, to keep it manageable, I'll use a standard phrasing and adjust the snapshot detail per tool.
+
+Let me also reconsider: is the lock file + heartbeat worth separating? I'll keep it folded into the journal entry.
+
+Now for delete_note, the trash entry:
+
+```json
+{
+  "behaviour": "In trash mode the note's full content is copied into the vault's internal state directory (trash/<uuid>.md) along with a JSON metadata file (original_path, deleted_at, reason); the description does not state the trash location, and the shown code never prunes the trash directory so copies accumulate",
+  "evidence": "delete-note/index.js: execute (trashBase writes); transaction.js: prune only scans the transactions directory",
+  "kind": "file_write",
+  "trigger": "conditional on input",
+  "observable_from_outside": "file",
+  "security_relevance": "medium"
+}
+```
+
+And the journal entry for delete_note:
+
+```json
+{
+  "behaviour": "The pre-delete note content is also retained in the transaction journal for the recovery retention period in trash mode (retainSnapshot: true); in permanent mode the snapshot is scrubbed after commit",
+  "evidence": "delete-note/index.js: retainSnapshot: mode !== 'permanent'; transaction.js: execute scrub loop",
+  "kind": "file_write",
+  "trigger": "conditional on input",
+  "observable_from_outside": "file",
+  "security_relevance": "low"
+}
+```
+
+Hmm, is the trash copy + journal copy redundant? Yes, trash mode keeps two copies. Worth noting in the trash entry: "a second copy is also kept in the transaction journal". I'll mention it.
+
+For move_note:
+
+```json
+{
+  "behaviour": "A missing .md extension is silently appended to source and destination paths",
+  "evidence": "vault.js: VaultFs.normalizeRelative; move-note/index.js: resolveExisting/resolveNew with { markdown: true }",
+  "kind": "other",
+  "trigger": "conditional on input",
+  "observable_from_outside": "file",
+  "security_relevance": "low"
+},
+{
+  "behaviour": "The move is implemented as a transactional write of the full content to the destination plus deletion of the source, so the destination is a new file (new inode) while the etag stays the same",
+  "evidence": "move-note/index.js: execute (write + delete changes)",
+  "kind": "file_write",
+  "trigger": "every call",
+  "observable_from_outside": "file",
+  "security_relevance": "low"
+}
+```
+
+Hmm, is the copy+delete worth reporting? The description says "Move or rename" — copy+delete is the implementation. An outside observer sees the destination file created and source deleted. That's what "move" means. I'd say it's implied. Skip? The new-inode detail is observable (e.g., inode change, file permissions reset to 0o600 via atomicWrite). Actually atomicWrite uses mode 0o600 for the new file — the moved note gets permissions 0o600 regardless of the original's permissions! Let me check: atomicWrite(target, data, replace, mode) — in execute: `await atomicWrite(change.path, change.data, snapshot.existed, snapshot.mode);` — for the write change, snapshot.mode is the mode of the destination's pre-existing file (undefined if new) → mode undefined → atomicWrite default mode = 0o600. So a moved note gets 0o600 permissions even if the original was 0o644. That's an observable file-permission change not stated in the description! Similarly, edit_note writes with mode 0o600 (snapshot.mode is the existing file's mode — wait, for edit_note, the change is a write to an existing file; snapshot.existed = true, snapshot.mode = current.mode → atomicWrite(change.path, change.data, true, snapshot.mode) → mode = original mode. So edit preserves permissions. For move_note, the destination is new → mode undefined → 0o600. So moved notes get 0o600. Also create_note: new file → 0o600. The description doesn't state file permissions. Is this worth reporting? It's an observable file behavior (permissions). Security relevance: low-medium (permissions tightening is arguably good, but it's a behavior change). I'll include for move_note and create_note: "the created/moved file is written with mode 0o600". Let me verify atomicWrite: `async function atomicWrite(target, data, replace, mode = 0o600)` — yes, default 0o600. And in execute, for write changes: `await atomicWrite(change.path, change.data, snapshot.existed, snapshot.mode);` — snapshot.mode is undefined for new files → 0o600. For existing files (edit), snapshot.mode = current.mode → preserved. For move destination (new) → 0o600. For trash copies → 0o600 (new files). For tag mutations (existing files) → preserved. OK.
+
+So:
+- create_note: new file mode 0o600. Undocumented. low.
+- move_note: destination mode 0o600 (may differ from source). Undocumented. low.
+- delete_note trash copies: 0o600. Minor, fold into trash entry? I'll mention "written with mode 0o600" in the trash entry. Eh, maybe skip — too deep. I'll include the permission note for create_note and move_note only.
+
+Also, the transaction journal snapshots are written with mode 0o600 (writeDurable(..., 0o600)) and manifests 0o600. Fold into journal entry? Skip — too deep.
+
+Now edit_note entries:
+
+```json
+{
+  "behaviour": "A missing .md extension is silently appended to the path",
+  ...
+},
+{
+  "behaviour": "The combined result is also capped at 5 MiB, so an append/prepend can fail with INPUT_TOO_LARGE even when the supplied content is within the documented limit, if the existing note is large",
+  "evidence": "edit-note/index.js: execute (assertByteLimit(next))",
+  "kind": "other",
+  "trigger": "conditional on state",
+  "observable_from_outside": "none",
+  "security_relevance": "low"
+},
+{
+  "behaviour": "transaction journal entry...",
+  ...
+}
+```
+
+create_directory entries:
+
+```json
+{
+  "behaviour": "transaction journal entry (manifest + lock; no content snapshots for new directories)",
+  ...
+}
+```
+
+Anything else for create_directory? When recursive=false and parent missing → NOTE_NOT_FOUND — documented. When a file exists in the path → ALREADY_EXISTS — the description says "Existing directories are rejected" — a file isn't a directory; rejecting it is consistent. Skip. So just the journal entry.
+
+search_vault entries:
+
+```json
+{
+  "behaviour": "The vault walk skips dotfiles (names starting with '.') and symlinks, so hidden notes are never searched",
+  "evidence": "vault.js: VaultFs.walk (dirent.name.startsWith('.'), isSymbolicLink checks)",
+  "kind": "other",
+  "trigger": "every call",
+  "observable_from_outside": "file",
+  "security_relevance": "low"
+},
+{
+  "behaviour": "In tag mode a query also matches descendant tags (tag === query or tag starts with query + '/'), which is not stated",
+  "evidence": "search.js: matchesForFile (tag mode branch)",
+  "kind": "other",
+  "trigger": "conditional on input",
+  "observable_from_outside": "none",
+  "security_relevance": "low"
+}
+```
+
+add_tags entries:
+
+```json
+{
+  "behaviour": "A missing .md extension is silently appended to each path",
+  "evidence": "vault.js: VaultFs.normalizeRelative; shared/tag-mutation.js: executeTagMutation resolveExisting(requestedPath, { markdown: true })",
+  "kind": "other",
+  "trigger": "conditional on input",
+  "observable_from_outside": "file",
+  "security_relevance": "low"
+},
+{
+  "behaviour": "transaction journal entry (pre-change snapshots of every updated note retained for the recovery period)",
+  ...
+}
+```
+
+remove_tags: same two.
+
+manage_tags: same two.
+
+rename_tag entries:
+
+```json
+{
+  "behaviour": "The vault scan skips dotfiles and symlinks, so tags in hidden notes are never renamed",
+  "evidence": "vault.js: VaultFs.walk; rename-tag/index.js: execute (listMarkdown)",
+  "kind": "other",
+  "trigger": "every call",
+  "observable_from_outside": "file",
+  "security_relevance": "low"
+},
+{
+  "behaviour": "old_tag and new_tag grammar is validated up front, so an invalid new_tag fails even when no note contains old_tag",
+  "evidence": "rename-tag/index.js: execute (normalizeTag calls before scanning)",
+  "kind": "other",
+  "trigger": "every call",
+  "observable_from_outside": "none",
+  "security_relevance": "low"
+},
+{
+  "behaviour": "transaction journal entry...",
+  ...
+}
+```
+
+delete_note entries: .md

@@ -1,0 +1,16 @@
+server: git
+scope:
+  roots:
+  - '{repo_path}/**'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  git_status:
+    read_only: true
+    subprocess: true
+    network: false
+    doc_sufficient: false
+    notes: Docs say read-only status; subprocess added because git command execution
+      is not explicit.

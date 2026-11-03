@@ -1,0 +1,140 @@
+{
+  "fs": {
+    "created": [
+      "/vac/vac-next/real-mcp/sandboxes/desktop-commander-0/home/.claude-server-commander",
+      "/vac/vac-next/real-mcp/sandboxes/desktop-commander-0/home/.claude-server-commander/config.json"
+    ],
+    "deleted": [],
+    "modified": []
+  },
+  "net": [
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "desktopcommander.app",
+      "qtype": "A",
+      "t": 1793382527.482933
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "desktopcommander.app",
+      "qtype": "AAAA",
+      "t": 1793382527.482999
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793382527.519799
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "AAAA",
+      "t": 1793382527.519864
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793382528.493064
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "AAAA",
+      "t": 1793382528.493135
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "A",
+      "t": 1793382528.502501
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "telemetry.desktopcommander.app",
+      "qtype": "AAAA",
+      "t": 1793382528.502534
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "googlechromelabs.github.io",
+      "qtype": "A",
+      "t": 1793382528.508375
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "googlechromelabs.github.io",
+      "qtype": "AAAA",
+      "t": 1793382528.508416
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793382528.544242
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "AAAA",
+      "t": 1793382528.544267
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup_late",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793382529.496152
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup_late",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "AAAA",
+      "t": 1793382529.496211
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup_late",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "A",
+      "t": 1793382529.504752
+    },
+    {
+      "dst": "10.200.88.1:53",
+      "kind": "dns",
+      "phase": "startup_late",
+      "qname": "dc-telemetry-proxy-83847352264.europe-west1.run.app",
+      "qtype": "AAAA",
+      "t": 1793382529.504806
+    }
+  ]
+}

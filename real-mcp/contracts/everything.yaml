@@ -1,0 +1,36 @@
+# Declared effect contract for @modelcontextprotocol/server-everything 2.1.0
+# Derived ONLY from contracts/everything.tools.json (descriptions + annotations) and the
+# package README, before any probe.  Every tool answers in the response channel; the only
+# documented external effect is that gzip-file-as-resource fetches the URL it is given.
+server: everything
+scope:
+  roots: ["{root}"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  echo:                           {read_only: true, doc_sufficient: true}
+  get-sum:                        {read_only: true, doc_sufficient: true}
+  get-tiny-image:                 {read_only: true, doc_sufficient: true}
+  get-annotated-message:          {read_only: true, doc_sufficient: true}
+  get-structured-content:         {read_only: true, doc_sufficient: true}
+  get-resource-reference:         {read_only: true, doc_sufficient: true}
+  get-resource-links:             {read_only: true, doc_sufficient: true}
+  get-header-params:              {read_only: true, doc_sufficient: true}
+  trigger-long-running-operation: {read_only: true, doc_sufficient: true, notes: "progress notifications only"}
+  trigger-log-messages:           {read_only: true, doc_sufficient: true}
+  trigger-list-changed:           {read_only: true, doc_sufficient: true}
+  trigger-resource-update:        {read_only: true, doc_sufficient: true}
+  toggle-simulated-logging:       {read_only: true, doc_sufficient: false, notes: "read_only_hint=false; the toggled state is in-process, no channel can see it"}
+  toggle-subscriber-updates:      {read_only: true, doc_sufficient: false, notes: "as above"}
+  get-env:
+    read_only: true
+    doc_sufficient: true
+    notes: "returns the server's environment in the response; an information channel, not a state effect"
+  gzip-file-as-resource:
+    read_only: true          # read_only_hint=false, but no file write is documented: the result is a resource
+    network: true
+    network_hosts: ["{host:data}"]
+    doc_sufficient: true
+    notes: "'fetches the URL it is given' (README); a data: URI is not fetched"

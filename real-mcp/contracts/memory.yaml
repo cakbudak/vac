@@ -1,0 +1,49 @@
+# Declared effect contract for @modelcontextprotocol/server-memory 2.0.1
+# Derived ONLY from contracts/memory.tools.json (descriptions + annotations) and the package
+# README, before any probe.  The server was started with MEMORY_FILE_PATH={memory_file}.
+server: memory
+scope:
+  roots: ["{memory_file}", "{memory_file}.lock", "{memory_file}.lock.break"]   # README: the file, its exclusive lock, the lock-break marker
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_graph:    {read_only: true, doc_sufficient: true, notes: "read_only_hint=true"}
+  search_nodes:  {read_only: true, doc_sufficient: true}
+  open_nodes:    {read_only: true, doc_sufficient: true}
+  create_entities:
+    read_only: false
+    fs: {may_create: ["{memory_file}", "{memory_file}.lock"], may_modify: ["{memory_file}"], may_delete: ["{memory_file}.lock"]}
+    expect_effect: {fs_any_of: ["{memory_file}"], unless_response_matches: ["[]"]}
+    doc_sufficient: true
+    notes: "'skipped' entities produce no change; the description says so"
+  create_relations:
+    read_only: false
+    fs: {may_create: ["{memory_file}", "{memory_file}.lock"], may_modify: ["{memory_file}"], may_delete: ["{memory_file}.lock"]}
+    expect_effect: {fs_any_of: ["{memory_file}"], unless_response_matches: ["[]"]}
+    doc_sufficient: true
+  add_observations:
+    read_only: false
+    fs: {may_create: ["{memory_file}", "{memory_file}.lock"], may_modify: ["{memory_file}"], may_delete: ["{memory_file}.lock"]}
+    expect_effect: {fs_any_of: ["{memory_file}"], unless_response_matches: ["[]"]}
+    doc_sufficient: true
+  delete_entities:
+    read_only: false
+    fs: {may_create: ["{memory_file}.lock"], may_modify: ["{memory_file}"], may_delete: ["{memory_file}.lock"]}
+    expect_effect: {fs_any_of: ["{memory_file}"], unless_response_matches: ["Deleted 0 of", "matched nothing"]}
+    doc_sufficient: true
+  delete_observations:
+    read_only: false
+    fs: {may_create: ["{memory_file}.lock"], may_modify: ["{memory_file}"], may_delete: ["{memory_file}.lock"]}
+    expect_effect: {fs_any_of: ["{memory_file}"], unless_response_matches: ["Deleted 0 of", "matched nothing"]}
+    doc_sufficient: true
+  delete_relations:
+    read_only: false
+    fs: {may_create: ["{memory_file}.lock"], may_modify: ["{memory_file}"], may_delete: ["{memory_file}.lock"]}
+    expect_effect: {fs_any_of: ["{memory_file}"], unless_response_matches: ["Deleted 0 of", "matched nothing"]}
+    notes: "a deletion that matches nothing changes nothing; the response says so ('Deleted 0 of N')"
+    doc_sufficient: true
+readme_declared:
+  fs: {may_create: ["{memory_file}.lock", "{memory_file}.lock.break"], may_delete: ["{memory_file}.lock", "{memory_file}.lock.break"]}
+  network: false

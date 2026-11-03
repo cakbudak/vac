@@ -1,0 +1,69 @@
+[
+  {
+    "annotations": null,
+    "description": "\nExecute terminal command and return results\n\nArgs:\n    command: Command line command to execute\n    timeout: Command timeout in seconds, default is 30 seconds\n\nReturns:\n    Output of the command execution\n",
+    "inputSchema": {
+      "properties": {
+        "command": {
+          "title": "Command",
+          "type": "string"
+        },
+        "timeout": {
+          "default": 30,
+          "title": "Timeout",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "command"
+      ],
+      "title": "execute_the_commandArguments",
+      "type": "object"
+    },
+    "name": "execute_the_command"
+  },
+  {
+    "annotations": null,
+    "description": "\nGet recent command execution history\n\nArgs:\n    count: Number of recent commands to return\n\nReturns:\n    Formatted command history record\n",
+    "inputSchema": {
+      "properties": {
+        "count": {
+          "default": 10,
+          "title": "Count",
+          "type": "integer"
+        }
+      },
+      "title": "get_commands_historyArguments",
+      "type": "object"
+    },
+    "name": "get_commands_history"
+  },
+  {
+    "annotations": null,
+    "description": "\nGet current working directory\n\nReturns:\n    Path of current working directory\n",
+    "inputSchema": {
+      "properties": {},
+      "title": "get_the_current_directoryArguments",
+      "type": "object"
+    },
+    "name": "get_the_current_directory"
+  },
+  {
+    "annotations": null,
+    "description": "\nChange current working directory\n\nArgs:\n    path: Directory path to switch to\n\nReturns:\n    Operation result information\n",
+    "inputSchema": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "change_the_directoryArguments",
+      "type": "object"
+    },
+    "name": "change_the_directory"
+  }
+]

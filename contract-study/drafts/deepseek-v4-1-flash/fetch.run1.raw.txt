@@ -1,0 +1,19 @@
+```yaml
+server: fetch
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: true
+tools:
+  fetch:
+    read_only: true
+    expect_effect:
+      network: true
+    subprocess: true
+    network: true
+    network_hosts: ["{host:url}"]
+    doc_sufficient: true
+    notes: "Documentation says it fetches URLs and may spawn Node.js subprocess for HTML extraction; redirects and robots.txt checks may contact additional hosts but documentation doesn't specify how to handle this"
+```

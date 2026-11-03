@@ -1,0 +1,147 @@
+```yaml
+server: desktop_commander
+scope:
+  roots: ["{work}/**"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  get_config:
+    read_only: true
+    doc_sufficient: true
+    notes: "Reads server configuration; no file changes, no subprocess, no network."
+  set_config_value:
+    read_only: false
+    doc_sufficient: false
+    notes: "Sets configuration values; documentation does not specify where config is persisted."
+  read_file:
+    read_only: true
+    network: true
+    network_hosts: ["{host:url}"]
+    doc_sufficient: true
+    notes: "Reads files and URLs; network requests only when isUrl=true."
+  read_multiple_files:
+    read_only: true
+    doc_sufficient: true
+    notes: "Reads multiple files; no network, no subprocess."
+  write_file:
+    read_only: false
+    fs:
+      may_create: ["{path}"]
+      may_modify: ["{path}"]
+    expect_effect:
+      fs_any_of: ["{path}"]
+    doc_sufficient: true
+    notes: "Writes or appends to files within allowed directories."
+  write_pdf:
+    read_only: false
+    fs:
+      may_create: ["{outputPath}"]
+      may_modify: ["{outputPath}"]
+    expect_effect:
+      fs_any_of: ["{outputPath}"]
+    doc_sufficient: true
+    notes: "Creates or modifies PDF files; outputPath is created/modified, path is only read."
+  create_directory:
+    read_only: false
+    fs:
+      may_create: ["{path}"]
+    expect_effect:
+      fs_any_of: ["{path}"]
+    doc_sufficient: true
+    notes: "Creates directories within allowed directories."
+  list_directory:
+    read_only: true
+    doc_sufficient: true
+    notes: "Lists directory contents; no changes."
+  move_file:
+    read_only: false
+    fs:
+      may_create: ["{destination}"]
+      may_delete: ["{source}"]
+    expect_effect:
+      fs_any_of: ["{destination}", "{source}"]
+    doc_sufficient: true
+    notes: "Moves/renames files; source is deleted, destination is created."
+  start_search:
+    read_only: true
+    subprocess: true
+    expect_effect:
+      subprocess: true
+    doc_sufficient: true
+    notes: "Starts a background search process; returns session ID immediately."
+  get_more_search_results:
+    read_only: true
+    doc_sufficient: true
+    notes: "Reads results from active search; no subprocess spawned."
+  stop_search:
+    read_only: false
+    subprocess: true
+    doc_sufficient: true
+    notes: "Stops a background search process."
+  list_searches:
+    read_only: true
+    doc_sufficient: true
+    notes: "Lists active searches; no changes."
+  get_file_info:
+    read_only: true
+    doc_sufficient: true
+    notes: "Retrieves file metadata; no changes."
+  edit_block:
+    read_only: false
+    fs:
+      may_modify: ["{file_path}"]
+    expect_effect:
+      fs_any_of: ["{file_path}"]
+    doc_sufficient: true
+    notes: "Applies surgical edits to files; modifies file_path in place."
+  start_process:
+    read_only: false
+    subprocess: true
+    scope: ["{root}/**"]
+    expect_effect:
+      subprocess: true
+    doc_sufficient: false
+    notes: "Starts a terminal process; README says terminal commands can access files outside allowedDirectories, but exact scope is not specified."
+  read_process_output:
+    read_only: true
+    doc_sufficient: true
+    notes: "Reads output from running process; no subprocess spawned."
+  interact_with_process:
+    read_only: false
+    subprocess: true
+    doc_sufficient: true
+    notes: "Sends input to running process; interacts with subprocess."
+  force_terminate:
+    read_only: false
+    subprocess: true
+    doc_sufficient: true
+    notes: "Force terminates a running terminal session."
+  list_sessions:
+    read_only: true
+    doc_sufficient: true
+    notes: "Lists active terminal sessions; no changes."
+  list_processes:
+    read_only: true
+    doc_sufficient: true
+    notes: "Lists running processes; no changes."
+  kill_process:
+    read_only: false
+    subprocess: true
+    doc_sufficient: true
+    notes: "Terminates a running process by PID."
+  get_usage_stats:
+    read_only: true
+    doc_sufficient: true
+    notes: "Gets usage statistics; no changes."
+  get_recent_tool_calls:
+    read_only: true
+    doc_sufficient: true
+    notes: "Gets recent tool call history; reads from tool-history.jsonl but does not modify it."
+  give_feedback_to_desktop_commander:
+    read_only: false
+    network: true
+    doc_sufficient: false
+    notes: "Opens feedback form in browser; documentation does not specify the URL or network endpoints."
+```

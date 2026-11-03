@@ -1,0 +1,56 @@
+
+```json
+{
+  "server": "everything",
+  "startup": [
+    {
+      "behaviour": "Launcher picks a transport from the first command-line argument (stdio default; sse and streamableHttp supported) and prints usage and exits 1 for an unknown name.",
+      "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/index.js: run()",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "The stdio transport registers a SIGINT handler that closes the connection, runs per-instance cleanups and exits the process.",
+      "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/transports/stdio.js: main()",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "The factory reads server instructions via readInstructions() and constructs the McpServer with capabilities (prompts/resources listChanged, resources subscribe, logging; the tasks extension on 2026-07-28), cache hints and a requestState verifier.",
+      "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/server/index.js: createServer()",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Generates a process-wide random 32-byte key for the requestState codec (600 s TTL) that signs multi-round-trip elicitation state.",
+      "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/server/index.js: roundStateCodec",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Advertises cache hints for 2026-07-28 cacheable responses (tools/list, prompts/list, resources/list, resources/templates/list: 60 s public; server/discover: 5 min public).",
+      "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/server/index.js: CACHE_HINTS",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "On a 2025-era connection, 350 ms after initialize the server sends the client a roots/list request (when the client supports Roots), installs a handler for notifications/roots/list_changed, and reports each answer to the client as a log message.",
+      "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/server/index.js: createServer() oninitialized; dist/server/roots.js: syncRoots()",
+      "kind": "network",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "network",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "On a 2025-era connection, installs resources/subscribe notification handlers backed by a per-instance Set of subscribed URIs.",
+      "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/server/index.js: createServer(); dist/resources/subscriptions.js: setSubscription

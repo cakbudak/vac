@@ -1,0 +1,129 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "The tool description accurately covers the core fetch-and-convert-to-markdown behaviour, but omits several significant operational details: robots.txt checking (including per-redirect-hop fetches), private IP blocking with DNS pre-resolution, the optional Node.js subprocess for Readability.js, the specific User-Agent header sent, the 30-second timeout, and the truncation/pagination mechanism. These are all implemented but undocumented in the tool description."
+  },
+  "server": "fetch",
+  "startup": [
+    {
+      "behaviour": "Proxy URL (if provided via --proxy-url) is normalized: 'socks://' scheme is rewritten to 'socks5://'",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: create_server/normalize_proxy_url",
+      "kind": "config",
+      "observable_from_outside": "network",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Proxy-related environment variables (HTTP_PROXY, http_proxy, HTTPS_PROXY, https_proxy, ALL_PROXY, all_proxy) are read and potentially rewritten in os.environ to normalize 'socks://' to 'socks5://'",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: create_server calls normalize_proxy_env, normalize_proxy_env modifies os.environ",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "A 'reject_unknown_names' middleware is registered that intercepts tools/call and prompts/get requests and returns -32602 for unknown names",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: create_server/reject_unknown_names",
+      "kind": "state",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "fetch": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Before fetching the target URL, the server fetches the robots.txt of the target origin via an HTTP GET request and refuses the fetch if the user agent is disallowed (unless --ignore-robots-txt is set)",
+          "evidence": "server.py: fetch tool calls check_may_autonomously_fetch_url, which calls client.get(robot_txt_url)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "medium",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "On each redirect hop, the robots.txt of the redirect destination origin is fetched and checked before following (unless --ignore-robots-txt is set)",
+          "evidence": "server.py: fetch_url/_check_redirect_robots_txt hook calls check_may_autonomously_fetch_url per redirect",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "medium",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Private, loopback, and link-local IP addresses are refused by default; DNS is resolved before each request (including redirect hops) to enforce this",
+          "evidence": "server.py: _refuse_private_destination registered as httpx request hook, calls _resolve_host via asyncio.get_running_loop().getaddrinfo",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "high",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "HTML content is processed through readabilipy (optionally invoking Node.js/Readability.js subprocess) and then markdownify to produce Markdown output",
+          "evidence": "server.py: extract_content_from_html calls readabilipy.simple_json.simple_json_from_html_string (which may spawn Node.js) and markdownify.markdownify",
+          "kind": "subprocess",
+          "observable_from_outside": "process",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "If Readability.js extraction drops content hidden via CSS/HTML attributes (SSR hydration pattern), the server modifies the parsed DOM (removes hidden attributes/styles) and re-runs Readability.js extraction",
+          "evidence": "server.py: _recover_hidden_content modifies BeautifulSoup tag attributes and calls _readability_content again",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Response charset is sniffed from up to the first 1024 bytes of the body (looking for <meta charset> or <meta http-equiv='Content-Type'>) if no Content-Type charset header is present",
+          "evidence": "server.py: decode_page parses HTML meta tags for charset declaration",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "HTTP requests use a specific User-Agent string ('ModelContextProtocol/1.0 (Autonomous; ...)') unless overridden by --user-agent at startup",
+          "evidence": "server.py: DEFAULT_USER_AGENT_AUTONOMOUS used as User-Agent header in fetch_url and check_may_autonomously_fetch_url",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "HTTP requests have a 30-second timeout enforced",
+          "evidence": "server.py: fetch_url calls client.get(..., timeout=30)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Non-HTML responses (or raw=True) are returned as-is with a prefix message stating the content type cannot be simplified to markdown",
+          "evidence": "server.py: fetch_url returns page_raw with prefix 'Content type {declared_type} cannot be simplified to markdown...' when not HTML or force_raw=True",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "When content exceeds max_length, a truncation error message with the next start_index is appended to the response",
+          "evidence": "server.py: fetch tool appends '<error>Content truncated. Call the fetch tool with a start_index of {next_start}...</error>'",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "HTTP redirects are followed automatically (up to httpx's default limit)",
+          "evidence": "server.py: fetch_url calls client.get(..., follow_redirects=True)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    }
+  }
+}

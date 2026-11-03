@@ -1,0 +1,557 @@
+Let me analyze this task carefully.
+
+I need to write a declared effect contract for the mcp-server-git MCP server. Let me go through the tools and the README.
+
+The server is started with `mcp-server-git -r {repo_path}`, so the repository root is `{repo_path}`.
+
+Key facts from the README:
+- The server is a git MCP server
+- Tools read, search, and manipulate Git repositories
+- `--repository` confines access to a repository; the server never asks for Roots
+- A tool call's `repo_path` must be inside that repository
+- The server walks up to the enclosing repository root (like `git rev-parse --show-toplevel`)
+- Errors return `isError: true` with text `Error executing tool <name>: <message>`
+
+Tools:
+1. `git_status` - read_only_hint: true, "Shows the working tree status" - read-only
+2. `git_diff_unstaged` - read_only_hint: true - read-only
+3. `git_diff_staged` - read_only_hint: true - read-only
+4. `git_diff` - read_only_hint: true - read-only
+5. `git_commit` - read_only_hint: false, "Records changes to the repository" - modifies repo (creates commit objects, updates refs, clears MERGE_HEAD)
+6. `git_add` - read_only_hint: false, "Adds file contents to the staging area" - modifies index
+7. `git_reset` - read_only_hint: false, destructive_hint: true, "Unstages all staged changes" - modifies index
+8. `git_log` - read_only_hint: true - read-only
+9. `git_create_branch` - read_only_hint: false, "Creates a new branch" - modifies refs
+10. `git_checkout` - read_only_hint: false, "Switches branches" - modifies HEAD, working tree possibly
+11. `git_show` - read_only_hint: true - read-only
+12. `git_branch` - read_only_hint: true - read-only
+
+Now, the scope: the server is started with `-r {repo_path}`, so the repository root is `{repo_path}`. The scope roots should be `["{repo_path}/**"]` or similar. Actually, the README says `--repository` admits the whole enclosing repository, not only the directory named. Since the server is started with `-r {repo_path}` and `{repo_path}` is the repository the server was started on, the scope is `{repo_path}`.
+
+Wait, the sandbox placeholders: `{repo_path}` = the repository the server was started on (also the value of every call's repo_path argument); `{root}` = sandbox root.
+
+So scope roots: `["{repo_path}/**"]` — but also the `.git` directory. Git operations modify files under `{repo_path}/.git` (index, refs, objects, HEAD, MERGE_HEAD, etc.). So the scope should cover the whole repo including `.git`.
+
+Patterns are glob-style absolute paths. `{repo_path}` is an absolute path placeholder. So scope roots could be `["{repo_path}/**", "{repo_path}/.git/**"]` — but `{repo_path}/**` already covers `.git` since `**` matches any sub-path. Actually, does `{repo_path}/**` match `{repo_path}/.git/HEAD`? Yes, `**` matches any sub-path. But does it match `{repo_path}` itself (the root dir)? Probably not needed.
+
+Hmm, but what about the working tree files? `git_checkout` can modify working tree files (when switching branches, files change). Those are under `{repo_path}/**` too.
+
+So scope roots: `["{repo_path}/**"]`.
+
+Now for each tool:
+
+**Read-only tools** (git_status, git_diff_unstaged, git_diff_staged, git_diff, git_log, git_show, git_branch):
+- read_only: true
+- No fs changes expected
+- subprocess: true (they run git commands — the server is built on the SDK, each tool is a typed Python function; presumably it shells out to git). Hmm, do we know the tools spawn subprocesses? The README says "This covers git errors (an unknown revision, a failed command)". The server is a Python MCP server that wraps git. It's reasonable that each tool invocation runs `git` as a subprocess. But is that documented? The README says "A tool that fails returns a result with isError: true whose text is Error executing tool <name>: <message>. This covers git errors (an unknown revision, a failed command)". This implies git commands are executed. The server is built on the SDK's high-level MCPServer; each tool is a typed Python function. It doesn't explicitly say "spawns a subprocess" but running git commands implies subprocess. Hmm.
+
+The contract has `defaults.subprocess` — "may tools spawn child processes unless they say otherwise?" For a git server, the whole point is running git commands, which are child processes. I think subprocess: true is justified for all tools since they execute git commands. The README mentions "a failed command" which implies commands are run. I'd set defaults.subprocess: true and note it.
+
+Actually, let me think about doc_sufficient. The documentation (README + tool descriptions) supports:
+- What each tool does
+- read_only hints from annotations
+- The confinement via --repository
+
+What it doesn't explicitly document:
+- That tools spawn subprocesses (git commands) — implied by "git errors (an unknown revision, a failed command)" and the nature of the server. I'd say this is reasonably supported.
+- Network: git tools don't make network requests. The README doesn't mention network at all. defaults.network: false. But wait — could git fetch/push? There are no fetch/push tools in the list. So network: false is safe. But is it documented? The tool list has no network operations. I'd say network: false is supported by the absence of any network tool. doc_sufficient could be true for that.
+
+Hmm, but the instructions say "never guess a hidden behaviour you cannot justify from the text". For network, the absence of network tools in the list justifies network: false. Actually, could `git_checkout` of a remote branch trigger a fetch? No, checkout doesn't fetch. `git_branch` with branch_type 'remote' just lists remote-tracking branches, no network. So network: false.
+
+**git_commit**: "Records changes to the repository". Modifies: `.git/objects/**` (new commit/tree/blob objects), `.git/refs/**` or packed-refs (updates branch ref), `.git/HEAD`? No, HEAD doesn't change on commit. `.git/MERGE_HEAD` cleared if merge in progress. Also `.git/index`? Commit doesn't change the index. So fs changes: `{repo_path}/.git/**`. 
+
+The README says: "Returns: Confirmation with new commit hash; an error if nothing is staged (as git commit without --allow-empty), except while a merge is in progress (MERGE_HEAD present), where git also allows an empty commit. While a merge is in progress the commit concludes it: its parents are HEAD and every MERGE_HEAD commit, and the merge state is cleared."
+
+So expect_effect: fs_any_of could include `{repo_path}/.git/objects/**` or `{repo_path}/.git/refs/**`. But if the commit is empty (merge in progress), objects still created (commit object). Actually an empty commit still creates a commit object and updates the ref. So fs changes should always happen on success. But the response might say... hmm. The expect_effect is "what MUST be observable after a successful call". For git_commit, a successful call creates a commit object and updates the ref. So fs_any_of: ["{repo_path}/.git/objects/**", "{repo_path}/.git/refs/**", "{repo_path}/.git/packed-refs"]. Hmm, but packed-refs only changes if refs are packed. Let me keep it simpler: `{repo_path}/.git/**` — but that's too broad? Actually for a commit, changes are under .git. The fs section for the tool: may_create/may_modify/may_delete under `{repo_path}/.git/**`.
+
+Wait, but the fs section is "only for tools that change files: glob patterns per kind of change". For git_commit:
+- may_create: `["{repo_path}/.git/objects/**"]` (new objects)
+- may_modify: `["{repo_path}/.git/refs/**", "{repo_path}/.git/packed-refs", "{repo_path}/.git/MERGE_HEAD"]` (ref update, merge state cleared)
+- may_delete: `["{repo_path}/.git/MERGE_HEAD"]` (merge state cleared — MERGE_HEAD deleted)
+
+Hmm, MERGE_HEAD is deleted when merge concludes. Also possibly MERGE_MSG. The README only mentions "the merge state is cleared". I shouldn't over-specify. Let me use `{repo_path}/.git/**` for may_modify to be safe? But that's very broad. The instruction says "A contract that is too narrow produces false deviations on honest behaviour; one that is too wide hides real deviations."
+
+For git_commit, the honest behavior: creates commit object(s) under .git/objects, updates the current branch ref (under .git/refs or packed-refs), and if merge in progress, deletes MERGE_HEAD (and MERGE_MSG). I think specifying:
+- may_create: ["{repo_path}/.git/objects/**"]
+- may_modify: ["{repo_path}/.git/refs/**", "{repo_path}/.git/packed-refs"]
+- may_delete: ["{repo_path}/.git/MERGE_HEAD", "{repo_path}/.git/MERGE_MSG"]
+
+Hmm, MERGE_MSG isn't mentioned in the README. "the merge state is cleared" — git commit during merge removes MERGE_HEAD and MERGE_MSG. But the README only says "the merge state is cleared". To be safe, may_delete: ["{repo_path}/.git/MERGE_HEAD"] and note that other merge state files may be removed. Actually, I could just use `{repo_path}/.git/**` for may_delete with a note. Hmm.
+
+Let me think about what's cleanest. The grader classifies changes as fs_outside_scope / fs_change_by_readonly_tool / fs_undeclared / etc. fs_undeclared means a change within scope but not declared in the tool's fs patterns. So if git_commit deletes MERGE_MSG and I only declared MERGE_HEAD, that's fs_undeclared — a false deviation. To avoid that, I should be generous within .git for the merge case. But being too generous hides real deviations.
+
+The README says "the merge state is cleared". Git's merge state includes MERGE_HEAD, MERGE_MSG, and possibly .git/MERGE_MODE? Actually `git commit` during a merge removes MERGE_HEAD and MERGE_MSG. I'll declare may_delete: ["{repo_path}/.git/MERGE_HEAD", "{repo_path}/.git/MERGE_MSG"] and note that the README says "merge state is cleared" without enumerating files.
+
+Alternatively, use `{repo_path}/.git/**` for may_delete. Hmm. I think naming MERGE_HEAD and MERGE_MSG is reasonable and documented-ish. Let me go with that but note it.
+
+Actually, let me reconsider. The expect_effect for git_commit: fs_any_of: ["{repo_path}/.git/objects/**", "{repo_path}/.git/refs/**", "{repo_path}/.git/packed-refs"]. A successful commit always creates at least a commit object and updates the ref. So this should hold. But wait — what if the response says the action was a no-op? For git_commit, the README says an error if nothing is staged (except merge case). So a successful call always commits. expect_effect with fs_any_of should be fine. But should I add unless_response_matches? The README doesn't describe a no-op response for commit. So no.
+
+Hmm, but actually, is expect_effect required? It's optional. For tools that change files, it's good to declare what must be observable. For git_commit, a successful call must create a commit. I'll include it.
+
+**git_add**: "Adds file contents to the staging area". Modifies `.git/index`. 
+- may_modify: ["{repo_path}/.git/index"]
+- The README: "Returns: Confirmation of staged files, or a message saying nothing was staged when the call left the index unchanged". So a no-op is possible (e.g., files already staged, or no changes). So expect_effect should have unless_response_matches: ["nothing was staged"] or similar. The README says "a message saying nothing was staged when the call left the index unchanged". So unless_response_matches: ["nothing was staged"].
+
+Hmm, the response text — I don't know the exact wording. The README says "a message saying nothing was staged". I'll use ["nothing was staged"] as substring. That's a guess at the exact wording but the README gives the phrase "nothing was staged". Reasonable.
+
+expect_effect for git_add: fs_any_of: ["{repo_path}/.git/index"], unless_response_matches: ["nothing was staged"].
+
+**git_reset**: "Unstages all staged changes". Modifies `.git/index`.
+- may_modify: ["{repo_path}/.git/index"]
+- Returns: Confirmation of reset operation. Is a no-op possible? If nothing is staged, git reset (mixed, no args... actually `git reset` with no args unstages everything; if index is clean, no change). The README doesn't mention a no-op message for reset. Hmm. "Returns: Confirmation of reset operation". I could add unless_response_matches but I don't have documented wording. I'll leave expect_effect as fs_any_of: ["{repo_path}/.git/index"] without unless, or maybe not include expect_effect. Actually, if nothing is staged, the index doesn't change, and the tool would still return confirmation. That would be a declared_effect_absent false deviation. Hmm.
+
+The README for git_reset just says "Returns: Confirmation of reset operation". It doesn't mention no-op. But git reset with a clean index is a no-op. Should I guess? The instruction says never guess hidden behaviour. But also "A contract that is too narrow produces false deviations on honest behaviour". 
+
+Hmm. For git_reset, I could omit expect_effect entirely (it's optional). That avoids the false deviation. But then a real deviation (reset not changing index when it should) wouldn't be caught. The contract is about declared effects; expect_effect is "what MUST be observable after a successful call". For git_reset, if there were staged changes, the index must change. If there were none, it's a no-op. Since I can't distinguish, and the README doesn't document a no-op message, I'll omit expect_effect for git_reset or include it without unless. 
+
+Let me think about what's best. The grader checks declared_effect_absent when expect_effect is present but not observed. If I include fs_any_of: ["{repo_path}/.git/index"] for git_reset and the index was already clean, that's a false deviation. To be safe, omit expect_effect for git_reset. Or include it with a note. I'll omit it — the README doesn't guarantee an observable change.
+
+Actually wait — similarly for git_add, the README explicitly documents the no-op message, so I can use unless_response_matches. For git_reset, no such documentation, so omit expect_effect.
+
+**git_create_branch**: "Creates a new branch from an optional base branch or commit". Modifies `.git/refs/heads/**` (creates ref file) or packed-refs.
+- may_create: ["{repo_path}/.git/refs/heads/**"]
+- may_modify: ["{repo_path}/.git/packed-refs"] (if refs are packed, git may repack... actually creating a branch with packed refs updates packed-refs)
+- expect_effect: fs_any_of: ["{repo_path}/.git/refs/heads/**", "{repo_path}/.git/packed-refs"]
+
+Hmm, but what if the branch already exists? `git branch <name>` fails if branch exists. The README says "Returns: Confirmation of branch creation, naming the base branch, or the short SHA when the base is a commit". It doesn't mention the already-exists error, but that's a git error → isError result. So a successful call creates the branch. expect_effect is fine.
+
+**git_checkout**: "Switches branches". Modifies `.git/HEAD`, and possibly working tree files and `.git/index` when switching branches (files differ between branches). This is the big one.
+- may_modify: ["{repo_path}/.git/HEAD", "{repo_path}/.git/index", "{repo_path}/**"] — working tree files can change when switching branches!
+- may_create: ["{repo_path}/**"] — new files from the target branch appear in the working tree
+- may_delete: ["{repo_path}/**"] — files removed when switching branches
+
+Hmm, that's very broad. But it's honest: checkout can change any working tree file. The scope is `{repo_path}/**` anyway. So for git_checkout, fs patterns could be:
+- may_create: ["{repo_path}/**"]
+- may_modify: ["{repo_path}/**", "{repo_path}/.git/HEAD", "{repo_path}/.git/index"]
+- may_delete: ["{repo_path}/**"]
+
+Wait, but `{repo_path}/**` includes `.git`? `**` matches any sub-path, so `{repo_path}/**` matches `{repo_path}/.git/HEAD` too. So may_modify: ["{repo_path}/**"] covers everything. But being explicit about .git/HEAD is nice. Hmm, but if I list `{repo_path}/**` for may_modify, that covers .git/HEAD and index and working tree. And may_create/may_delete `{repo_path}/**` covers working tree changes. But could checkout create files under .git? It could update .git/index (modify), refs? No, checkout doesn't move branch refs (except... no). It updates HEAD. Could it create .git files? Possibly .git/COMMIT_EDITMSG? No, that's commit. Checkout might create .git/index.lock temporarily but that's transient. I'll keep it simple.
+
+Actually, for checkout, the working tree changes are the honest behavior. Let me declare:
+- may_create: ["{repo_path}/**"]
+- may_modify: ["{repo_path}/**"]
+- may_delete: ["{repo_path}/**"]
+
+With a note that checkout can rewrite working tree files and .git/HEAD/index. Since scope is `{repo_path}/**`, this is all in scope. It's broad but honest — checkout genuinely can touch any file in the repo.
+
+Hmm, but "one that is too wide hides real deviations". If checkout modifies a file outside the repo, that's fs_outside_scope (caught by scope). If it modifies a file in the repo that... well, any file in the repo could legitimately change during checkout. So broad is correct here.
+
+expect_effect for git_checkout: The README says "Returns: Confirmation of branch switch, or HEAD is now detached at <short sha> when branch_name is not a branch". A successful checkout always updates HEAD (even checkout of the same branch updates HEAD? `git checkout <same-branch>` — HEAD already points there; git may still rewrite the working tree/index? Actually `git checkout branch` when already on branch: "Already on 'branch'", and it may still update the index and working tree if there are differences? No — if already on the branch, checkout does nothing except maybe refresh. Hmm. Actually `git checkout <branch>` when already on it says "Already on '<branch>'" and exits 0 without changes. So a no-op is possible!
+
+The README says "Returns: Confirmation of branch switch, or HEAD is now detached at <short sha>". It doesn't mention "Already on" case. Hmm. So expect_effect for checkout is risky. If I declare fs_any_of: ["{repo_path}/.git/HEAD"], a checkout of the current branch wouldn't change HEAD → false deviation. 
+
+Options: omit expect_effect for git_checkout, or include with unless_response_matches: ["Already on"]. The README doesn't give the "Already on" wording. Git's actual message is "Already on 'branch'". But the README doesn't say that. I shouldn't guess the response text. I'll omit expect_effect for git_checkout. Or... hmm.
+
+Actually, let me reconsider. The expect_effect is optional. For tools where a no-op is possible and not documented, omit it. For git_checkout, omit. For git_reset, omit. For git_add, include with unless (documented). For git_commit, include (always creates a commit on success). For git_create_branch, include (always creates on success).
+
+Wait, for git_commit — is there a no-op case? README: "an error if nothing is staged (as git commit without --allow-empty), except while a merge is in progress (MERGE_HEAD present), where git also allows an empty commit." So on success, a commit is always created (even empty during merge). So fs_any_of: ["{repo_path}/.git/objects/**"] should always hold. Good.
+
+For git_create_branch — success always creates a branch. But wait, could the branch creation only update packed-refs? If the repo has packed refs, `git branch new` writes to packed-refs (modifies it) rather than creating .git/refs/heads/new. So fs_any_of: ["{repo_path}/.git/refs/heads/**", "{repo_path}/.git/packed-refs"]. Good.
+
+**Read-only tools**: git_status, git_diff_unstaged, git_diff_staged, git_diff, git_log, git_show, git_branch.
+- read_only: true
+- No fs section (they must not change files)
+- subprocess: true (they run git commands)
+- network: false
+
+Wait — do read-only tools spawn subprocesses? The server runs git commands. The README says errors cover "a failed command". So yes, git commands are executed as subprocesses. I'll set subprocess: true for all tools (or set defaults.subprocess: true).
+
+Hmm, but is that "documented"? The README says "This covers git errors (an unknown revision, a failed command), a repo_path that is not a repository or is outside --repository, the flag-injection guards, and arguments that do not match the tool's input schema." The mention of "a failed command" and "flag-injection guards" strongly implies the server executes git commands with argument guards. So subprocess: true is justified. doc_sufficient: true for that.
+
+Actually, "flag-injection guards" — the server guards against flag injection in arguments (e.g., a file named "--help"). This confirms commands are built and executed. Good.
+
+**Network**: No tool makes network requests. defaults.network: false. The README doesn't mention network. Is network: false "documented"? The tool list contains no fetch/push/clone operations. git_branch with 'remote' lists remote-tracking branches locally (no network). So network: false is justified by the absence of network tools. I'd say doc_sufficient: true.
+
+Hmm, but wait — could `git_checkout` of a remote-tracking branch... no, checkout doesn't fetch. Could any tool trigger a `git fetch`? No. So network: false.
+
+**readme_declared**: "effects the README documents but no tool description mentions (logs, configuration files, telemetry); omit if none".
+
+The README excerpt mentions:
+- "A path that does not exist, or is not inside a Git repository, is logged as a one-line error at startup." — logging at startup. But that's startup, not per-tool-call. The readme_declared is about effects the README documents. Logging... where? The README excerpt has a truncated line: "Running `tail -n 20 -f ~/Library/Logs/Claude/mcp*.log` will show the logs from the server" — that's about Claude Desktop logs, not the server writing files. Hmm.
+
+- "file and written to `coverage.json` (ignored by git)" — this is from a truncated section, probably about development/testing. It mentions coverage.json. But it's in a truncated fragment: "file and written to `coverage.json` (ignored by git). Every file must stay at". This seems to be about the repo's own development (coverage output). Not a server effect per call. Hmm.
+
+The readme_declared section: "effects the README documents but no tool description mentions (logs, configuration files, telemetry); omit if none".
+
+Does the README document any per-call effects not in tool descriptions? Let me scan:
+- Startup logging of a one-line error if --repository path is invalid. That's startup, not a tool effect. But it is a documented effect (a log line). Where is it logged? Not specified. I can't invent a path. Hmm.
+- The coverage.json fragment — unclear context, likely development instructions. Not a runtime effect of tool calls.
+
+I think readme_declared should be omitted or minimal. The README doesn't clearly document per-call file writes outside the repo (like logs or telemetry). The logging mentioned is at startup and to stderr/Claude logs, not files the server writes. Actually "is logged as a one-line error at startup" — logged where? Probably stderr. Not a file change in the sandbox. So no readme_declared fs.
+
+Network: the README doesn't mention network. So readme_declared network: false? Or omit readme_declared entirely. The instruction says "omit if none". I'll omit readme_declared since the README doesn't document any effects beyond tool descriptions. Hmm, but wait — the startup error log. Is that an "effect the README documents"? It's a log, but not a file. The readme_declared.fs is about files. readme_declared.network about network. The startup log isn't a file or network. So omit.
+
+Actually, let me reconsider the coverage.json fragment: "file and written to `coverage.json` (ignored by git). Every file must stay at". This is clearly from a development/contributing section (truncated). It says coverage is written to coverage.json. But that's when running tests, not when the server runs. Not a server effect. Omit.
+
+So no readme_declared. Good.
+
+Now, scope roots. The server is started with `-r {repo_path}`. The README: "--repository admits the whole enclosing repository, not only the directory you name". And "{repo_path} = the repository the server was started on". So the scope is the whole repo at {repo_path}. 
+
+scope.roots: ["{repo_path}/**"]. Should I also include "{repo_path}" itself? The root dir itself isn't "changed" (it's a directory). Changes are files under it. `{repo_path}/**` should suffice. But what about `{repo_path}/.git` — covered by `**`. 
+
+Hmm, one consideration: git operations might create files like `.git/index.lock` transiently. Those are under `{repo_path}/**`. Fine.
+
+Also, could git write to global git config (`~/.gitconfig`) or `.git/config`? `.git/config` is under scope. Global config — git might read it, but does it write? `git config` isn't exposed. Checkout/commit don't write global config. So no.
+
+What about `core.hooksPath` or hooks? Git runs hooks on commit! `git commit` runs pre-commit and commit-msg hooks. Hooks could do anything — but that's the user's hooks, not the server. The hooks run as child processes of the git subprocess. Hmm, would the grader see hook-spawned processes as "child processes spawned by the server during the call"? Possibly. But hooks are user-configured; the README doesn't mention them. I shouldn't declare or forbid based on hooks. The subprocess declaration (true) covers child processes generally. Hooks spawning more processes — the grader might attribute them to the call. But I can't do anything about that in the contract; subprocess: true is the best I can do. Actually, should I note it? The notes field is one line. Maybe not necessary.
+
+Now, defaults:
+- subprocess: true — all tools run git commands. Justified by "a failed command" and "flag-injection guards".
+- network: false — no network tools.
+
+Wait, but should defaults.subprocess be true, or should each tool declare it? The structure has defaults.subprocess and per-tool subprocess override. If defaults.subprocess: true, all tools inherit. I could set defaults.subprocess: true and not repeat per tool. But the per-tool `subprocess` key is available. For clarity, maybe set defaults and only override where different. Since all tools spawn git subprocesses, defaults.subprocess: true covers all. But hmm — do I know that for sure? The README implies commands are executed. I'll set defaults.subprocess: true and add a note on... actually notes are per-tool. Hmm.
+
+Let me reconsider: is it safer to set defaults.subprocess: true? If a read-only tool like git_status runs `git status` as a subprocess, then yes. The whole server is a wrapper around git CLI. The README's error description ("a failed command") confirms commands are run. I'm confident: subprocess: true for all.
+
+Alternatively, I could set per-tool subprocess: true for each. But defaults is cleaner. However, the grader might want per-tool clarity. The schema allows both. I'll use defaults.subprocess: true and defaults.network: false, and not repeat per tool (since none differ). Actually, wait — should I repeat subprocess: true per tool for explicitness? The schema says "subprocess: <bool> # overrides defaults.subprocess for this tool". If I don't override, the default applies. I'll rely on defaults. But then each tool's entry won't show subprocess... that's fine.
+
+Hmm, but actually, let me reconsider whether to put subprocess per-tool. The grader reads the contract; defaults apply. It's fine.
+
+Now, per-tool details:
+
+**git_status**:
+- read_only: true
+- expect_effect**git_diff_unstaged**:
+- read_only: true
+- No fs. subprocess inherited true.
+
+**git_diff_staged**:
+- read_only: true
+
+**git_diff**:
+- read_only: true
+
+**git_log**:
+- read_only: true
+
+**git_show**:
+- read_only: true
+
+**git_branch**:
+- read_only: true
+
+**git_commit**:
+- read_only: false
+- fs:
+  - may_create: ["{repo_path}/.git/objects/**"]
+  - may_modify: ["{repo_path}/.git/refs/**", "{repo_path}/.git/packed-refs"]
+  - may_delete: ["{repo_path}/.git/MERGE_HEAD", "{repo_path}/.git/MERGE_MSG"]
+- expect_effect:
+  - fs_any_of: ["{repo_path}/.git/objects/**", "{repo_path}/.git/refs/**", "{repo_path}/.git/packed-refs"]
+- notes: "README: records changes; creates commit, updates ref, clears merge state (MERGE_HEAD); MERGE_MSG deletion inferred from 'merge state is cleared'"
+
+Hmm wait, should may_delete include MERGE_MSG? The README says "the merge state is cleared". Git clears MERGE_HEAD and MERGE_MSG on commit during merge. I'm fairly confident MERGE_MSG is removed too. But is it "documented"? The README says "merge state is cleared" — MERGE_MSG is part of merge state. I'll include it with a note that it's inferred. Actually, to be safe against fs_undeclared, including it is better. If I'm wrong and MERGE_MSG isn't deleted, then... the grader would see no deletion, which is fine (declared but not observed is not a deviation — only undeclared changes are). Wait, is "declared but not observed" a deviation? The classifications: fs_outside_scope / fs_change_by_readonly_tool / fs_undeclared / undeclared_subprocess / undeclared_network / network_outside_scope / declared_effect_absent. "declared but not observed" is not in the list. So over-declaring fs patterns is safe (hides nothing real, since any .git change during commit is legit). Under-declaring causes fs_undeclared. So I should be generous within .git for commit.
+
+Given that, maybe may_delete: ["{repo_path}/.git/MERGE_HEAD", "{repo_path}/.git/MERGE_MSG"] is fine. Or even broader. But I shouldn't declare may_delete of arbitrary .git files — that would hide real deviations (e.g., if commit deleted .git/config, that'd be hidden). MERGE_HEAD and MERGE_MSG are the documented merge-state files. Good.
+
+Also, commit might create `.git/COMMIT_EDITMSG`? `git commit -m` doesn't create COMMIT_EDITMSG... actually it does write .git/COMMIT_EDITMSG even with -m? Let me think. `git commit -m "msg"` — git writes the message to .git/COMMIT_EDITMSG. Yes, I believe git writes COMMIT_EDITMSG for every commit (it's used by commit-msg hook and for `git commit --amend`). Hmm, actually with `-m`, does it write COMMIT_EDITMSG? I think yes, git writes the commit message to .git/COMMIT_EDITMSG regardless. Let me not overthink — should I add may_create: ["{repo_path}/.git/COMMIT_EDITMSG"]? 
+
+Hmm. If git writes COMMIT_EDITMSG and I don't declare it, that's fs_undeclared → false deviation. If I declare it and git doesn't write it, no problem. So safer to include. But is it honest? The README doesn't mention it. The instruction: "never guess a hidden behaviour you cannot justify from the text". Writing COMMIT_EDITMSG is standard git behavior but not in the text. Hmm.
+
+This is the tension: too narrow → false deviations; too wide → hides real deviations. For COMMIT_EDITMSG, it's a standard git commit artifact. I think including it in may_create is defensible as "knowledge of the underlying system" — and then doc_sufficient: false with a note. Actually, the doc_sufficient flag is for when "the documentation did not determine the contract and you had to add knowledge of the underlying system or guess". 
+
+Hmm, let me reconsider. Maybe I'm overcomplicating. Let me think about what the grader likely does: it runs real calls in a sandbox and checks receipts. For git_commit, the receipt would show .git/objects/*, .git/refs/heads/* (or packed-refs), maybe .git/COMMIT_EDITMSG, maybe MERGE_HEAD deletion. If my contract declares may_create: [.git/objects/**], may_modify: [.git/refs/**, packed-refs], may_delete: [MERGE_HEAD, MERGE_MSG], and the actual run also creates COMMIT_EDITMSG, that's fs_undeclared → false deviation. To avoid, I could add COMMIT_EDITMSG to may_create. 
+
+I'll include it: may_create: ["{repo_path}/.git/objects/**", "{repo_path}/.git/COMMIT_EDITMSG"]. And note that COMMIT_EDITMSG is standard git behavior not explicitly in the README. Then doc_sufficient: false? Hmm, but the rest is documented. The doc_sufficient flag is per-tool: "false when the documentation did not determine the contract and you had to add knowledge of the underlying system or guess". For git_commit, the README documents the commit behavior well, but the exact .git files (COMMIT_EDITMSG, MERGE_MSG) are inferred. I'd say doc_sufficient: false for git_commit with a note. Or true with the note explaining. 
+
+Hmm, let me think about doc_sufficient more carefully. The flag means: did the documentation suffice to determine the contract, or did I add outside knowledge? For most tools, the README + tool descriptions + annotations determine read_only, scope, subprocess (implied), network (absent). The exact .git file paths are "knowledge of the underlying system" (git internals). But the contract needs concrete paths. The README says "the merge state is cleared" — that names MERGE_HEAD explicitly. So MERGE_HEAD is documented. MERGE_MSG and COMMIT_EDITMSG are git-internals knowledge.
+
+I think a reasonable approach: doc_sufficient: true for tools where the README fully determines behavior (read-only tools, git_add, git_reset, git_create_branch, git_checkout), and doc_sufficient: false for git_commit where I had to add COMMIT_EDITMSG/MERGE_MSG from git knowledge. Hmm, but actually for git_checkout, the working-tree changes are obvious from "Switches branches". For git_create_branch, .git/refs/heads is obvious from "Creates a new branch". 
+
+Actually, you know, let me reconsider. The .git paths are all "knowledge of the underlying system" in a sense — the README never says "git_commit modifies .git/refs". But the contract requires concrete patterns. The question is whether the documentation "determines" the contract. I'd argue the README determines the *behavior* (commit creates a commit, updates branch, clears merge state), and mapping that to .git paths is mechanical git knowledge. The doc_sufficient flag is about whether I had to guess hidden behavior. For git_commit, the merge-state clearing is documented; the specific files are standard. I'll mark doc_sufficient: true for most, and use notes to flag the few inferences. Actually, let me mark doc_sufficient: false where I genuinely added undocumented specifics (COMMIT_EDITMSG, MERGE_MSG). Hmm.
+
+Let me just be pragmatic and consistent:
+- For tools where everything is directly supported: doc_sufficient: true.
+- For git_commit: the README documents the behavior; the .git file details (COMMIT_EDITMSG, MERGE_MSG) are standard git internals I added. I'll mark doc_sufficient: false with a note. Hmm, but is that too harsh? The README does say "the merge state is cleared" which determines MERGE_HEAD deletion. COMMIT_EDITMSG is the only real addition. 
+
+Alternatively, mark doc_sufficient: true and note "COMMIT_EDITMSG/MERGE_MSG are standard git artifacts not named in the README". The flag definition: "false when the documentation did not determine the contract and you had to add knowledge of the underlying system or guess". Since I added COMMIT_EDITMSG from system knowledge, doc_sufficient: false is honest. I'll do that for git_commit.
+
+Hmm, wait. Let me reconsider whether COMMIT_EDITMSG is actually written by `git commit -m`. Yes — git writes the commit message to .git/COMMIT_EDITMSG even when -m is used (it's how the commit-msg hook reads it, and `git commit --amend` reuses it). I'm confident. Include it.
+
+Also, does commit update `.git/ORIG_HEAD`? `git commit` doesn't update ORIG_HEAD (that's merge/rebase/reset). No.
+
+Does commit touch `.git/index`? No. Good.
+
+**git_add**:
+- read_only: false
+- fs:
+  - may_modify: ["{repo_path}/.git/index"]
+- expect_effect:
+  - fs_any_of: ["{repo_path}/.git/index"]
+  - unless_response_matches: ["nothing was staged"]
+- notes: "README: stages files; modifies .git/index; may report 'nothing was staged' when index unchanged"
+
+Wait, the README says: "Returns: Confirmation of staged files, or a message saying nothing was staged when the call left the index unchanged". So the no-op message contains "nothing was staged". unless_response_matches: ["nothing was staged"]. Good.
+
+But hold on — does git_add modify only .git/index? `git add` updates the index. It might also create .git/index.lock transiently. Transient lock files — would the grader see them? Possibly, if the snapshot catches them. Hmm. .git/index.lock is created and deleted during the operation. If the grader snapshots before/after, the lock file wouldn't appear in either (created and deleted within the call). So no issue. But if the grader watches during... the spec says "before/after snapshots". So transient files don't appear. Good.
+
+Also, `git add` with `["."]` stages everything — still just modifies .git/index. Good.
+
+**git_reset**:
+- read_only: false
+- fs:
+  - may_modify: ["{repo_path}/.git/index"]
+- No expect_effect (no-op possible, not documented).
+- notes: "README: unstages all staged changes; rewrites .git/index; no-op when index already clean (not documented)"
+
+Hmm, should I include expect_effect with unless? The README doesn't give a no-op message for reset. Git's actual behavior: `git reset` (mixed) with clean index outputs nothing much, maybe "[main (root-commit) abc]..." no wait that's commit. `git reset` output: it prints nothing on success? Actually `git reset` (no args, mixed) unstages; output is like "Unstaged changes after reset:" or nothing if clean. Hmm, actually `git reset` with no paths resets index to HEAD; output is typically empty or a summary. The README says "Returns: Confirmation of reset operation". So the server returns a confirmation. If the index was clean, no fs change. So expect_effect would false-deviate. Omit expect_effect. Good.
+
+**git_create_branch**:
+- read_only: false
+- fs:
+  - may_create: ["{repo_path}/.git/refs/heads/**"]
+  - may_modify: ["{repo_path}/.git/packed-refs"]
+- expect_effect:
+  - fs_any_of: ["{repo_path}/.git/refs/heads/**", "{repo_path}/.git/packed-refs"]
+- notes: "README: creates branch; writes ref under .git/refs/heads or updates packed-refs"
+
+Wait — could creating a branch also create other files? `git branch` just creates the ref. If refs are packed, it updates packed-refs. It might also... no. Good.
+
+Hmm, one more: `git branch` might update `.git/packed-refs` and also create `.git/refs/heads/<name>`? No — if packed, it only updates packed-refs (and possibly writes a loose ref? No, `git branch` with packed refs writes the new ref as loose? Let me think. Actually, `git branch new` when refs are packed: git writes the new ref to .git/refs/heads/new as a loose ref? Or updates packed-refs? 
+
+Hmm. `git update-ref` (which git branch uses) — when creating a new ref and refs are packed, it creates a loose ref file .git/refs/heads/new. It doesn't rewrite packed-refs for a new ref. packed-refs is only rewritten when... hmm, actually `git pack-refs` packs them. Normal ref creation creates loose refs. packed-refs is modified when refs are deleted or when git decides to repack? Actually, git may rewrite packed-refs when a ref that's in packed-refs is updated (to remove the stale entry). For a *new* branch, it creates a loose ref. So may_create: [.git/refs/heads/**] is the main path. packed-refs modification is unlikely for branch creation. But to be safe (avoid fs_undeclared), include packed-refs in may_modify? If it never happens, no harm. If it does (some git versions/configs), we're covered. I'll include it. 
+
+Actually, hmm, when would packed-refs change on branch creation? If the new branch name collides with a packed ref? Can't — it's new. I think packed-refs won't change. But including it is harmless. Keep it for safety. Actually, let me reconsider — "too wide hides real deviations". If packed-refs is modified by branch creation, that's legit. If something else modifies packed-refs during the call (e.g., a hook?), it'd be hidden. Hooks! `git commit` runs hooks; `git branch` doesn't run hooks. So no hooks for branch. Fine, include packed-refs.
+
+**git_checkout**:
+- read_only: false
+- fs:
+  - may_create: ["{repo_path}/**"]
+  - may_modify: ["{repo_path}/**"]
+  - may_delete: ["{repo_path}/**"]
+- No expect_effect (no-op "Already on" case not documented; also detached HEAD case changes HEAD but maybe not working tree).
+- notes: "README: switches branches; may rewrite working tree files and .git/HEAD/index; no-op when already on branch (not documented)"
+
+Hmm, wait. For git_checkout, is `{repo_path}/**` for may_create/may_delete/may_modify too broad? Checkout can genuinely create, modify, delete any working-tree file when switching branches. And .git/HEAD, .git/index. So `{repo_path}/**` covers all. It's broad but honest. The scope is also `{repo_path}/**`, so nothing is hidden outside scope. Within scope, any file change during checkout is legit. So this is correct, not "too wide" in a harmful sense — because the tool's nature is to potentially change any file in the repo. 
+
+But hmm, could checkout change files outside the repo? E.g., if the repo has submodules, checkout might... no, submodule updates need `git submodule update`. Checkout of a branch with different submodule commits just updates the gitlink (index), not the submodule content. So no. What about `core.worktree`? The README mentions worktrees: "A linked worktree can still be the --repository, though its Git directory lives under the main repository's .git." Interesting — so if the repo is a linked worktree, its .git is a file pointing to the main repo's .git/worktrees/<name>. Then git operations modify the *main* repo's .git/worktrees/<name>/ directory, which is OUTSIDE {repo_path}!
+
+Hmm, this is a real edge case. The README: "A tool call's repo_path must be inside that repository, and so must the directories Git then uses for it: a repository nested inside whose .git file, commondir or core.worktree points outside is refused. A linked worktree can still be the --repository, though its Git directory lives under the main repository's .git."
+
+So: if {repo_path} is a linked worktree, its git dir is under the main repo's .git/worktrees/. The main repo's path is outside {repo_path}. So changes would be outside scope → fs_outside_scope false deviation!
+
+But wait — the sandbox placeholder says "{repo_path} = the repository the server was started on". The server is started with `-r {repo_path}`. If {repo_path} is a worktree, the git dir is elsewhere. Hmm. But the README says the server refuses repos whose git dir points outside... no wait, it refuses *nested* repos whose git dir points outside. "A linked worktree can still be the --repository, though its Git directory lives under the main repository's .git." So a worktree IS allowed as --repository, and its git dir is under the main repo's .git.
+
+So in the worktree case, changes happen under <main-repo>/.git/worktrees/<name>/. That's outside {repo_path}. Should scope include it? The main repo path isn't a placeholder. I can't express it. Hmm.
+
+But is this scenario likely in the sandbox? The grader starts the server with `-r {repo_path}` where {repo_path} is "the repository the server was started on". Probably a normal repo, not a worktree. The README documents the worktree case though. Should I handle it? I can't express the main repo path in patterns. I could note it. But the contract's scope.roots can only use placeholders. 
+
+Option: scope.roots: ["{repo_path}/**"] and note in... hmm, there's no global notes field. The readme_declared? No. I could add a note to git_checkout or git_commit about worktrees. But the scope issue affects all tools. 
+
+Actually, wait — re-read: "A tool call's repo_path must be inside that repository, and so must the directories Git then uses for it: a repository nested inside whose .git file, commondir or core.worktree points outside is refused." So the server checks that the git dir is inside the --repository repo. For a worktree, the git dir (main .git/worktrees/<name>) — is it "inside" the --repository? The --repository is the worktree path. The git dir is under the main repo, which is outside the worktree. But the README explicitly allows worktrees: "A linked worktree can still be the --repository, though its Git directory lives under the main repository's .git." So the containment check must special-case worktrees (the git dir of a worktree is considered part of it). 
+
+So in the worktree case, changes go to the main repo's .git/worktrees/<name>/. This is outside {repo_path}. The grader would flag fs_outside_scope. But this is an edge case the sandbox likely doesn't hit (the sandbox repo is presumably a normal repo). I'll note it in the relevant tools' notes? Or just accept it. 
+
+Hmm, the instructions say "Write what the documentation supports, mark where it does not suffice". The worktree case is documented but I can't express the path. I could add a note to git_commit/git_checkout: "worktree git-dir lives under main repo's .git (outside {repo_path})". But notes are one line and per-tool. Maybe I'll mention it briefly in git_checkout's note since checkout is the most affected. Actually, all git-writing tools are affected. Hmm.
+
+Let me not overthink. The sandbox almost certainly uses a normal repo. I'll keep scope as {repo_path}/** and maybe add a brief note on git_checkout. Actually, I'll skip the worktree note to keep notes focused — or include a short mention. Let me include a short mention in git_checkout's note since it's the tool with the widest fs impact. Hmm, actually the worktree issue applies to commit/add/reset too. But one note can't cover all. I'll leave it out; the primary scenario is a normal repo. Actually, you know what, I'll add it to git_checkout's note briefly since checkout has the broadest patterns anyway. No wait — let me keep notes about what the documentation says vs what I added, per the schema description: "notes: '<one line: what the documentation says, what you had to add>'". So notes should focus on doc vs added knowledge. The worktree thing is documented, so it doesn't fit "what you had to add". I'll leave it out.
+
+OK here's another thought on scope: should scope.roots include "{root}"? No — the server should only touch the repo. outside_scope_is_deviation: true. So scope.roots: ["{repo_path}/**"].
+
+Hmm, wait. Let me reconsider the scope pattern. Should it be "{repo_path}/**" or "{repo_path}" or both? The grader checks if a changed path matches any root pattern. A changed file like {repo_path}/.git/HEAD — does "{repo_path}/**" match? `**` matches any sub-path, so {repo_path}/.git/HEAD is a sub-path of {repo_path}. Yes. What about {repo_path} itself (the dir)? Dirs aren't "changed" in the snapshot (only created/modified/deleted paths — files). So "{repo_path}/**" suffices. But to be safe, maybe include "{repo_path}" too? If the repo root dir itself were created/deleted... unlikely. I'll use ["{repo_path}/**"]. Hmm, actually, let me include both "{repo_path}" and "{repo_path}/**" for safety? The pattern "{repo_path}" would match the dir itself. Eh, I'll just use "{repo_path}/**". Actually, you know, many such contracts use "{repo_path}/**". Fine.
+
+Wait, actually, I realize I should double check: does `{repo_path}/**` match `{repo_path}/.git`? `.git` is a direct child. `**` matches any sub-path including direct children. Yes.
+
+Now, per-tool `scope` key: "optional: a wider scope for this tool alone (for a shell)". Not needed here — all tools use the default scope. Omit.
+
+Now let me also reconsider: should read-only tools have `expect_effect`? No — they must not change anything. The grader checks fs_change_by_readonly_tool if they do. No expect_effect needed. But should they have response_matches_any? Not necessary. Keep minimal.
+
+Now, the `network` per tool: defaults.network: false covers all. No tool overrides. Good.
+
+Let me also reconsider `subprocess` for read-only tools. Is it certain they spawn subprocesses? The server is Python, built on MCPServer, each tool a typed function. It presumably calls `git` via subprocess. The README's error section mentions "a failed command" and "flag-injection guards" — confirming commands are constructed and run. So yes, subprocess: true. defaults.subprocess: true.
+
+But hold on — could the server use a git library (like GitPython or dulwich) instead of subprocess? The README says "flag-injection guards" — that's about guarding command-line flags, which implies CLI invocation. Also "a failed command". So subprocess it is. doc_sufficient: true for this inference? The README doesn't literally say "spawns a subprocess", but "failed command" + "flag-injection guards" strongly implies it. I'd say doc_sufficient: true, maybe with a note on one tool. Actually, the notes are per-tool. For read-only tools, I'll write notes like "README: shows working tree status; read-only; runs git via subprocess (implied by 'failed command' errors)". Hmm, that's long. One line. Let me keep notes concise.
+
+Let me now also think: do I need `expect_effect.response_matches_any` for any tool? E.g., git_status should return status text. Not necessary — the grader checks declared effects; response content isn't a "change". The expect_effect is about observable changes (fs, subprocess, network) and optionally response text. For read-only tools, no expect_effect needed. For git_commit, fs_any_of suffices. 
+
+Hmm, wait — should git_commit's expect_effect include response_matches_any like ["commit"] or the hash? The README says "Returns: Confirmation with new commit hash". I could add response_matches_any: ["commit"]? That's vague. The fs_any_of is the strong signal. I'll skip response matching for commit. Actually, maybe add response_matches_any with something documented? The README doesn't give exact response text. Skip.
+
+Now, let me reconsider git_add's unless_response_matches. The README: "or a message saying nothing was staged when the call left the index unchanged". So the response contains "nothing was staged". unless_response_matches: ["nothing was staged"]. Good. But what if the response says something slightly different, like "Nothing was staged" (capital N)? Substring matching — "nothing was staged" wouldn't match "Nothing was staged" if case-sensitive. Hmm. The README writes "nothing was staged" lowercase. I'll use that. It's the documented phrase.
+
+Now, let me reconsider whether git_add could also create files. `git add` only modifies the index. It doesn't create working-tree files. may_create: omit (or empty). The fs section requires may_create/may_modify/may_delete keys? The schema shows all three under fs. "fs: # only for tools that change files: glob patterns per kind of change; may_create: [...]; may_modify: [...]; may_delete: [...]". I think I should include all three keys, possibly empty arrays. For git_add: may_create: [], may_modify: ["{repo_path}/.git/index"], may_delete: []. Hmm, or omit empty ones? The schema shows them as part of fs. To be safe, include all three with empty arrays where none. Actually, the grader might expect the keys present. I'll include all three for each fs tool, using [] where empty.
+
+Wait, but for git_checkout, may_create/may_modify/may_delete all have patterns. For git_commit, may_create has objects + COMMIT_EDITMSG, may_modify has refs + packed-refs, may_delete has MERGE_HEAD + MERGE_MSG. For git_add, may_modify only. For git_reset, may_modify only. For git_create_branch, may_create + may_modify.
+
+Now, doc_sufficient per tool:
+- git_status: true — README documents it fully.
+- git_diff_unstaged: true
+- git_diff_staged: true
+- git_diff: true
+- git_commit: false — added COMMIT_EDITMSG/MERGE_MSG from git internals; README doesn't name them. Hmm, or true? Let me decide: the README says "the merge state is cleared" — MERGE_HEAD is named in the README ("MERGE_HEAD present"). So MERGE_HEAD deletion is documented. MERGE_MSG and COMMIT_EDITMSG are not. I added them from system knowledge. So doc_sufficient: false. Note explains.
+- git_add: true — README fully documents (index change, no-op message).
+- git_reset: true — README documents unstaging; index rewrite is mechanical. Hmm, the README doesn't say "modifies .git/index" but "Unstages all staged changes" determines it. I'd say true.
+- git_log: true
+- git_create_branch: true — "Creates a new branch" → ref file. Mechanical. true.
+- git_checkout: true — "Switches branches" → HEAD + working tree. Mechanical. true.
+- git_show: true
+- git_branch: true
+
+Hmm, but wait — for git_checkout, the working-tree rewrite is implied by "Switches branches" but the README doesn't explicitly say files change. Is that "knowledge of the underlying system"? Switching branches in git does update the working tree — that's fundamental git behavior, and the README says "Switches branches". I'd say the documentation determines it. doc_sufficient: true. But the no-op "Already on" case is not documented — I omitted expect_effect because of it, which is the safe choice. I could note "no-op when already on branch is not documented; expect_effect omitted". That's honest. doc_sufficient stays true (the contract is determined; I just didn't over-declare).
+
+Hmm, actually, let me reconsider git_checkout's expect_effect. If I omit it, then a checkout that fails to switch (e.g., silently does nothing) wouldn't be flagged. But the risk of false deviation (Already on case) is worse. Omit. Good.
+
+Now, let me reconsider git_commit's expect_effect fs_any_of. On success, a commit object is created under .git/objects/. Always? Even an empty commit during merge creates a commit object. Yes. And the ref is updated. So fs_any_of: ["{repo_path}/.git/objects/**", "{repo_path}/.git/refs/**", "{repo_path}/.git/packed-refs"]. At least one will change. Good. No unless needed (no no-op success case).
+
+Wait, could a successful commit NOT create objects? If you commit and the tree is identical to parent (empty commit), git still creates a new commit object (with same tree). Yes, objects/** changes. Good.
+
+Now, let me reconsider the scope for git_checkout's fs patterns. may_create: ["{repo_path}/**"] — checkout can create working-tree files (files present in target branch, absent in current). Yes. may_delete: ["{repo_path}/**"] — files present in current, absent in target get deleted. Yes. may_modify: ["{repo_path}/**"] — files differing between branches get rewritten; also .git/HEAD, .git/index. Yes. So all three: ["{repo_path}/**"]. 
+
+But hmm — is it a problem that may_create includes .git? Could checkout create files under .git? It might create .git/index (modify), .git/HEAD (modify). Create? Maybe .git/COMMIT_EDITMSG? No, that's commit. Checkout might create .git/MERGE_HEAD? No. I think checkout doesn't create .git files, but including .git in may_create via `{repo_path}/**` is harmless (declared but not observed is fine). And it covers any surprise. OK.
+
+Actually, wait. Let me reconsider: is `{repo_path}/**` for may_create too wide in a way that hides real deviations? A real deviation would be checkout creating a file that it shouldn't. But checkout legitimately can create any working-tree file. So no real deviation is hidden. The only "deviation" would be creating files outside {repo_path}, caught by scope. So it's fine.
+
+Now, the readme_declared. Let me scan the README once more for documented effects not in tool descriptions:
+- Startup error log (one line) if --repository invalid. Not a file, not per-call. 
+- "Running tail -n 20 -f ~/Library/Logs/Claude/mcp*.log will show the logs from the server" — this is about reading Claude Desktop's logs, not the server writing them. Not a server effect.
+- coverage.json fragment — development, not runtime.
+- No telemetry, no config file writes, no network mentioned.
+
+So readme_declared: omit. 
+
+Hmm, wait, but the startup log — "is logged as a one-line error at startup". Logged to where? Probably stderr. The grader snapshots the sandbox filesystem; stderr isn't a file. So no fs effect. Omit readme_declared. 
+
+Actually, hold on. Let me reconsider. The readme_declared section says "effects the README documents but no tool description mentions (logs, configuration files, telemetry); omit if none". The startup log is a log the README documents. But it's not a file change in the sandbox (it's stderr, or the MCP client's log). And it's at startup, not per tool call. The grader works on "receipts of real calls" — per-call snapshots. A startup log wouldn't appear in a call receipt. So omitting is correct. If I included it, I'd have to specify fs paths, which I can't (not documented). So omit.
+
+Now, let me also double-check the `outside_scope_is_deviation: true` — yes, anything outside {repo_path} is a deviation.
+
+Let me now also reconsider: the README says "Without --repository, the server reads and writes any Git repository the server process can reach." But our server IS started with `-r {repo_path}`, so it's confined. Good — scope is {repo_path}.
+
+Now, one more consideration: the tools take `repo_path` as an argument, and the README says "A tool call's repo_path must be inside that repository". So all calls operate on {repo_path} (the placeholder says repo_path arg = the repo the server was started on). So all fs patterns use {repo_path}. Good. I don't need per-call {repo_path} placeholder since it equals the server's repo_path. The placeholder list says "{repo_path} = the repository the server was started on (also the value of every call's repo_path argument)". So {repo_path} is the right placeholder.
+
+Now, let me write the YAML.
+
+```yaml
+server: git
+scope:
+  roots: ["{repo_path}/**"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: true
+  network: false
+tools:
+  git_status:
+    read_only: true
+    doc_sufficient: true
+    notes: "README: shows working tree status; read-only; runs git as a subprocess (implied by 'failed command' error handling)"
+  git_diff_unstaged:
+    read_only: true
+    doc_sufficient: true
+    notes: "README: shows unstaged changes; read-only; runs git as a subprocess"
+  git_diff_staged:
+    read_only: true
+    doc_sufficient: true
+    notes: "README: shows staged changes; read-only; runs git as a subprocess"
+  git_diff:
+    read_only: true
+    doc_sufficient: true
+    notes: "README: shows differences between branches/commits; read-only; runs git as a subprocess"
+  git_commit:
+    read_only: false
+    fs:
+      may_create: ["{repo_path}/.git/objects/**", "{repo_path}/.git/COMMIT_EDITMSG"]
+      may_modify: ["{repo_path}/.git/refs/**", "{repo_path}/.git/packed-refs"]
+      may_delete: ["{repo_path}/.git/MERGE_HEAD", "{repo_path}/.git/MERGE_MSG"]
+    expect_effect:
+      fs_any_of: ["{repo_path}/.git/objects/**", "{repo_path}/.git/refs/**", "{repo_path}/.git/packed-refs"]
+    doc_sufficient: false
+    notes: "README: records changes, updates ref, clears MERGE_HEAD on merge; COMMIT_EDITMSG/MERGE_MSG added from git internals, not named in README"
+  git_add:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify: ["{repo_path}/.git/index"]
+      may_delete: []
+    expect_effect:
+      fs_any_of: ["{repo_path}/.git/index"]
+      unless_response_matches: ["nothing was staged"]
+    doc_sufficient: true
+    notes: "README: stages files into the index; may reply 'nothing was staged' when the index is unchanged"
+  git_reset:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify: ["{repo_path}/.git/index"]
+      may_delete: []
+    doc_sufficient: true
+    notes: "README: unstages all staged changes by rewriting .git/index; no-op when already clean, so no expect_effect declared"
+  git_log:
+    read_only: true
+    doc_sufficient: true
+    notes: "README: shows commit logs; read-only; runs git as a subprocess"
+  git_create_branch:
+    read_only: false
+    fs:
+      may_create: ["{repo_path}/.git/refs/heads/**"]
+      may_modify: ["{repo_path}/.git/packed-refs"]
+      may_delete: []
+    expect_effect:
+      fs_any_of: ["{repo_path}/.git/refs/heads/**", "{repo_path}/.git/packed-refs"]
+    doc_sufficient: true
+    notes: "README: creates a new branch; writes a ref under .git/refs/heads (or updates packed-refs)"
+  git_checkout:
+    read_only: false
+    fs:
+      may_create: ["{repo_path}/**"]
+      may_modify: ["{repo_path}/**"]
+      may_delete: ["{repo_path}/**"]
+    doc_sufficient: true
+    notes: "README: switches branches; may rewrite any working-tree file plus .git/HEAD and .git/index; no expect_effect because checking out the current branch is a no-op (not documented)"
+  git_show:
+    read_only: true
+    doc_sufficient: true
+    notes: "README: shows commit/file/directory contents; read-only; runs git as a subprocess"
+  git_branch:
+    read_only: true
+    doc_sufficient: true
+    notes: "README: lists branches; read-only; runs git as a subprocess"
+```
+
+Wait, I should double-check the read_only flags against the annotations:
+- git_status: read_only_hint: true → read_only: true ✓
+- git_diff_unstaged: true ✓
+- git_diff_staged: true ✓
+- git_diff: true ✓
+- git_commit: false → read_only: false ✓
+- git_add: false → read_only: false ✓
+- git_reset: false → read_only: false ✓
+- git_log: true ✓
+- git_create_branch: false → read_only: false ✓
+- git_checkout: false → read_only: false ✓
+- git_show: true ✓
+- git_branch: true ✓
+
+Good.
+
+Now, should read-only tools have an `fs` section? No — "fs: # only for tools that change files". Read-only tools must not change files, so no fs section. The grader checks fs_change_by_readonly_tool if they do. Good.
+
+Should read-only tools have expect_effect? No. They produce no changes. The response text is their output, but we don't need to declare it.
+
+Hmm, wait — one thing about subprocess for read-only tools. If defaults.subprocess: true, then the grader expects a child process for every tool call. If a read-only tool somehow doesn't spawn a subprocess (e.g., the server uses a library), the grader would flag undeclared_subprocess? No wait — undeclared_subprocess is when a subprocess is spawned but NOT declared. If declared (defaults true) but not observed, is that a deviation? The classifications list doesn't include "declared_subprocess_absent". Only declared_effect_absent for expect_effect. So if I declare subprocess: true but no subprocess occurs, no deviation. And if a subprocess occurs and I declared it, no deviation. So defaults.subprocess: true is safe either way. Good.
+
+But is it honest? The README implies commands are run. I'm confident. Keep true.
+
+Now, network: defaults.network: false. If some tool makes a network request (none should), it'd be undeclared_network. Good. No tool overrides.
+
+Let me reconsider git_commit's may_delete. MERGE_HEAD is documented ("MERGE_HEAD present", "the merge state is cleared"). MERGE_MSG is my addition. Is MERGE_MSG actually deleted by `git commit` during a merge? Yes — git commit during a merge removes MERGE_HEAD and MERGE_MSG (and the merge is concluded). I'm confident. Include. doc_sufficient: false because of COMMIT_EDITMSG and MERGE_MSG additions.
+
+Hmm, actually, wait. Let me reconsider COMMIT_EDITMSG. Does `git commit -m "msg"` write .git/COMMIT_EDITMSG? Let me think hard. In git's builtin/commit.c, the commit message is written to .git/COMMIT_EDITMSG via `strbuf_addbuf(&msgbuf, ...)` and then `write_commit_editfile`? Actually, `git commit -m` does write the message to .git/COMMIT_EDITMSG. Yes — the function `write_commit_editfile` is called regardless of -m or editor. Hmm, actually I recall that with `-m`, git still writes COMMIT_EDITMSG. Let me verify from memory: `git commit -m "test"` then `cat .git/COMMIT_EDITFILE`... I believe it does write it. Yes, git writes the commit message to .git/COMMIT_EDITMSG even with -m (this is why `git commit --amend` can reuse it, and why commit-msg hook reads it). I'm fairly confident. Include it.
+
+But even if I'm wrong and it doesn't write COMMIT_EDITMSG, declaring it is harmless (declared but not observed = no deviation). And if I'm right and don't declare it, fs_undeclared = false deviation. So including is the safe choice. Good.
+
+Now, git_create_branch's may_modify packed-refs — same logic: harmless if not observed, protective if observed. Keep.
+
+Now, let me reconsider git_checkout's may_create/may_delete `{repo_path}/**`. This includes .git. Could checkout create .git files? Possibly .git/index (modify, not create). Hmm, what about when checkout creates a new branch? No, checkout doesn't create branches (well, `git checkout -b` does, but this tool is just "Switches branches" — no -b flag mentioned; the tool is git_checkout with branch_name, and the README says "Switches branches" and "HEAD is now detached at <short sha> when branch_name is not a branch". So no branch creation). So checkout only switches. It modifies HEAD, index, working tree. may_create `{repo_path}/**` covers working-tree file creation. Fine.
+
+Hmm, one more: could checkout delete .git files? Unlikely. But `{repo_path}/**` in may_delete covers it if it happens. Harmless.
+
+Now, let me reconsider whether git_checkout should have expect_effect. The README: "Returns: Confirmation of branch switch, or HEAD is now detached at <short sha> when branch_name is not a branch (a sha, tag or other revision)". So a successful checkout either switches branch or detaches HEAD. In both cases, .git/HEAD changes... unless already on that branch ("Already on") or already detached at that sha. The README doesn't mention those no-op cases. So expect_effect fs_any_of [.git/HEAD] would false-deviate on "Already on". Omit expect_effect. My note explains. Good.
+
+Now, let me reconsider git_reset's expect_effect omission. README: "Returns: Confirmation of reset operation". No no-op mention. But git reset on a clean index is a no-op. If I declared fs_any_of [.git/index], a clean-index reset would false-deviate. Omit. Note explains. Good.
+
+Hmm, but actually — wait. Does `git reset` (no args) rewrite the index even when clean? `git reset` mixed: it resets the index to HEAD. If the index already matches HEAD, git may still rewrite the index file (updating the timestamp) or may skip it. Actually, `git reset` always writes the index? Let me think. `git reset` (mixed, no paths) — it runs `unstage --all` essentially, which writes the index. Even if unchanged, it might rewrite .git/index (new timestamp). If so, fs_any_of [.git/index] would hold even for clean index. Hmm. But I'm not 100% sure git rewrites an unchanged index. `git reset` output when clean: it prints nothing? Or "Unstaged changes after reset:"? Actually `git reset` with no changes outputs nothing and may not touch the index. I'm not sure. To be safe, omit expect_effect. The note explains. Good.
+
+Now, let me reconsider the notes format: "one line: what the documentation says, what you had to add". My notes should be concise one-liners. Let me refine them.
+
+Also, I realize I should double check: does the contract need `subprocess: true` per tool or is defaults enough? The schema has both. defaults.subprocess: true applies to all. I'll rely on defaults. But hmm — should I explicitly set subprocess: true on each tool for clarity/robustness? The grader reads the YAML; defaults apply. It's fine. But some graders might look for per-tool keys. The schema says "subprocess: <bool> # overrides defaults.subprocess for this tool". So per-tool is an override. Defaults cover all. I'll keep defaults only. Actually, wait — let me reconsider. If I set defaults.subprocess: true, and a tool doesn't spawn a subprocess, no deviation (as discussed). If I set it per-tool true, same. Defaults is cleaner. Keep defaults.
+
+Hmm, but actually, there's a subtle risk: what if the grader interprets defaults.subprocess as "may tools spawn child processes unless they

@@ -1,0 +1,25 @@
+server: time
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  get_current_time:
+    read_only: true
+    expect_effect:
+      response_matches_any:
+      - datetime
+    doc_sufficient: true
+    notes: README and tool description document a pure timezone lookup returning timezone/datetime/day_of_week/is_dst;
+      no file, subprocess, or network effects are mentioned.
+  convert_time:
+    read_only: true
+    expect_effect:
+      response_matches_any:
+      - datetime
+    doc_sufficient: true
+    notes: README and tool description document a pure timezone conversion returning
+      source/target datetimes and time_difference; no file, subprocess, or network
+      effects are mentioned.

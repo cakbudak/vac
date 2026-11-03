@@ -1,0 +1,573 @@
+```json
+{
+  "server": "mcp-server-git",
+  "startup": [
+    {
+      "behaviour": "If --repository is given, opens the git repo with search_parent_directories=True to resolve subdirectories to the working tree root, and updates the allowed path to that root",
+      "evidence": "server.py: serve()/git.Repo(repository, search_parent_directories=True)",
+      "kind": "state",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Exits with SystemExit(1) if the supplied --repository path does not exist",
+      "evidence": "server.py: serve()/except git.NoSuchPathError",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Serves over stdio using MCPServer.run_stdio_async()",
+      "evidence": "server.py: serve()/create_server(repository).run_stdio_async()",
+      "kind": "network",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "git_status": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository (if server was started with --repository) before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Sets core.quotepath=false for the git command to prevent octal-escaped path output",
+          "evidence": "server.py: _git_text()/repo.git(c='core.quotepath=false')",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Non-UTF-8 bytes in output are replaced with U+FFFD rather than raising an error",
+          "evidence": "server.py: _git_text()/output.decode('utf-8', errors='replace')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "All tool calls are serialized through a global threading.Lock, blocking concurrent invocations",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_diff_unstaged": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Sets core.quotepath=false for the git command",
+          "evidence": "server.py: _git_text()/repo.git(c='core.quotepath=false')",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Non-UTF-8 bytes in output replaced with U+FFFD",
+          "evidence": "server.py: _git_text()/output.decode('utf-8', errors='replace')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "context_lines parameter controls --unified=N in the underlying git diff call",
+          "evidence": "server.py: git_diff_unstaged()/f'--unified={context_lines}'",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_diff_staged": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Sets core.quotepath=false for the git command",
+          "evidence": "server.py: _git_text()/repo.git(c='core.quotepath=false')",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Non-UTF-8 bytes in output replaced with U+FFFD",
+          "evidence": "server.py: _git_text()/output.decode('utf-8', errors='replace')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "context_lines parameter controls --unified=N in the underlying git diff --cached call",
+          "evidence": "server.py: git_diff_staged()/f'--unified={context_lines}'",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_diff": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects target values starting with '-' to prevent flag injection",
+          "evidence": "server.py: git_diff()/if target.startswith('-'): raise FlagInjectionError",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Validates that target resolves to a real git ref via repo.rev_parse before running diff",
+          "evidence": "server.py: git_diff()/repo.rev_parse(target)",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Sets core.quotepath=false for the git command",
+          "evidence": "server.py: _git_text()/repo.git(c='core.quotepath=false')",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Non-UTF-8 bytes in output replaced with U+FFFD",
+          "evidence": "server.py: _git_text()/output.decode('utf-8', errors='replace')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_commit": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Refuses to commit if no changes are staged (checks index diff against HEAD or MERGE_HEAD state)",
+          "evidence": "server.py: git_commit()/_has_staged_changes()",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "When MERGE_HEAD exists, commits with all merge parents and clears MERGE_HEAD, MERGE_MSG, MERGE_MODE, AUTO_MERGE files",
+          "evidence": "server.py: git_commit()/merge_head.exists() branch; unlink of merge state files",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "After a merge commit, reapplies any MERGE_AUTOSTASH stash; on conflict stores it in the stash list and deletes MERGE_AUTOSTASH",
+          "evidence": "server.py: _apply_merge_autostash()/repo.git.stash('apply'/'store'); autostash.unlink()",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_add": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects individual file paths that resolve outside the repository working tree to prevent path traversal",
+          "evidence": "server.py: git_add()/resolved.relative_to(repo_root)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Uses '--' separator before file arguments to prevent file names starting with '-' being treated as git options",
+          "evidence": "server.py: git_add()/repo.git.add('--', *files)",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Returns an informational message (rather than error) when no changes were actually staged (index unchanged after add)",
+          "evidence": "server.py: git_add()/_index_entries comparison before/after",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Raises ValueError immediately if files list is empty (no git command run)",
+          "evidence": "server.py: git_add()/if not files: raise ValueError",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_reset": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Uses GitPython's repo.index.reset() (mixed reset of index to HEAD) rather than git reset --hard",
+          "evidence": "server.py: git_reset()/repo.index.reset()",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_log": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects start_timestamp or end_timestamp values starting with '-' to prevent flag injection",
+          "evidence": "server.py: git_log()/if start_timestamp.startswith('-') / end_timestamp.startswith('-')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_create_branch": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects branch_name or base_branch values starting with '-' to prevent flag injection",
+          "evidence": "server.py: git_create_branch()/branch_name.startswith('-'), base_branch.startswith('-')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Raises ValueError if a branch with the given branch_name already exists",
+          "evidence": "server.py: git_create_branch()/any(head.name == branch_name for head in repo.heads)",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "When base_branch is not a known reference, attempts to resolve it as a commit SHA/revision",
+          "evidence": "server.py: git_create_branch()/repo.commit(base_branch).hexsha",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "When HEAD is detached and no base_branch given, uses the current commit SHA as the base",
+          "evidence": "server.py: git_create_branch()/elif repo.head.is_detached: base = repo.head.commit.hexsha",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_checkout": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects branch_name values starting with '-' to prevent flag injection",
+          "evidence": "server.py: git_checkout()/if branch_name.startswith('-'): raise FlagInjectionError",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Validates branch_name resolves to a real git ref via repo.rev_parse before checking out",
+          "evidence": "server.py: git_checkout()/repo.rev_parse(branch_name)",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Accepts any revision (SHA, tag, remote-tracking ref) not just branch names; reports detached HEAD if result is detached",
+          "evidence": "server.py: git_checkout()/if repo.head.is_detached: return 'HEAD is now detached...'",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_show": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects revision values starting with '-' to prevent flag injection",
+          "evidence": "server.py: git_show()/if revision.startswith('-'): raise FlagInjectionError",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "When revision resolves to a Blob, returns raw file bytes decoded as UTF-8 with replacement",
+          "evidence": "server.py: git_show()/isinstance(obj, git.Blob): obj.data_stream.read().decode('utf-8', errors='replace')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "When revision resolves to a Tree, returns a directory listing with trailing '/' on subdirectories",
+          "evidence": "server.py: git_show()/isinstance(obj, git.Tree): listing with '/' suffix",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Non-UTF-8 bytes in diff output are replaced with U+FFFD",
+          "evidence": "server.py: git_show()/d.diff.decode('utf-8', errors='replace')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_branch": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates repo_path is within allowed repository before opening",
+          "evidence": "server.py: open_repo()/validate_repo_path, validate_opened_repo",
+          "kind": "config",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects contains or not_contains values starting with '-' to prevent flag injection",
+          "evidence": "server.py: git_branch()/contains.startswith('-'), not_contains.startswith('-')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Raises ValueError for branch_type values other than 'local', 'remote', or 'all'",
+          "evidence": "server.py: git_branch()/case _: raise ValueError(f'Invalid branch type: {branch_type}')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "All tool calls serialized through global threading.Lock",
+          "evidence": "server.py: reports_failures/_GIT_LOCK",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All tools implement what their descriptions state, but there are numerous undocumented behaviours including flag-injection guards (rejecting inputs starting with '-'), repository confinement via path validation, a global mutex serialising all concurrent tool calls, and merge-state handling in git_commit. These omissions are security-relevant mitigations rather than contradictions of the stated behaviour."
+  }
+}
+```

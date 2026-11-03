@@ -1,0 +1,78 @@
+
+```yaml
+server: filesystem
+scope:
+  roots:
+    - "{work}"
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_file:
+    read_only: true
+    doc_sufficient: true
+    notes: "Deprecated alias of read_text_file; documentation says it only reads a file within allowed directories."
+  read_text_file:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation: pure read of a file as UTF-8 text within allowed directories; no writes, subprocess, or network."
+  read_media_file:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation: pure read returning a base64 content block with MIME type; no writes, subprocess, or network."
+  read_multiple_files:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation: pure read of multiple files within allowed directories; failed reads do not stop the operation."
+  write_file:
+    read_only: false
+    fs:
+      may_create: ["{work}/{path}", "{path}"]
+      may_modify: ["{work}/{path}", "{path}"]
+    doc_sufficient: true
+    notes: "Documentation: creates or overwrites {path} in place within allowed directories; read-only files are refused; no subprocess or network."
+  edit_file:
+    read_only: false
+    fs:
+      may_modify: ["{work}/{path}", "{path}"]
+    doc_sufficient: true
+    notes: "Documentation: line-based edits to {path} within allowed directories; dryRun previews without applying; no subprocess or network."
+  create_directory:
+    read_only: false
+    fs:
+      may_create: ["{work}/{path}", "{path}"]
+    doc_sufficient: true
+    notes: "Documentation: creates {path} and parents within allowed directories; an existing directory is a silent no-op."
+  list_directory:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation: pure read listing of a directory within allowed directories."
+  list_directory_with_sizes:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation: pure read listing with sizes within allowed directories."
+  directory_tree:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation: pure read recursive JSON tree within allowed directories."
+  move_file:
+    read_only: false
+    fs:
+      may_create: ["{work}/{destination}", "{destination}"]
+      may_delete: ["{work}/{source}", "{source}"]
+    doc_sufficient: true
+    notes: "Documentation: moves/renames {source} to {destination} within allowed directories; fails if destination exists; source is removed and destination created."
+  search_files:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation: pure read glob search within allowed directories."
+  get_file_info:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation: pure read of file/directory metadata within allowed directories."
+  list_allowed_directories:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation: pure read returning the server's allowed directories."
+```

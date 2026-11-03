@@ -1,0 +1,61 @@
+
+
+```yaml
+server: sqlite
+scope:
+  roots:
+    - "{db}"
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_query:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Docs say it executes a SELECT query to read data; no subprocess or network is documented."
+  write_query:
+    read_only: false
+    fs:
+      may_create:
+        - "{db}"
+      may_modify:
+        - "{db}"
+      may_delete: []
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Docs say it executes INSERT/UPDATE/DELETE on the database; I added that the database file is {db} and may be created if absent."
+  create_table:
+    read_only: false
+    fs:
+      may_create:
+        - "{db}"
+      may_modify:
+        - "{db}"
+      may_delete: []
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Docs say it creates a table in the database; I added that the database file is {db} and may be created if absent."
+  list_tables:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Docs say it lists tables in the database; no file change, subprocess, or network is documented."
+  describe_table:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Docs say it returns schema information for a table; no file change, subprocess, or network is documented."
+  append_insight:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Docs say it updates the memo://insights resource but do not name any file, so no fs effects are declared."
+```

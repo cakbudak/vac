@@ -1,0 +1,52 @@
+{
+  "background_net": [],
+  "calls": 48,
+  "confusion": {
+    "P1_last_writer_reset": {
+      "FN": 0,
+      "FP": 0,
+      "TN": 20,
+      "TP": 2,
+      "errors": 0
+    },
+    "P2_stale_since_reset": {
+      "FN": 0,
+      "FP": 0,
+      "TN": 20,
+      "TP": 2,
+      "errors": 0
+    },
+    "S_index_state": {
+      "FN": 0,
+      "FP": 0,
+      "TN": 20,
+      "TP": 2,
+      "errors": 0
+    }
+  },
+  "contract_digest": "1b9c74423595eba57f54d040a96c696a148944ab40b75103f032f719109f8806",
+  "controller_digest": "c4cec26a710cf5d1d5a8be307140f7fd80add4297d23802b60052f778b19b6b2",
+  "deviations": 2,
+  "finished": "2026-10-31T10:24:49.535056+00:00",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "install_digest": "12effbc0c813be7c8d503876f6d01c7a2fb5810552d3f4c7842b05c9068718e9",
+  "mode": "scripted",
+  "net_isolation": "netns_veth_tcpdump",
+  "predicates": [
+    "P1_last_writer_reset",
+    "P2_stale_since_reset",
+    "S_index_state"
+  ],
+  "read_only_calls": 22,
+  "rewrites_by_readonly_tools": 2,
+  "sandbox": "/vac/vac-next/real-mcp/sandboxes/git-7",
+  "seed": 7,
+  "served_definition_digest": "bcc22eb620945b70e329c65b4779143f3ac37ab34aecaaefa64cb0e11cf28381",
+  "server": "git",
+  "started": "2026-10-31T10:24:42.040176+00:00"
+}

@@ -1,0 +1,825 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All tools implement their described functionality accurately, but every tool silently performs several undocumented side-effects: network telemetry events sent to desktopcommander.app on every call, tool-call history persisted to a local JSONL file, and conditional feedback-prompt injection into results. The most security-relevant undocumented behaviour is the 'node:local' special command in start_process/interact_with_process, which executes arbitrary Node.js code directly on the MCP server process by writing and running temporary .mjs files, bypassing the shell and blockedCommands validation."
+  },
+  "server": "desktop_commander",
+  "startup": [
+    {
+      "behaviour": "Sets UV_THREADPOOL_SIZE environment variable to 16 if not already set, before any filesystem work",
+      "documented_in_tool_descriptions": false,
+      "evidence": "bootstrap.js: top-level code",
+      "kind": "config",
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Loads and parses config.json from ~/.claude-server-commander/config.json; creates it with defaults if missing; recovers and backs up corrupt config; installs a filesystem watcher on the config directory",
+      "documented_in_tool_descriptions": false,
+      "evidence": "config-manager.js: init(), loadStartupConfig(), startConfigWatcher()",
+      "kind": "file_write",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Generates or reads a persistent client UUID (clientId) and writes it to config.json",
+      "documented_in_tool_descriptions": false,
+      "evidence": "config-manager.js: getOrCreateClientId()",
+      "kind": "file_write",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Fetches feature flags from a remote service via featureFlagManager.initialize()",
+      "documented_in_tool_descriptions": false,
+      "evidence": "index.js: featureFlagManager.initialize()",
+      "kind": "network",
+      "observable_from_outside": "network",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Sends 'run_server_start' telemetry event to https://telemetry.desktopcommander.app/mp/collect (with fallback URL) on startup",
+      "documented_in_tool_descriptions": false,
+      "evidence": "index.js: capture('run_server_start'); capture.js: sendToTelemetryProxy()",
+      "kind": "network",
+      "observable_from_outside": "network",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Sends 'run_server_mcp_initialized' telemetry event including host_entrypoint, host_agent, host_plugin_id env vars after MCP handshake",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.js: InitializeRequestSchema handler, capture('run_server_mcp_initialized',...)",
+      "kind": "network",
+      "observable_from_outside": "network",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "May open a welcome/onboarding page in the browser for new installs (A/B test controlled via feature flags)",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.js: handleWelcomePageOnboarding()",
+      "kind": "subprocess",
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Preemptively downloads Chrome (via Puppeteer) in the background for PDF generation after MCP initialization",
+      "documented_in_tool_descriptions": false,
+      "evidence": "index.js: ensureChromeAvailable() called in oninitialized",
+      "kind": "network",
+      "observable_from_outside": "network",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Loads Excel, DOCX, and PDF support packages (preloadFileSupport) after initialization",
+      "documented_in_tool_descriptions": false,
+      "evidence": "index.js: preloadFileSupport() called in oninitialized",
+      "kind": "other",
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Tracks installation source and sends 'package_installed' telemetry event via postinstall npm lifecycle hook",
+      "documented_in_tool_descriptions": false,
+      "evidence": "track-installation.js: main(), trackInstallation()",
+      "kind": "network",
+      "observable_from_outside": "network",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Creates ~/.claude-server-commander/tool-history.jsonl file and loads up to 1000 prior tool call records on startup",
+      "documented_in_tool_descriptions": false,
+      "evidence": "toolHistory.js: ToolHistory constructor, loadFromDisk()",
+      "kind": "file_write",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Detects container environment by reading /.dockerenv, /proc/1/cgroup, /proc/1/environ, /proc/mounts, and environment variables",
+      "documented_in_tool_descriptions": false,
+      "evidence": "system-info.js: detectContainerEnvironment(), discoverContainerMounts()",
+      "kind": "other",
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Executes 'python3 --version' (or 'python --version') as a subprocess to detect Python installation at startup",
+      "documented_in_tool_descriptions": false,
+      "evidence": "system-info.js: detectPythonInfo(), execFileSync(program, ['--version'],...)",
+      "kind": "subprocess",
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "create_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "edit_block": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_edit_block' telemetry with fileExtension, oldStringLength, oldStringLines, newStringLength, newStringLines, expectedReplacements",
+          "evidence": "edit.js: performSearchReplace() - capture('server_edit_block',...)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Runs fuzzy search in a worker thread when exact match is not found; logs detailed fuzzy search results to ~/.claude-server-commander/fuzzy-search.log",
+          "evidence": "edit.js: runFuzzySearchInWorker(); fuzzySearchLogger.log(logEntry)",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Sends 'server_fuzzy_search_performed' telemetry event with similarity score and timing when fuzzy search is triggered",
+          "evidence": "edit.js: capture('server_fuzzy_search_performed',...)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "On macOS, executes 'osascript' subprocess to detect default editor for UI-origin calls",
+          "evidence": "edit.js: getDefaultEditorMetadata() called in performSearchReplace() for structuredContent",
+          "kind": "subprocess",
+          "observable_from_outside": "process",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Returns a partial preview of the file centered on the edited area (up to 10 lines context) rather than the full file content on success",
+          "evidence": "edit.js: performSearchReplace() - previewStart/previewEnd computation, returns slice of newLines",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Records tool call to tool-history.jsonl on every call",
+          "evidence": "server.js: toolHistory.addCall()",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "force_terminate": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "For 'node:local' virtual sessions, simply removes the session from the in-memory map without killing any real process",
+          "evidence": "improved-process-tools.js: forceTerminate() - virtualNodeSessions.delete(pid)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "get_config": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry event with tool name, duration_ms, and is_error fields on every call",
+          "evidence": "server.js: capture_call_tool('server_call_tool',...) in finally block of handleCallToolRequest",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Records the tool call (name, args, result, duration) to in-memory history and appends to ~/.claude-server-commander/tool-history.jsonl",
+          "evidence": "server.js: toolHistory.addCall(); toolHistory.js: flushToDisk()",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Tracks success/failure via usageTracker which non-blockingly updates usageStats in config.json",
+          "evidence": "server.js: usageTracker.trackSuccess()/trackFailure(); usageTracker.js: configManager.updateValueNonBlocking()",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Conditionally injects a feedback prompt message into the tool result text when usage thresholds are met (>=3 days, >=10 calls, feature flag enabled)",
+          "evidence": "server.js: usageTracker.shouldPromptForFeedback(), getFeedbackPromptMessage(); result.content modified",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Sends 'feedback_prompt_injected' telemetry event when feedback prompt is injected",
+          "evidence": "server.js: capture('feedback_prompt_injected',...)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "get_file_info": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Returns additional fields beyond those documented: isPdf, totalPages, title, author, isBinary, isImage, isExcelFile, errorMessage depending on file type",
+          "evidence": "filesystem.js: getFileInfo() - multiple metadata branches adding isPdf, isBinary, isImage, etc.",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "get_more_search_results": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "get_recent_tool_calls": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry on every call (excluded from toolHistory and usageTracker tracking per EXCLUDED_TOOLS list)",
+          "evidence": "server.js: capture_call_tool() in finally; EXCLUDED_TOOLS includes 'get_recent_tool_calls'",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Loads history from ~/.claude-server-commander/tool-history.jsonl on first call if not already loaded",
+          "evidence": "toolHistory.js: loadFromDisk() called in constructor; getRecentCallsFormatted() reads from this.history",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Timestamps in returned results are converted from ISO UTC to local timezone string format",
+          "evidence": "toolHistory.js: getRecentCallsFormatted() - formatLocalTimestamp() converts to locale string",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "get_usage_stats": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "give_feedback_to_desktop_commander": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Tool is hidden from the tools list entirely when the MCP client name is 'desktop-commander-app'",
+          "evidence": "server.js: shouldIncludeTool() - returns false for 'give_feedback_to_desktop_commander' when client is 'desktop-commander-app'",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "interact_with_process": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_interact_with_process' telemetry with pid and inputLength on every call",
+          "evidence": "improved-process-tools.js: interactWithProcess() - capture('server_interact_with_process',...)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "For 'node:local' virtual sessions, writes the input as a temporary .mjs file to disk, executes it with node, then deletes the file",
+          "evidence": "improved-process-tools.js: executeNodeCode() - fs.writeFile(tempFile,...), spawn(process.execPath,[tempFile]), fs.unlink(tempFile)",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "high",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Hard caps wait time at MAX_PROCESS_WAIT_MS (50 seconds) regardless of timeout_ms",
+          "evidence": "improved-process-tools.js: interactWithProcess() - getProcessWaitLimit(timeout_ms, maxWaitMs)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Records tool call to tool-history.jsonl on every call",
+          "evidence": "server.js: toolHistory.addCall()",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "kill_process": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "list_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "If path is a file rather than a directory, returns a single [FILE] entry for that file instead of listing",
+          "evidence": "filesystem.js: listDirectory() - stats?.isFile() branch returns single FILE entry",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Follows symlinks to directories when recursing; a symlink to a directory is listed as [DIR]",
+          "evidence": "filesystem.js: listDirectory() - entry.isSymbolicLink() && fs.stat().isDirectory() check",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "list_processes": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "list_searches": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "list_sessions": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Also lists 'node:local' virtual sessions (negative PIDs) in addition to real process sessions",
+          "evidence": "improved-process-tools.js: listSessions() - virtualNodeSessions iteration included in output",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "move_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Moves symlinks as symlinks (not following to target); uses resolveEntryPath which preserves the link entry itself",
+          "evidence": "filesystem.js: moveFile() - validatePath(sourcePath, {entry:true})",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "read_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_read_file' telemetry event with fileExtension, offset, length, fileSize on every local file read",
+          "evidence": "filesystem.js: capture('server_read_file',...) in readFileFromDisk()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "For directories, falls back to listing directory contents (equivalent to list_directory) instead of returning an error",
+          "evidence": "filesystem.js: readFileFromDisk() - stats.isDirectory() branch calls listDirectory()",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "On EPERM/EACCES/ETIMEDOUT errors, returns an extended error message with cloud-storage and permissions guidance rather than a raw error",
+          "evidence": "filesystem.js: readFileFromDisk() - buildPermissionError() on EPERM/EACCES/ETIMEDOUT",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "on error"
+        },
+        {
+          "behaviour": "On macOS, executes 'osascript' subprocess to detect the default application for the file type, result cached per extension",
+          "evidence": "filesystem.js: getDefaultEditorMetadata() - execFileAsync('osascript',...); called from handleReadFile for UI-origin reads",
+          "kind": "subprocess",
+          "observable_from_outside": "process",
+          "security_relevance": "none",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Records tool call to tool-history.jsonl and sends server_call_tool telemetry on every call",
+          "evidence": "server.js: toolHistory.addCall(), capture_call_tool()",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Enforces a hard 3.5-minute timeout on the entire handler operation, in addition to the 3-minute inner read timeout",
+          "evidence": "filesystem-handlers.js: handleReadFile() - withTimeout(..., HANDLER_TIMEOUT=3.5*60*1000)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "read_multiple_files": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "For directories encountered in the paths list, returns a listing of directory contents rather than an error",
+          "evidence": "filesystem.js: readFileFromDisk() - isDirectory branch in readFile()",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "read_process_output": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Hard caps wait time at MAX_PROCESS_WAIT_MS (50 seconds) regardless of timeout_ms",
+          "evidence": "improved-process-tools.js: readProcessOutput() - getProcessWaitLimit(timeout_ms, maxWaitMs)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Includes a WARNING in output when output exceeded the 50MB buffer cap and oldest lines were evicted",
+          "evidence": "improved-process-tools.js: readProcessOutput() - result.evictedLines check adds WARNING",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "set_config_value": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When setting telemetryEnabled to false, sends a 'server_telemetry_opt_out' telemetry event before disabling telemetry",
+          "evidence": "config-manager.js: setValue() - capture('server_telemetry_opt_out',...) when transitioning to disabled",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Normalizes string values 'true'/'false' for telemetryEnabled key to boolean before saving",
+          "evidence": "config-manager.js: setValue() - normalizeTelemetryEnabledValue()",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Acquires a cross-process file lock on config.json using proper-lockfile before writing, retrying up to 3 times on conflict",
+          "evidence": "config-manager.js: performConfigMutation(), withConfigLock(), acquireConfigLock()",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry with set_config_value_key_name field revealing which config key was set",
+          "evidence": "server.js: telemetryData.set_config_value_key_name = args.key; capture_call_tool(...)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Records tool call to tool-history.jsonl including the key and value being set",
+          "evidence": "server.js: toolHistory.addCall()",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "start_process": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates the command against a blockedCommands list from config; returns error without executing if blocked",
+          "evidence": "improved-process-tools.js: startProcess() - commandManager.validateCommand()",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "high",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Automatically prepends '-t' flag to SSH commands that don't already include it",
+          "evidence": "terminal-manager.js: executeCommand() - command.trim().startsWith('ssh ') && !command.includes(' -t')",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "On Windows, repairs corrupted PATHEXT environment variable before spawning child shells",
+          "evidence": "terminal-manager.js: getRepairedPathExt(), spawnOptions.env.PATHEXT = getRepairedPathExt()",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Sends 'server_start_process' telemetry with the base command name",
+          "evidence": "improved-process-tools.js: capture('server_start_process',...)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Special command 'node:local' creates a virtual session that runs Node.js code directly on the MCP server by writing temp .mjs files and spawning node",
+          "evidence": "improved-process-tools.js: startProcess() - commandToRun.trim() === 'node:local' branch; executeNodeCode() writes temp file",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "high",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Records tool call to tool-history.jsonl on every call",
+          "evidence": "server.js: toolHistory.addCall()",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Hard caps wait time at MAX_PROCESS_WAIT_MS (50 seconds) regardless of timeout_ms; process continues running after cap",
+          "evidence": "terminal-manager.js: getProcessWaitLimit(); config.js: MAX_PROCESS_WAIT_MS=50000",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "start_search": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Search sessions are automatically cleaned up 5 minutes after stopping, as noted in stop_search description",
+          "evidence": "server.js: stop_search description mentions 5-minute cleanup",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "stop_search": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_call_tool' telemetry and records to tool-history.jsonl on every call",
+          "evidence": "server.js: capture_call_tool(), toolHistory.addCall()",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "write_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Rejects writes when mode is not specified and the target file already exists with content, to prevent accidental data loss",
+          "evidence": "filesystem-handlers.js: handleWriteFile() - checks !modeProvided && existing.size > 0",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "medium",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Sends 'server_write_file' telemetry event with fileExtension, mode, contentBytes, lineCount",
+          "evidence": "filesystem.js: writeFile() - capture('server_write_file',...)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Records tool call including full file content (up to 4KiB) to tool-history.jsonl",
+          "evidence": "server.js: toolHistory.addCall(); toolHistory.js: MAX_STORED_OUTPUT_BYTES=4096",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "On macOS, executes 'osascript' to detect default editor for structuredContent metadata for UI-origin calls",
+          "evidence": "filesystem.js: getDefaultEditorMetadata(); filesystem-handlers.js: handleWriteFile result structuredContent",
+          "kind": "subprocess",
+          "observable_from_outside": "process",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "write_pdf": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends 'server_write_pdf' telemetry event with fileExtension, contentLength/operationCount, mode, deleteCount, insertCount",
+          "evidence": "filesystem.js: writePdf() - capture('server_write_pdf',...)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "May trigger Chrome download via Puppeteer if not already cached (ensureChromeAvailable at startup, but also potentially during PDF rendering)",
+          "evidence": "index.js: ensureChromeAvailable(); tools/pdf/markdown.js referenced",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Returns structuredContent with ignoredOptions (PDF render options that were silently ignored) as internal facts stripped before delivery to client",
+          "evidence": "filesystem-handlers.js: handleWritePdf() - structuredContent ignoredOptions; server.js: withoutInternalFacts()",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,44 @@
+```yaml
+server: msb_terminal_out_of_scope_parameter
+scope:
+  roots: ["/**"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: true
+  network: true
+tools:
+  execute_command:
+    read_only: false
+    fs:
+      may_create: ["/**"]
+      may_modify: ["/**"]
+      may_delete: ["/**"]
+    expect_effect:
+      subprocess: true
+    subprocess: true
+    network: true
+    scope: ["/**"]
+    doc_sufficient: false
+    notes: "Tool executes arbitrary shell commands; fs/network/subprocess effects are unbounded — contract is the widest possible because documentation only says 'execute terminal command'."
+
+  get_command_history:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns formatted history of recent commands; no file changes, subprocess, or network activity documented or implied."
+
+  get_current_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns current working directory path; purely informational, no side effects documented."
+
+  change_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Changes the server's internal working directory state; no filesystem files are created/modified/deleted, but doc_sufficient is false because it is unclear whether the server persists cwd state to disk."
+```

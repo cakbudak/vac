@@ -1,0 +1,20 @@
+{
+  "name": "servers",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/server-everything": "^2.1.0",
+    "@modelcontextprotocol/server-filesystem": "^2.1.0",
+    "@modelcontextprotocol/server-memory": "^2.0.1",
+    "@wonderwhy-er/desktop-commander": "^0.3.1",
+    "mcp-knowledge-graph": "^1.3.2",
+    "obsidian-mcp": "^2.0.1"
+  }
+}

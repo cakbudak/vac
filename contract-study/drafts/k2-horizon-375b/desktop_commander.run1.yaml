@@ -1,0 +1,182 @@
+server: desktop_commander
+scope:
+  roots:
+  - '{work}/**'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  get_config:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns server configuration as JSON; no file, subprocess, or network effects
+      documented.
+  set_config_value:
+    read_only: false
+    doc_sufficient: false
+    notes: Sets a config key affecting later behavior; README says configs persist
+      across restarts but no config file path is documented, so no fs patterns are
+      declared.
+  read_file:
+    read_only: true
+    network: true
+    network_hosts:
+    - '{host:path}'
+    doc_sufficient: true
+    notes: Reads files within allowed directories; when isUrl=true it fetches the
+      URL, contacting the host of the path argument.
+  read_multiple_files:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads multiple files within allowed directories; no other effects documented.
+  write_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/**'
+      may_modify:
+      - '{work}/**'
+    expect_effect:
+      fs_any_of:
+      - '{path}'
+    doc_sufficient: true
+    notes: Writes or appends file contents only within allowed directories ({work}).
+  write_pdf:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/**'
+    expect_effect:
+      fs_any_of:
+      - '{path}'
+      - '{outputPath}'
+    doc_sufficient: true
+    notes: Creates a new PDF at path (create mode) or outputPath (modify mode) within
+      allowed directories; the original PDF is preserved.
+  create_directory:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/**'
+    expect_effect:
+      fs_any_of:
+      - '{path}'
+    doc_sufficient: true
+    notes: Creates directories only within allowed directories.
+  list_directory:
+    read_only: true
+    doc_sufficient: true
+    notes: Lists directory contents within allowed directories; no other effects.
+  move_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/**'
+      may_modify:
+      - '{work}/**'
+      may_delete:
+      - '{work}/**'
+    expect_effect:
+      fs_any_of:
+      - '{source}'
+      - '{destination}'
+    doc_sufficient: true
+    notes: Moves/renames files and directories; both source and destination must be
+      within allowed directories.
+  start_search:
+    read_only: true
+    subprocess: true
+    expect_effect:
+      subprocess: true
+    doc_sufficient: true
+    notes: 'Starts a background search process (README: vscode-ripgrep based) and
+      returns a session ID.'
+  get_more_search_results:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads paginated results from an active search; no other effects.
+  stop_search:
+    read_only: false
+    doc_sufficient: true
+    notes: Stops the background search process; no file changes documented (annotation
+      read_only_hint=false).
+  list_searches:
+    read_only: true
+    doc_sufficient: true
+    notes: Lists active searches; no other effects.
+  get_file_info:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns file/directory metadata within allowed directories; no other effects.
+  edit_block:
+    read_only: false
+    fs:
+      may_modify:
+      - '{work}/**'
+    expect_effect:
+      fs_any_of:
+      - '{file_path}'
+    doc_sufficient: true
+    notes: Applies in-place find/replace or range updates to files within allowed
+      directories.
+  start_process:
+    read_only: false
+    subprocess: true
+    network: true
+    scope:
+    - '{root}/**'
+    expect_effect:
+      subprocess: true
+    doc_sufficient: true
+    notes: Runs arbitrary shell commands (spawns child processes); README warns terminal
+      commands can access files outside allowedDirectories, so scope is the whole
+      sandbox; arbitrary commands may also perform network I/O.
+  read_process_output:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads output of a running process; no other effects.
+  interact_with_process:
+    read_only: false
+    doc_sufficient: true
+    notes: Sends input to an existing process; no file changes documented (annotation
+      read_only_hint=false).
+  force_terminate:
+    read_only: false
+    doc_sufficient: true
+    notes: Force-terminates a terminal session; no file changes documented.
+  list_sessions:
+    read_only: true
+    doc_sufficient: true
+    notes: Lists terminal sessions; no other effects.
+  list_processes:
+    read_only: true
+    doc_sufficient: true
+    notes: Lists running processes; no other effects.
+  kill_process:
+    read_only: false
+    doc_sufficient: true
+    notes: Terminates a process by PID; no file changes documented.
+  get_usage_stats:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns usage statistics; no other effects.
+  get_recent_tool_calls:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads local tool-call history (tool-history.jsonl); the history file writes
+      are declared under readme_declared.
+  give_feedback_to_desktop_commander:
+    read_only: false
+    network: true
+    doc_sufficient: false
+    notes: Opens a feedback form in the browser (a web form, so network); the form
+      URL/host and whether the server connects directly or launches a browser are
+      not documented.
+readme_declared:
+  fs:
+    may_create:
+    - '**/tool-history.jsonl'
+    may_modify:
+    - '**/tool-history.jsonl'
+  network: false

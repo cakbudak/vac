@@ -1,0 +1,159 @@
+```yaml
+server: obsidian
+scope:
+  roots:
+    - "{vault}/**"
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  obsidian_list_vaults:
+    read_only: true
+    doc_sufficient: true
+    notes: "read_only_hint true; lists configured vault ids only, no filesystem changes, no network, no subprocess"
+
+  obsidian_read_note:
+    read_only: true
+    doc_sufficient: true
+    notes: "read_only_hint true; reads a bounded page of a note, returns etag; no filesystem changes, no network, no subprocess"
+
+  obsidian_create_note:
+    read_only: false
+    fs:
+      may_create:
+        - "{vault}/{path}"
+        - "{vault}/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{path}"
+    doc_sufficient: true
+    notes: "creates note atomically without overwriting; may create parent directories when create_parents true; path arg is vault-relative"
+
+  obsidian_edit_note:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/{path}"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{path}"
+    doc_sufficient: true
+    notes: "appends, prepends, or replaces note content; description says it never deletes notes; transactions/recovery written to .obsidian-mcp covered by readme_declared"
+
+  obsidian_delete_note:
+    read_only: false
+    fs:
+      may_create:
+        - "{vault}/.obsidian-mcp/trash/**"
+        - "{vault}/.obsidian-mcp/transactions/**"
+      may_modify:
+        - "{vault}/**"
+      may_delete:
+        - "{vault}/{path}"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{path}"
+        - "{vault}/.obsidian-mcp/trash/**"
+        - "{vault}/.obsidian-mcp/transactions/**"
+    doc_sufficient: true
+    notes: "moves note to .obsidian-mcp/trash (default) or permanently deletes; may update backlinks in other vault notes when backlink_action mark_broken; transactions stored under .obsidian-mcp/transactions per README"
+
+  obsidian_move_note:
+    read_only: false
+    fs:
+      may_create:
+        - "{vault}/{destination}"
+        - "{vault}/.obsidian-mcp/transactions/**"
+      may_modify:
+        - "{vault}/**"
+      may_delete:
+        - "{vault}/{source}"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{destination}"
+        - "{vault}/.obsidian-mcp/transactions/**"
+    doc_sufficient: true
+    notes: "moves/renames note and transactionally updates unambiguous backlinks in other vault notes; transaction journal written to .obsidian-mcp/transactions per README"
+
+  obsidian_create_directory:
+    read_only: false
+    fs:
+      may_create:
+        - "{vault}/{path}"
+        - "{vault}/{path}/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{path}"
+    doc_sufficient: true
+    notes: "creates directory inside vault; may create parent directories when recursive true (default); rejects existing directories"
+
+  obsidian_search_vault:
+    read_only: true
+    doc_sufficient: true
+    notes: "read_only_hint true; searches filenames, content, or tags with cursor pagination; no filesystem changes, no network, no subprocess"
+
+  obsidian_add_tags:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/**"
+      may_create:
+        - "{vault}/.obsidian-mcp/transactions/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/**"
+    doc_sufficient: true
+    notes: "adds tags to up to 500 notes atomically; modifies frontmatter or content of each listed path; transaction journal written to .obsidian-mcp/transactions per README"
+
+  obsidian_remove_tags:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/**"
+      may_create:
+        - "{vault}/.obsidian-mcp/transactions/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/**"
+    doc_sufficient: true
+    notes: "removes tags from up to 500 notes atomically; modifies frontmatter or content of each listed path; transaction journal written to .obsidian-mcp/transactions per README"
+
+  obsidian_rename_tag:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/**"
+      may_create:
+        - "{vault}/.obsidian-mcp/transactions/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/**"
+    doc_sufficient: true
+    notes: "renames a tag across the vault in one journaled all-or-nothing transaction; may modify any vault note containing the old tag; transaction journal written to .obsidian-mcp/transactions per README"
+
+  obsidian_manage_tags:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/**"
+      may_create:
+        - "{vault}/.obsidian-mcp/transactions/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/**"
+    doc_sufficient: true
+    notes: "unified add/remove tag workflow; same implementation as obsidian_add_tags/obsidian_remove_tags; modifies up to 500 notes atomically; transaction journal written to .obsidian-mcp/transactions per README"
+
+readme_declared:
+  fs:
+    may_create:
+      - "{vault}/.obsidian-mcp/trash/**"
+      - "{vault}/.obsidian-mcp/transactions/**"
+    may_modify:
+      - "{vault}/.obsidian-mcp/trash/**"
+      - "{vault}/.obsidian-mcp/transactions/**"
+    may_delete:
+      - "{vault}/.obsidian-mcp/transactions/**"
+  network: false
+```

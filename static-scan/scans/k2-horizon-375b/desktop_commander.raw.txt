@@ -1,0 +1,751 @@
+Let me analyze the implementation files against the tool descriptions.
+
+The tools list has 24 tools:
+1. get_config
+2. set_config_value
+3. read_file
+4. read_multiple_files
+5. write_file
+6. write_pdf
+7. create_directory
+8. list_directory
+9. move_file
+10. start_search
+11. get_more_search_results
+12. stop_search
+13. list_searches
+14. get_file_info
+15. edit_block
+16. start_process
+17. read_process_output
+18. interact_with_process
+19. force_terminate
+20. list_sessions
+21. list_processes
+22. kill_process
+23. get_usage_stats
+24. get_recent_tool_calls
+25. give_feedback_to_desktop_commander
+
+Wait, that's 25. Let me count again: get_config, set_config_value, read_file, read_multiple_files, write_file, write_pdf, create_directory, list_directory, move_file, start_search, get_more_search_results, stop_search, list_searches, get_file_info, edit_block, start_process, read_process_output, interact_with_process, force_terminate, list_sessions, list_processes, kill_process, get_usage_stats, get_recent_tool_calls, give_feedback_to_desktop_commander. That's 25 tools.
+
+Now let me look at the implementation files provided:
+
+1. index.js - startup
+2. bootstrap.js - threadpool
+3. server.js - server setup, tool list, call handler
+4. config-manager.js - config management
+5. config.js - config paths
+6. utils/capture.js - telemetry
+7. utils/toolHistory.js - tool history
+8. utils/usageTracker.js - usage tracking
+9. utils/process-detection.js - process detection
+10. utils/system-info.js - system info
+11. track-installation.js - installation tracking
+12. handlers/filesystem-handlers.js - filesystem handlers
+13. tools/filesystem.js - filesystem tools
+14. tools/edit.js - edit_block
+15. tools/improved-process-tools.js - process tools
+16. terminal-manager.js - terminal manager (truncated)
+
+Note: handlers for search (start_search, get_more_search_results, stop_search, list_searches), list_processes, kill_process, get_usage_stats, give_feedback are NOT in the provided files. The server.js references handlers.handleStartSearch etc. from './handlers/index.js' but that file isn't provided. So I can only report on what's visible in the code.
+
+Let me go through each tool:
+
+**Startup behaviors:**
+
+1. **Telemetry on startup**: index.js calls `capture('run_server_start')` at startup. capture.js sends events to `https://telemetry.desktopcommander.app/mp/collect` (and fallback `https://dc-telemetry-proxy-83847352264.europe-west1.run.app/mp/collect`). This is network behavior not documented in any tool description. The get_config description mentions telemetryEnabled config field, but the startup network call itself isn't documented in tool descriptions. Actually, the descriptions don't mention telemetry at all except the config field. The give_feedback tool mentions "client_id: Analytics identifier". Hmm. The startup behavior: telemetry events sent over network. Documented in tool descriptions? The get_config description mentions telemetryEnabled as a config field, but doesn't say the server sends telemetry to remote endpoints. I'd say this is undocumented network behavior at startup. Security relevance: medium (network exfiltration of usage data, though redacted).
+
+2. **ensureChromeAvailable()** on initialization: index.js calls `ensureChromeAvailable()` after server.oninitialized — "Preemptively check/download Chrome for PDF generation (runs in background)". This downloads Chrome — network + file write behavior not documented in any tool description. write_pdf description doesn't mention downloading Chrome. This is a significant undocumented behavior: network download and file writes (Chrome installation). Security relevance: high? It downloads and installs a browser binary. Observable from outside: network + file.
+
+3. **preloadFileSupport()** on initialization: loads Excel, DOCX, PDF packages. File reads (loading packages). Minor.
+
+4. **Config watcher**: config-manager.js startConfigWatcher watches the config directory with fs.watch. File system watching — not documented. Low security relevance.
+
+5. **Tool history**: toolHistory.js writes to tool-history.jsonl in ~/.claude-server-commander, flushes every second, trims file. This is file write behavior. The get_recent_tool_calls description does document "History is persisted locally in tool-history.jsonl, keeps up to the last 1000 calls in memory, and trims older on-disk history." So that's documented for that tool. But the fact that EVERY tool call is recorded to disk (except get_recent_tool_calls and track_ui_event) is documented in get_recent_tool_calls description ("Get recent local tool call history with arguments and outputs"). So it's documented.
+
+6. **Usage tracking**: usageTracker.js updates usageStats in config on every tool call (trackSuccess/trackFailure called in server.js handleCallToolRequest). This writes to config.json. Not documented in tool descriptions. get_usage_stats description says "Returns summary of tool usage, success/failure rates, and performance metrics" — it doesn't say every call is tracked. Hmm, arguably implied. But the config write on every call is a side effect. Low security relevance.
+
+7. **Feedback prompt injection**: server.js — on successful tool calls, usageTracker.shouldPromptForFeedback() may inject a feedback request message into the tool result text. This modifies tool outputs — not documented in any tool description. This is a significant undocumented behavior: tool results get appended with feedback prompts. Security relevance: medium (prompt injection into results). Observable from outside: none directly (it's in the response content). Actually observable from outside: the response content. Kind: other/state.
+
+8. **processDockerPrompt**: server.js calls `result = await processDockerPrompt(result, name)` after success — may inject Docker environment prompt into results. Not documented. Similar to feedback injection.
+
+9. **track-installation.js**: runs during npm install (postinstall) — sends installation tracking to telemetry. This is a separate script, not part of server startup per se, but it's part of the package. The task says "startup" behaviors — I could include it as it's part of installation. It's a network call during npm install. Not documented in tool descriptions. Security relevance: medium.
+
+10. **bootstrap.js**: sets UV_THREADPOOL_SIZE=16. Process environment change. Minor, not security relevant.
+
+11. **Welcome page onboarding**: server.js InitializeRequestSchema handler calls handleWelcomePageOnboarding for eligible clients. This may open a browser? Let me check — the file welcome-onboarding.js isn't provided, so I can't see what it does. I shouldn't speculate. The code calls it but I can't see its behavior. I could mention it calls handleWelcomePageOnboarding but can't verify behavior. Better to not speculate beyond the code. The call is visible; the behavior isn't. I'll skip or mention minimally.
+
+12. **Config file creation**: config-manager init creates ~/.claude-server-commander/config.json if missing. File write at startup. Not documented in tool descriptions (get_config description mentions config fields but not that a config file is created on disk). Low.
+
+13. **clientId generation**: configManager.getOrCreateClientId creates a UUID clientId stored in config. Called from capture.js when telemetry sends. Documented? give_feedback mentions "client_id: Analytics identifier". Partially.
+
+14. **uncaughtException handler exits process**: index.js — on uncaught exception (non-JSON), calls exitProcess(1). That's process behavior. Not really security relevant.
+
+15. **SSH command enhancement**: terminal-manager.js executeCommand — if command starts with "ssh " and doesn't include " -t", it rewrites to "ssh -t ". This modifies the command — undocumented behavior in start_process. The description says "Start a terminal process" — doesn't mention SSH modification. Security relevance: low/medium. Observable: process.
+
+16. **PATHEXT repair on Windows**: terminal-manager.js — modifies PATHEXT env for spawned shells. Undocumented, low.
+
+17. **node:local virtual sessions**: improved-process-tools.js — start_process with command "node:local" runs Node.js code directly on the MCP server via temp files in the MCP directory. The description DOES mention this: "start_process("node:local") → Run stateless Node.js code on the MCP server". So documented.
+
+18. **executeNodeCode writes temp .mjs files** in mcpRoot directory. Part of node:local, documented as running on MCP server. The temp file write is an implementation detail. Probably fine to mention as file write but it's part of documented behavior.
+
+19. **write_file mode protection**: filesystem-handlers.js handleWriteFile — if mode not provided and file exists with content, rejects the write. The description says "Write or append to file contents" and mentions mode='rewrite' default. The description says "Repeated calls with mode='rewrite' followed by mode='append' are supported". It doesn't mention that omitting mode on an existing non-empty file is rejected. This is an undocumented behavior (conditional on input/state). Security relevance: low (protective). Observable: file (the write is refused).
+
+20. **read_file directory fallback**: filesystem.js readFileFromDisk — if path is a directory, returns a listing instead of error. Not documented in read_file description. Low.
+
+21. **read_file URL fetching**: documented ("Can fetch content from URLs when isUrl parameter is set to true"). The fetch uses cross-fetch with 30s timeout. Documented.
+
+22. **getAllowedDirs fallback**: filesystem.js getAllowedDirs — if config.allowedDirectories is not an array, falls back to [os.homedir()] and WRITES it to config via configManager.setValue('allowedDirectories', ...). This is a config write triggered by file operations. Undocumented. Also note: default config has allowedDirectories: [] which means full access (per set_config_value description). But getAllowedDirs treats empty array... wait: `if (config.allowedDirectories && Array.isArray(config.allowedDirectories))` — empty array is truthy in JS, so allowedDirectories = [] and then isPathAllowed returns true for empty array (full access). OK. But if allowedDirectories is undefined (not set), it falls back to homedir and writes it to config. That's a config mutation side effect. Security relevance: medium (changes security boundary silently). Observable: file (config.json).
+
+23. **list_directory symlink handling**: follows symlinks to determine if directory. Minor.
+
+24. **list_directory validates paths before recursing** — calls validatePath on each subdirectory. Minor.
+
+25. **move_file**: uses movePath which may copy across volumes. Documented as move/rename. Fine.
+
+26. **get_file_info**: documented fields. Implementation adds isExcelFile, isImage, isPdf, isBinary, errorMessage fields. Minor, not really security.
+
+27. **edit_block fuzzy search logging**: edit.js — on failed exact match, runs fuzzy search in a worker thread and logs to fuzzy-search.log (fuzzySearchLogger.log). The description says "When a close but non-exact match is found, a character-level diff is shown" — it doesn't mention the log file write. File write behavior, undocumented. Low security (local log). Also the fuzzy search data sent to telemetry excludes character codes deliberately. The log entry includes searchText and foundText — file content fragments written to a local log. Security relevance: low/medium (local file write of file content fragments). Observable: file.
+
+28. **edit_block line ending normalization**: normalizes search/replace to file's line endings. Implementation detail, fine.
+
+29. **start_process blocked commands**: commandManager.validateCommand checks blockedCommands. Documented via get_config (blockedCommands field). Fine.
+
+30. **start_process telemetry captures command**: capture('server_start_process', {command...}). Telemetry of commands — the capture.js redacts paths. Not documented in tool descriptions. Network behavior on every start_process call. Medium.
+
+31. **read_process_output**: documented. Implementation waits for output. Fine.
+
+32. **interact_with_process**: documented. Fine.
+
+33. **force_terminate**: documented. Fine.
+
+34. **list_sessions**: includes virtual node:local sessions. Minor.
+
+35. **list_processes, kill_process**: handlers not provided. Can't assess. The server.js routes to handlers.handleListProcesses/handleKillProcess but those files aren't in the provided set. I should note matches_description: true with no evidence of mismatch? The instruction says "List every tool of tools/list" and report undocumented behaviors. For tools whose handlers aren't visible, I can only say the dispatch exists in server.js. I'll mark matches_description: true and no undocumented behaviors found in visible code, or note that implementation wasn't provided. Hmm — the task says "Do not speculate beyond the code." For tools without visible handlers, I can't find undocumented behaviors. I'll list them with matches_description: true and empty undocumented_behaviours, since the dispatch in server.js matches.
+
+Actually wait — for search tools (start_search etc.), the filesystem.js has searchFiles which uses searchManager (search-manager.js not provided). The handlers aren't provided. So same treatment.
+
+36. **get_usage_stats**: handler in tools/usage.js not provided. server.js routes to getUsageStats from './tools/usage.js'. Not provided. Same treatment.
+
+37. **give_feedback_to_desktop_commander**: tools/feedback.js not provided. Same.
+
+38. **get_recent_tool_calls**: handlers.handleGetRecentToolCalls — handlers/index.js not provided, but toolHistory.js is provided and documents the behavior. The description matches toolHistory.js behavior (1000 calls, 4KiB cap, tool-history.jsonl). Documented.
+
+39. **get_config**: tools/config.js not provided, but config-manager.js is. getConfig returns {...this.config}. The description lists fields including clientHistory — config-manager doesn't show clientHistory. Hmm, config.js (tools/config.js) isn't provided so I can't verify clientHistory. The config-manager has config with version, blockedCommands, etc. I can't verify clientHistory. Not going to speculate.
+
+40. **set_config_value**: tools/config.js not provided. But config-manager.setValue exists. The description says setting allowedDirectories to [] allows full access — isPathAllowed confirms: `if (allowedDirectories.includes('/') || allowedDirectories.length === 0) return true`. Documented.
+
+41. **write_pdf**: tools/pdf/ not provided. handlers.handleWritePdf calls writePdf from tools/filesystem.js which is provided. writePdf validates paths, parses markdown to PDF, writes file. The description matches. ensureChromeAvailable downloads Chrome — that's startup, already noted.
+
+42. **create_directory**: documented. Fine.
+
+43. **read_multiple_files**: documented. Fine.
+
+44. **Telemetry on every tool call**: server.js finally block calls capture_call_tool('server_call_tool', ...) for every tool call (except track_ui_event). Network behavior. Not documented in tool descriptions. Medium security relevance. This is a per-tool-call behavior — should I list it per tool or as startup? It's not startup; it's per tool call. The instructions say report per tool "all behaviour the descriptions do not state". Telemetry capture happens for every tool. I could add it to each tool's undocumented_behaviours, or note it once. Given the schema, I think adding a telemetry entry to each tool would be repetitive but accurate. Hmm. Let me think about what's most useful. The capture happens in the CallTool handler in server.js for every tool. Also individual tools call capture (server_read_file, server_write_file, etc.). I'll add a telemetry behavior entry to each tool (or at least note it). Actually, to keep the report manageable, I'll include it for each tool since the schema is per-tool. But that's 25 entries of the same thing. Alternatively, I can include it in "startup" as a general behavior and mention per-tool in summary. The schema has "startup" array and per-tool arrays. The telemetry-on-call is not startup. I'll add it per tool but keep it concise. Actually, let me reconsider: the instruction says "report, per tool and for start-up, all behaviour the descriptions do not state." So per-tool undocumented behaviors should be listed per tool. Telemetry applies to all tools. I'll add one entry per tool for the server_call_tool telemetry event, plus tool-specific captures where visible.
+
+Hmm, but that might be excessive. Let me focus on the most significant ones and include telemetry for each tool since it's a real network behavior on every call. I'll do it — it's accurate.
+
+Also **usage tracking on every call**: server.js calls usageTracker.trackSuccess/trackFailure on every call, which writes usageStats to config.json (updateValueNonBlocking → queueMutation → scheduleSave → config.json write). This is a file write on every tool call. Not documented. I'll include per tool? That's also repetitive. Maybe include in startup? No, it's per-call. I'll include it per tool as well, or mention in a few. Let me include it per tool too — it's a genuine side effect. Actually, to avoid bloat, I'll include the telemetry + usage-tracking entries for each tool in a compact form.
+
+Wait, also **toolHistory.addCall on every call** (except get_recent_tool_calls and track_ui_event): writes to tool-history.jsonl. The get_recent_tool_calls description documents the history file, so this is documented behavior ("Get recent local tool call history... History is persisted locally in tool-history.jsonl"). The description of get_recent_tool_calls states the history exists. So recording every call is documented there. I'll consider it documented.
+
+**Feedback prompt injection** (server.js): on success, may append feedback request to result content. This affects every tool's output. Not documented. I'll add per tool? It's conditional on state (usage patterns, feature flag). I'll add it to each tool as conditional on state. Hmm, again repetitive. Let me think about the best structure.
+
+Given the JSON schema, I think the cleanest approach:
+- startup: list startup behaviors (telemetry, chrome download, config creation, watcher, threadpool, installation tracking, onboarding).
+- tools: for each tool, list tool-specific undocumented behaviors. For cross-cutting behaviors (telemetry, usage tracking, feedback injection, docker prompt), I'll add them to each tool since they apply to every call. To keep it readable, I'll use concise behavior strings.
+
+Actually, let me reconsider — maybe I should add cross-cutting ones to each tool. The schema allows arrays. I'll do it but keep entries terse.
+
+Let me now enumerate tool-specific undocumented behaviors:
+
+**get_config**:
+- Telemetry: capture_call_tool server_call_tool (network). Also getConfig itself doesn't capture. 
+- Usage tracking write to config.json.
+- Feedback/docker prompt injection on success.
+- getConfig returns config including clientId? config-manager config may include clientId (getOrCreateClientId). The description lists fields; clientId isn't listed but that's a minor extra field. Not worth reporting? "clientHistory" is listed but I can't verify. Extra fields returned: version, pendingWelcomeOnboarding, welcomeOnboardingEligible, clientId, usageStats, sawOnboardingPage, feedbackGiven... The description says "Config includes fields for:" — "includes" suggests non-exhaustive. I won't report extra fields.
+
+**set_config_value**:
+- Telemetry: capture('server_telemetry_opt_out') when disabling telemetry; setValue normalizes telemetryEnabled. Also server.js records telemetryData.set_config_value_key_name = args.key — the config key name is sent to telemetry! That's notable: `if (name === 'set_config_value' && args && typeof args === 'object' && 'key' in args) { telemetryData.set_config_value_key_name = args.key; }`. So the key being set is sent to telemetry. Not documented. Medium.
+- Usage tracking, feedback injection.
+- setValue writes config.json (documented — it's a config tool).
+
+**read_file**:
+- Telemetry: capture('server_read_file', {fileExtension, offset, length, fileSize}) — file size and extension sent. Not documented. Medium.
+- capture('server_read_file_error') on stat failure.
+- capture('server_path_realpath_error'), capture('server_path_validation_error'), capture('server_path_validation_timeout') in validatePath.
+- Usage tracking, feedback injection.
+- Directory fallback (returns listing) — undocumented, low.
+- getAllowedDirs fallback writes homedir to config if allowedDirectories not an array — conditional on configuration. Medium.
+- URL fetch — documented.
+- readFileFromUrl uses cross-fetch — documented as fetching URLs.
+
+**read_multiple_files**:
+- Telemetry via capture_call_tool only (readMultipleFiles doesn't capture per-file). Usage tracking, feedback injection.
+- Each file validated via validatePath (which captures path errors). 
+
+**write_file**:
+- Telemetry: capture('server_write_file', {fileExtension, mode, contentBytes, lineCount}).
+- Mode-protection rejection (undocumented, conditional on state: existing non-empty file + no mode). Low.
+- Usage tracking, feedback injection.
+- getAllowedDirs fallback.
+
+**write_pdf**:
+- Telemetry: capture('server_write_pdf', ...).
+- ensureChromeAvailable may download Chrome (startup, but also triggered by PDF ops? The startup call is preemptive; parseMarkdownToPdf may also ensure Chrome — tools/pdf/markdown.js not provided, can't verify). I'll note the startup one.
+- Usage tracking, feedback injection.
+
+**create_directory**: telemetry call_tool, usage tracking, feedback injection. Nothing else notable.
+
+**list_directory**: telemetry call_tool, usage tracking, feedback injection. validatePath per subdirectory (captures path errors). Minor.
+
+**move_file**: telemetry call_tool, usage tracking, feedback injection. movePath may copy across volumes (documented as move). Fine.
+
+**start_search**: handlers not provided. But searchFiles in filesystem.js uses searchManager (not provided) and ripgrep fallback. Can't verify. Telemetry call_tool, usage tracking, feedback injection apply via server.js. I'll note those.
+
+**get_more_search_results**: same.
+
+**stop_search**: same.
+
+**list_searches**: same.
+
+**get_file_info**: telemetry call_tool, usage tracking, feedback injection. getFileInfo uses getFileHandler — may load packages. Fine.
+
+**edit_block**:
+- Telemetry: capture('server_edit_block', {fileExtension, oldStringLength, oldStringLines, newStringLength, newStringLines, expectedReplacements}) — sizes of search/replace sent. Not documented. Medium.
+- Fuzzy search log file write (fuzzy-search.log) with searchText and foundText fragments. Not documented. Low/medium.
+- capture('server_edit_block_empty_search'), capture('server_edit_block_content_not_string'), capture('server_edit_block_unexpected_count'), capture('server_fuzzy_search_performed', ...).
+- Usage tracking, feedback injection.
+- Note: edit_block writes via writeFile → validatePath. Fine.
+
+**start_process**:
+- Telemetry: capture('server_start_process', {command, commands}) — the command (redacted) sent. Not documented. Medium.
+- SSH -t enhancement (undocumented command modification). Low.
+- PATHEXT repair (Windows). Low.
+- node:local documented.
+- Usage tracking, feedback injection.
+- executeCommand spawns process — documented.
+
+**read_process_output**: telemetry call_tool, usage tracking, feedback injection. Nothing else.
+
+**interact_with_process**: telemetry: capture('server_interact_with_process', {pid, inputLength}), capture('server_interact_with_process_node_fallback', {pid, inputLength}), capture('server_interact_with_process_error'). inputLength sent. Usage tracking, feedback injection.
+
+**force_terminate**: telemetry call_tool, usage tracking, feedback injection. Nothing else.
+
+**list_sessions**: telemetry call_tool, usage tracking, feedback injection. Includes virtual sessions. Minor.
+
+**list_processes**: handlers not provided. Telemetry call_tool, usage tracking, feedback injection.
+
+**kill_process**: handlers not provided. Telemetry call_tool, usage tracking, feedback injection.
+
+**get_usage_stats**: telemetry call_tool, usage tracking, feedback injection. Note: getUsageStats from tools/usage.js not provided.
+
+**get_recent_tool_calls**: excluded from history recording (documented: "Does not track its own calls"). Telemetry call_tool still fires? Yes — the finally block fires for all except track_ui_event. So get_recent_tool_calls itself is telemetry'd. Usage tracking: trackSuccess/trackFailure still called for it (EXCLUDED_TOOLS only excludes history). Feedback injection applies. Documented exclusion from history.
+
+**give_feedback_to_desktop_commander**: tools/feedback.js not provided. Telemetry call_tool, usage tracking, feedback injection. The description says it opens a browser — can't verify (feedback.js not provided). matches_description: true (no visible contradiction).
+
+Now startup behaviors in detail:
+
+1. **Telemetry event on server start** (index.js: `capture('run_server_start')`): network POST to telemetry.desktopcommander.app. Kind: network. Documented in tool descriptions: false. Observable: network. Security: medium.
+
+2. **Telemetry on MCP initialize** (server.js InitializeRequestSchema: capture('run_server_mcp_initialized', {host_entrypoint, host_agent, host_plugin_id})): sends env var values (CLAUDE_CODE_ENTRYPOINT, AI_AGENT, CLAUDE_PLUGIN_DATA basename) to telemetry. Network. Not documented. Medium.
+
+3. **ensureChromeAvailable()** (index.js oninitialized): downloads Chrome for PDF generation. Network + file writes. Not documented in write_pdf description. High? It downloads and installs a browser. I'd say high security relevance (arbitrary binary download). Observable: network + file.
+
+4. **preloadFileSupport()** (index.js oninitialized): loads Excel/DOCX/PDF packages — file reads. Low. Not documented.
+
+5. **Config file creation** (config-manager init): creates ~/.claude-server-commander/config.json with defaults (telemetryEnabled: true). File write. Not documented in tool descriptions. Low/medium. Note default telemetry on.
+
+6. **Config file watcher** (config-manager startConfigWatcher): fs.watch on config dir, reloads config on external change. File system watch. Not documented. Low.
+
+7. **Tool history file** (toolHistory.js constructor): creates/reads/trims tool-history.jsonl at startup. Documented in get_recent_tool_calls description. So documented_in_tool_descriptions: true for this one. I'll mark it documented.
+
+8. **Usage stats in config**: usageTracker reads config at startup? getStats reads on demand. Not startup per se.
+
+9. **UV_THREADPOOL_SIZE=16** (bootstrap.js): process env. Not documented. None/low security.
+
+10. **track-installation.js**: postinstall script sends installation source + clientId to telemetry. Network. Not documented. Medium. This runs at npm install, not server startup, but it's part of the package lifecycle. I'll include it in startup with a note.
+
+11. **Welcome page onboarding** (server.js): handleWelcomePageOnboarding called for eligible clients — may open browser (can't verify, file not provided). I'll mention the call but note behavior not visible? The instruction says don't speculate. The call is visible; what it does isn't. I could list it as "calls handleWelcomePageOnboarding (behavior in welcome-onboarding.js, not provided)". Hmm, that's not a behavior I can confirm. I'll skip it or mention minimally. Actually, I'll skip since I can't see what it does.
+
+12. **uncaughtException → exitProcess(1)**: process behavior. Not security relevant. Skip or include as other/none. I'll skip.
+
+13. **clientId generation**: getOrCreateClientId called when first telemetry event fires — creates UUID in config. Part of telemetry. I'll fold into telemetry entry.
+
+14. **Config recovery/backups**: config-manager may back up corrupt config (backupCorruptConfig) — file write. Conditional on state (corrupt config). Not documented. Low. I'll include as conditional.
+
+15. **Background save retries**: scheduleSave writes config.json in background. Part of config writes. Fold into config write entry.
+
+Also **deferred log messages** — not security relevant.
+
+Now, the "documented_in_tool_descriptions" field for startup entries: the get_config description mentions telemetryEnabled and clientHistory, and give_feedback mentions client_id analytics identifier. But the actual network transmission isn't described. I'll mark false for the network behaviors.
+
+For the tool-history startup entry, the get_recent_tool_calls description documents it, so true.
+
+Now let me also check: **read_file with isUrl** — the description says URLs are always read in full. Implementation: readFileFromUrl fetches with 30s timeout. Documented.
+
+**write_file line limit warning**: description says "Files over 50 lines are still written successfully but may generate performance notes." Implementation: errorMessage appended with performance tip. Documented.
+
+**edit_block line limit warning**: description mentions fileWriteLineLimit warning. Implementation: warningMessage. Documented.
+
+**list_directory 100-item cap**: documented. Implementation matches.
+
+**start_process timeout**: description doesn't mention MAX_PROCESS_WAIT_MS cap of 50s. The tool schema requires timeout_ms. Implementation caps wait at 50s (getProcessWaitLimit). The description doesn't state the 50s ceiling. Undocumented? It's a behavioral limit. Low. I could mention: "start_process/read_process_output/interact_with_process waits are capped at 50s (MAX_PROCESS_WAIT_MS) regardless of timeout_ms; the process keeps running." That's a real undocumented behavior. Medium/low. I'll include for the three process tools.
+
+**read_process_output default timeout 5000ms**: description says "waits up to timeout_ms for new output" — schema default? ReadProcessOutputArgsSchema — not provided, but improved-process-tools.js destructures `timeout_ms = 5000`. The description doesn't state the 5000 default. Minor. The interact description states default 8000ms. For read_process_output, the description doesn't give a default. Minor, skip or include as low.
+
+**interact_with_process default timeout 8000ms**: documented ("timeout_ms: Maximum wait time (default: 8000ms)"). Matches.
+
+**kill_process**: description says "Terminate a running process by PID" — implementation not visible. Fine.
+
+**list_processes**: "Returns process information including PID, command name, CPU usage, and memory usage" — implementation not visible. Fine.
+
+Now the **feedback prompt injection** details: server.js — after success, `usageTracker.shouldPromptForFeedback()` (requires feature flag user_surveys, ≥3 days, ≥10 calls, first command of session, etc.), then appends feedbackResult.message to result content, and capture('feedback_prompt_injected', {...}). This modifies the tool result returned to the LLM. Not documented in any tool description. Security relevance: medium (injects instructions into tool outputs — prompt injection vector). Observable from outside: none (it's in the response). Kind: other (or state). Trigger: conditional on state.
+
+**processDockerPrompt**: server.js — `result = await processDockerPrompt(result, name)` after success. dockerPrompt.js not provided, but the name suggests it injects Docker environment info into results. Can't verify content. The start_process description DOES include Docker environment detection text ("DOCKER CONTAINER ENVIRONMENT DETECTED..."). So the Docker prompt content is documented in start_process description. But processDockerPrompt is applied to ALL successful tool results, not just start_process. Hmm. Since dockerPrompt.js isn't provided, I can't see exactly what it does. I'll mention it cautiously: "result passed through processDockerPrompt (dockerPrompt.js, not provided) which may modify the result" — actually I shouldn't speculate. The call is visible; the modification isn't confirmed. I'll skip or note minimally. Let me skip it since I can't confirm behavior. Actually, the call `result = await processDockerPrompt(result, name)` clearly implies it may transform the result. But what it does is unknown. I'll leave it out to avoid speculation. Hmm, but it's a visible call that reassigns result. I could say "result is passed through processDockerPrompt() which may alter the returned content (implementation not provided)". That's factual about the call. I'll include it as low confidence... The instruction: "Do not speculate beyond the code." The code shows the call and reassignment. I'll include it with evidence noting the file isn't provided. Actually, I'll include it — the behavior "result is transformed by processDockerPrompt" is visible; the nature isn't. I'll phrase carefully.
+
+Let me also check **trackToolCall** (server.js): `trackToolCall(name, args)` — from utils/trackTools.js, not provided. Probably writes to claude_tool_call.log (TOOL_CALL_FILE in config.js). config.js defines TOOL_CALL_FILE = ~/.claude-server-commander/claude_tool_call.log, max 10MB. trackTools.js not provided, but the constant exists. I can say trackToolCall is called on every tool call (trackTools.js not provided; config.js defines TOOL_CALL_FILE log path). That's a file write per call, undocumented. Low. I'll include it in startup or per-tool? It's per-call. I'll mention in per-tool entries? That's a lot. Maybe include once in startup as "every tool call is also passed to trackToolCall (trackTools.js, not provided; config.js defines a 10MB claude_tool_call.log)". Hmm, it's not startup. But the schema only has startup and per-tool. I'll add it to each tool? Too repetitive. Let me add it to a few representative tools... No — accuracy matters. Actually, I'll include it in the per-tool entries compactly along with telemetry and usage tracking. Let me design a compact set of cross-cutting entries:
+
+For each tool (except where noted):
+1. {"behaviour": "Sends a server_call_tool telemetry event (with tool name, duration, error status) to telemetry.desktopcommander.app over HTTPS", "evidence": "server.js: handleCallToolRequest finally block → capture_call_tool", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "medium"}
+2. {"behaviour": "Records success/failure in usageStats, persisted to config.json (background save)", "evidence": "server.js: usageTracker.trackSuccess/trackFailure → config-manager updateValueNonBlocking/queueMutation", "kind": "file_write", "trigger": "every call", "observable_from_outside": "file", "security_relevance": "low"}
+3. {"behaviour": "On success, may append a feedback-request message to the tool result text (usage-based trigger, feature-flagged)", "evidence": "server.js: usageTracker.shouldPromptForFeedback/getFeedbackPromptMessage → result.content[0].text += ...", "kind": "other", "trigger": "conditional on state", "observable_from_outside": "none", "security_relevance": "medium"}
+4. {"behaviour": "Appends the call (name, args, output, duration) to tool-history.jsonl (flushed every second)", "evidence": "server.js: toolHistory.addCall → utils/toolHistory.js", "kind": "file_write", "trigger": "every call", "observable_from_outside": "file", "security_relevance": "low", "documented": true} — documented in get_recent_tool_calls description. Since it's documented, should I include it in undocumented_behaviours? No — undocumented_behaviours should only contain undocumented ones. The description of get_recent_tool_calls documents the history. So exclude from undocumented lists. But wait — the history recording is documented only in get_recent_tool_calls' description, not in each tool's description. The task: "report, per tool... all behaviour the descriptions do not state." The get_recent_tool_calls description states the history behavior. So it's stated in a tool description. I'll exclude it.
+
+5. trackToolCall → claude_tool_call.log: undocumented. Include per tool? I'll include it once per tool compactly. Hmm. Actually, let me reconsider the volume. 25 tools × 4 entries = 100 entries. That's a lot but the schema allows it. Alternatively, I can be judicious: include the cross-cutting entries for all tools since they genuinely apply. I'll do it but keep them terse. Actually, let me reduce: the telemetry and usage-tracking and feedback-injection apply to every tool. I'll include all three for every tool. The trackToolCall log — include for every tool too? It's a real file write. I'll include it. Hmm, that's 4 per tool. Let me just do it — accuracy over brevity. Actually, I worry about report bloat making it less useful. Let me think about what a security auditor wants: the significant findings. The cross-cutting telemetry is significant (network on every call). Usage tracking (config write) is minor. Feedback injection is significant (output modification). trackToolCall log is minor.
+
+I'll include for each tool: telemetry (medium), feedback injection (medium), usage tracking (low), trackToolCall log (low). Plus tool-specific ones. That's thorough.
+
+Wait — for get_recent_tool_calls, the history exclusion is documented. For track_ui_event — not in tools/list, it's an internal tool. Skip.
+
+Also for give_feedback: the description says it opens a browser and includes metadata. tools/feedback.js not provided. I'll mark matches_description: true with the cross-cutting entries.
+
+Now, tool-specific entries:
+
+**get_config**: 
+- Returns config object that may include clientId, usageStats, welcomeOnboarding flags, sawOnboardingPage, feedbackGiven — extra fields beyond those listed. The description says "Config includes fields for:" (non-exhaustive). Skip? I'll skip — "includes" is non-exhaustive.
+- Actually one notable thing: getConfig is called by capture.js for every telemetry event (configManager.getValue('telemetryEnabled')). Not a tool behavior per se.
+
+**set_config_value**:
+- The config key name is sent to telemetry (telemetryData.set_config_value_key_name). Medium. Evidence: server.js handleCallToolRequest.
+- Disabling telemetry sends server_telemetry_opt_out event with prev_value. Evidence: config-manager setValue. Low/medium.
+- Normalizes telemetryEnabled string values ('true'/'false'). Minor, skip.
+
+**read_file**:
+- Sends fileExtension, offset, length, fileSize to telemetry (server_read_file). Medium.
+- Sends stat errors (server_read_file_error). Low.
+- Path validation errors to telemetry (server_path_validation_error, server_path_realpath_error, server_path_validation_timeout). Low.
+- Directory read returns listing instead of error. Low. Trigger: conditional on input (path is a directory).
+- If allowedDirectories config is missing/not an array, silently sets it to [homedir] and persists to config. Medium. Trigger: conditional on configuration.
+- URL fetch: documented.
+
+**read_multiple_files**: per-file validatePath telemetry. Minor — fold into read_file-like entry? I'll add a compact entry: "Each path is validated via validatePath, which sends path-validation errors to telemetry". Low.
+
+**write_file**:
+- Sends fileExtension, mode, contentBytes, lineCount to telemetry (server_write_file). Medium.
+- Rejects write without explicit mode when target exists non-empty (data-loss protection). Low. Trigger: conditional on state (existing file) + input (mode omitted).
+- getAllowedDirs fallback (same as read_file). Medium. Conditional on configuration.
+
+**write_pdf**:
+- Sends fileExtension, contentLength/operation counts to telemetry (server_write_pdf). Medium.
+- PDF creation may trigger Chrome download (ensureChromeAvailable at startup; tools/pdf/markdown.js not provided for per-call). I'll note the startup one only.
+
+**create_directory**: nothing specific beyond cross-cutting.
+
+**list_directory**: validatePath on each recursed subdirectory (telemetry on path errors). Low. Also follows symlinks to classify entries. Minor, skip.
+
+**move_file**: nothing specific. movePath may copy+delete across volumes — documented as move. Skip.
+
+**start_search**: handlers not provided. Cross-cutting only. Note: searchFiles (filesystem.js) uses searchManager with ripgrep and a 30s terminate timer — but that's the legacy searchFiles, not necessarily the handler. The handler handleStartSearch is in handlers/index.js (not provided). I'll only list cross-cutting.
+
+**get_more_search_results, stop_search, list_searches**: cross-cutting only.
+
+**get_file_info**: cross-cutting. getFileInfo loads file handler (may load packages). Minor, skip.
+
+**edit_block**:
+- Sends oldStringLength/Lines, newStringLength/Lines, expectedReplacements, fileExtension to telemetry (server_edit_block). Medium.
+- On failed exact match, runs fuzzy search in a worker thread and appends a log entry (including search text and found text fragments) to fuzzy-search.log. Low/medium. Trigger: conditional on input (no exact match). Evidence: tools/edit.js performSearchReplace → fuzzySearchLogger.log.
+- Sends fuzzy search metrics (server_fuzzy_search_performed). Low.
+- Sends empty-search and unexpected-count events. Low.
+
+**start_process**:
+- Sends command (path-redacted) to telemetry (server_start_process). Medium.
+- Rewrites "ssh ..." to "ssh -t ..." (undocumented command modification). Low. Trigger: conditional on input.
+- Repairs PATHEXT for spawned Windows shells. Low. Trigger: conditional on configuration (Windows).
+- Wait capped at 50s (MAX_PROCESS_WAIT_MS) regardless of timeout_ms; process keeps running. Low/medium. Trigger: every call (when timeout_ms > 50s). Evidence: config.js MAX_PROCESS_WAIT_MS, improved-process-tools.js getProcessWaitLimit.
+- node:local: documented.
+
+**read_process_output**:
+- Wait capped at 50s. Low. Evidence: same.
+- Default timeout_ms 5000 (schema default not shown in description). Minor — the description says "waits up to timeout_ms" without default. I'll include as low? The description doesn't state a default; implementation defaults to 5000. It's minor. I'll include it as low. Hmm, actually the inputSchema for read_process_output has no default for timeout_ms (it's optional, type number). The description doesn't mention a default. Implementation: `timeout_ms = 5000`. I'll include as low.
+
+**interact_with_process**:
+- Sends pid and inputLength to telemetry (server_interact_with_process). Medium.
+- node:local fallback sends server_interact_with_process_node_fallback with inputLength. Low.
+- Wait capped at 50s. Low.
+- Default timeout 8000 documented. Matches.
+
+**force_terminate**: cross-cutting only. Virtual node sessions cleared. Minor, skip.
+
+**list_sessions**: includes node:local virtual sessions in output. Minor — the description says "List all active terminal sessions" — virtual sessions are arguably sessions. Skip.
+
+**list_processes**: cross-cutting only (handler not provided).
+
+**kill_process**: cross-cutting only (handler not provided).
+
+**get_usage_stats**: cross-cutting only (handler not provided).
+
+**get_recent_tool_calls**: 
+- Excluded from history recording (documented).
+- Still sends server_call_tool telemetry and usage tracking. Cross-cutting.
+- Reads tool-history.jsonl. Documented.
+
+**give_feedback_to_desktop_commander**: cross-cutting only (handler not provided). Description says opens browser — can't verify.
+
+Now startup entries:
+
+1. Telemetry on start: capture('run_server_start') → HTTPS POST to telemetry.desktopcommander.app/mp/collect (fallback Cloud Run URL). Network. Not documented. Medium. Evidence: index.js runServer; utils/capture.js TELEMETRY_PROXY_URL.
+
+2. Telemetry on MCP initialize: capture('run_server_mcp_initialized', {host_entrypoint: CLAUDE_CODE_ENTRYPOINT, host_agent: AI_AGENT, host_plugin_id}) — env values sent. Network. Not documented. Medium. Evidence: server.js InitializeRequestSchema.
+
+3. Chrome download: ensureChromeAvailable() after initialization — preemptive check/download of Chrome for PDF generation. Network + file. Not documented (write_pdf description doesn't mention it). High. Evidence: index.js server.oninitialized; import from tools/pdf/markdown.js.
+
+4. Package preloading: preloadFileSupport() loads Excel/DOCX/PDF packages at initialization. File reads. Not documented. Low. Evidence: index.js.
+
+5. Config file creation: configManager.loadConfig() creates ~/.claude-server-commander/config.json with defaults (telemetryEnabled: true) on first run. File write. Not documented. Low. Evidence: config-manager.js init/loadStartupConfig; config.js CONFIG_FILE.
+
+6. Config file watcher: fs.watch on config dir; reloads config 20ms after external change. File watch. Not documented. Low. Evidence: config-manager.js startConfigWatcher.
+
+7. Tool history file: toolHistory singleton loads/trims tool-history.jsonl at startup. Documented in get_recent_tool_calls description. Mark documented_in_tool_descriptions: true. Low. Evidence: utils/toolHistory.js constructor.
+
+8. Threadpool size: sets UV_THREADPOOL_SIZE=16 if unset. Process env. Not documented. None. Evidence: bootstrap.js.
+
+9. Installation tracking: track-installation.js (npm postinstall) detects install source and POSTs to telemetry with clientId. Network. Not documented. Medium. Evidence: track-installation.js.
+
+10. Corrupt config backup: on corrupt config.json, backs up the file and rewrites it. File write. Conditional on state. Not documented. Low. Evidence: config-manager.js recoverCorruptConfig/backupCorruptConfig.
+
+11. Welcome onboarding: handleWelcomePageOnboarding called for eligible clients on initialize. Behavior not visible (welcome-onboarding.js not provided). I'll include with a note? The call is visible. I'll include: "Calls handleWelcomePageOnboarding for eligible clients (A/B-tested welcome page); implementation not provided". Kind: other. Observable: unknown — I'll say "none" since I can't confirm. Hmm, observable_from_outside options: file|process|network|none. I'll say none (unverified). Security: low. Actually, since I can't see what it does, maybe skip. But the call itself is a behavior. I'll include it cautiously with security_relevance low and note the file isn't provided. Let me include it.
+
+12. Uncaught exception → exitProcess(1): process exit on uncaught exceptions (except JSON parse errors). Not documented. Low/none. I'll include as other/none? It's process behavior. Security relevance: none. I'll include briefly. Actually, this is standard error handling; skip? The task says report all behavior descriptions don't state. It's a behavior. I'll include it as low/none. Hmm, I'll include it for completeness with security_relevance none.
+
+Also: **deferred log messages flushed after init** — not security relevant. Skip.
+
+**Config save retries in background** — part of config writes. Skip (covered by config write entries).
+
+Now, "declared_effect_not_implemented": any tool description claiming something not implemented? Let me check:
+
+- get_config: claims clientHistory field. tools/config.js not provided — can't verify. Can't claim not implemented.
+- read_file: claims DOCX raw XML mode etc. — utils/files not provided. Can't verify.
+- write_pdf: claims operations — tools/pdf not provided. Can't verify.
+- start_search: claims streaming search sessions — handlers not provided. Can't verify.
+- list_processes: claims CPU/memory usage — handler not provided. Can't verify.
+- give_feedback: claims opens browser — feedback.js not provided. Can't verify.
+
+So declared_effect_not_implemented: null for all (no visible evidence of unimplemented claims).
+
+matches_description: For tools where I found no contradiction, true. All tools: the dispatch in server.js matches the tool names. No visible contradictions. So true for all.
+
+Wait — one check on read_file description: "URLs are always read in full regardless of offset/length" — implementation readFileFromUrl ignores offset/length. Matches. "Images (PNG, JPEG, GIF, WebP): Base64 encoded" — matches. 
+
+write_file description: "Files over 50 lines are still written successfully but may generate performance notes" — implementation writes and appends tip. Matches. But the mode-protection rejection is an extra behavior (undocumented). matches_description stays true (the described behavior is implemented; there's just extra behavior).
+
+start_process description: "Running on Linux (Docker). Default shell: /bin/sh." — that's from OS_GUIDANCE generated at runtime. Matches implementation (getOSSpecificGuidance). The SSH rewrite is extra.
+
+Now, one more: **read_file svgAsImage** — for origin:'ui' reads, SVG returned as image. The description doesn't mention SVG handling at all. Minor. The description lists image types PNG, JPEG, GIF, WebP — no SVG. Implementation: isImageAnswer(contentType, svgAsImage) — SVG as image only for UI origin. Minor, skip? It's a small undocumented behavior. I'll skip — low value.
+
+**read_file structuredContent for UI origin** — internal. Skip.
+
+**get_file_info**: description lists fields; implementation also returns isExcelFile, isImage, isPdf, isBinary, errorMessage, title, author, totalPages. Extra fields. "including:" is non-exhaustive. Skip.
+
+**list_directory**: description says "If a directory cannot be accessed, it will show [DENIED]" — implementation matches. "Top-level directory shows ALL items" — matches (isTopLevel). Good.
+
+**edit_block**: description says "Also searches headers/footers if not found in document body" — DocxFileHandler (not provided). Can't verify. Skip.
+
+Now the overall assessment: description_implementation_mismatch: "substantial" — because of telemetry on every call, Chrome download, feedback injection, SSH rewrite, mode-protection, config fallback writes, fuzzy log. There are many undocumented behaviors, several with security relevance. I'd say "substantial".
+
+Summary: two sentences.
+
+Now let me also double check the telemetry endpoints: TELEMETRY_PROXY_URL = 'https://telemetry.desktopcommander.app/mp/collect', fallback 'https://dc-telemetry-proxy-83847352264.europe-west1.run.app/mp/collect'. capture() is fire-and-forget (void async). Events include client_id (UUID from config), platform, container info, client name/version, event params. Path redaction applied. The TODO comment notes the endpoint is unauthenticated. Security relevance medium.
+
+Also note: capture.js imports currentClient from server.js and server.js imports from capture.js — circular but works.
+
+One more startup thing: **config-manager heldRecoveryEvents** — telemetry for config recovery sent after init. Fold into entry 10.
+
+Also **getOrCreateClientId** — creates clientId UUID in config on first telemetry event. Fold into telemetry entry 1.
+
+Now, per-tool cross-cutting entries — let me finalize the wording and evidence:
+
+Telemetry entry (every tool):
+- behaviour: "Sends a 'server_call_tool' telemetry event (tool name, duration, error status) via HTTPS POST to telemetry.desktopcommander.app (fallback: dc-telemetry-proxy-83847352264.europe-west1.run.app)"
+- evidence: "server.js: handleCallToolRequest finally block → capture_call_tool → utils/capture.js sendToTelemetryProxy"
+- kind: network
+- trigger: every call
+- observable_from_outside: network
+- security_relevance: medium
+
+Usage tracking entry (every tool):
+- behaviour: "Records the call's success/failure in usageStats, which is persisted to config.json by a background save"
+- evidence: "server.js: usageTracker.trackSuccess/trackFailure → utils/usageTracker.js → config-manager updateValueNonBlocking/queueMutation"
+- kind: file_write
+- trigger: every call
+- observable_from_outside: file
+- security_relevance: low
+
+Feedback injection entry (every tool, on success):
+- behaviour: "On success, may append a feedback-request instruction to the tool result text (triggered by usage patterns, feature-flag 'user_surveys') and sends a 'feedback_prompt_injected' telemetry event"
+- evidence: "server.js: usageTracker.shouldPromptForFeedback/getFeedbackPromptMessage → result.content[0].text += feedbackResult.message"
+- kind: other
+- trigger: conditional on state
+- observable_from_outside: none
+- security_relevance: medium
+
+trackToolCall entry (every tool):
+- behaviour: "Passes the call to trackToolCall (trackTools.js, not provided; config.js defines a 10 MB claude_tool_call.log in ~/.claude-server-commander)"
+- evidence: "server.js: trackToolCall(name, args); config.js: TOOL_CALL_FILE"
+- kind: file_write
+- trigger: every call
+- observable_from_outside: file
+- security_relevance: low
+
+Hmm, for trackToolCall I'm inferring it writes to TOOL_CALL_FILE. config.js defines TOOL_CALL_FILE but trackTools.js isn't provided, so I can't confirm trackToolCall writes there. I should phrase carefully: "Calls trackToolCall(name, args) (utils/trackTools.js not provided; config.js defines TOOL_CALL_FILE = ~/.claude-server-commander/claude_tool_call.log, 10 MB cap)". That's factual. Security relevance low. OK.
+
+Also processDockerPrompt entry (every tool, on success):
+- behaviour: "Passes the result through processDockerPrompt(result, name), which may alter the returned content (utils/dockerPrompt.js not provided)"
+- evidence: "server.js: result = await processDockerPrompt(result, name)"
+- kind: other
+- trigger: every call (on success)
+- observable_from_outside: none
+- security_relevance: low
+
+Hmm, is this speculation? The call reassigns result. It's factual that the result is transformed by an unseen function. I'll include it with low relevance and a note. Actually, I'll include it — it's a visible call that may modify output.
+
+That's 5 cross-cutting entries per tool × 25 tools = 125 entries. Plus tool-specific. The JSON will be large but that's fine.
+
+Wait, should I really include all 5 for every tool? Let me reconsider. The task says "report, per tool and for start-up, all behaviour the descriptions do not state." Yes, per tool. I'll include them. But maybe I can trim the weakest ones (trackToolCall, processDockerPrompt) to reduce noise? No — thoroughness is the job. I'll keep them but they're compact.
+
+Actually, let me reconsider trackToolCall: is it really per-call? server.js: `trackToolCall(name, args);` — yes, every call. OK.
+
+And processDockerPrompt: `result = await processDockerPrompt(result, name);` — after the success branch, so on success. OK.
+
+Now tool-specific entries:
+
+get_config: none beyond cross-cutting. Actually — getConfig is called by capture.js on every telemetry event (getValue('telemetryEnabled')). Not a tool behavior. Skip.
+
+set_config_value:
+- {"behaviour": "Sends the config key name being set to telemetry (set_config_value_key_name)", "evidence": "server.js: handleCallToolRequest — telemetryData.set_config_value_key_name = args.key", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "medium"}
+- {"behaviour": "When telemetryEnabled is set to false, sends a 'server_telemetry_opt_out' event with the previous value", "evidence": "config-manager.js: setValue — capture('server_telemetry_opt_out', {reason: 'user_disabled', prev_value})", "kind": "network", "trigger": "conditional on input", "observable_from_outside": "network", "security_relevance": "low"}
+
+read_file:
+- {"behaviour": "Sends file extension, offset, length and file size to telemetry (server_read_file); stat failures sent as server_read_file_error", "evidence": "tools/filesystem.js: readFileFromDisk — capture('server_read_file', {fileExtension, offset, length, fileSize})", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "medium"}
+- {"behaviour": "Path validation failures (realpath errors, disallowed paths, timeouts) are sent to telemetry", "evidence": "tools/filesystem.js: validatePath — capture('server_path_realpath_error'/'server_path_validation_error'/'server_path_validation_timeout')", "kind": "network", "trigger": "conditional on input", "observable_from_outside": "network", "security_relevance": "low"}
+- {"behaviour": "Reading a directory returns a directory listing with a hint instead of an error", "evidence": "tools/filesystem.js: readFileFromDisk — stats.isDirectory() → listDirectory fallback", "kind": "other", "trigger": "conditional on input", "observable_from_outside": "none", "security_relevance": "low"}
+- {"behaviour": "If allowedDirectories is missing or not an array, silently defaults it to the user's home directory and persists that to config.json", "evidence": "tools/filesystem.js: getAllowedDirs — configManager.setValue('allowedDirectories', [os.homedir()])", "kind": "config", "trigger": "conditional on configuration", "observable_from_outside": "file", "security_relevance": "medium"}
+
+read_multiple_files:
+- {"behaviour": "Each path is validated via validatePath, which sends path-validation errors to telemetry", "evidence": "tools/filesystem.js: readMultipleFiles → validatePath", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "low"}
+
+write_file:
+- {"behaviour": "Sends file extension, mode, content byte count and line count to telemetry (server_write_file)", "evidence": "tools/filesystem.js: writeFile — capture('server_write_file', {fileExtension, mode, contentBytes, lineCount})", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "medium"}
+- {"behaviour": "Rejects the write when mode is omitted and the target file already exists with content (data-loss protection); the description documents mode='rewrite' as the default without this refusal", "evidence": "handlers/filesystem-handlers.js: handleWriteFile — modeProvided check → createErrorResponse", "kind": "other", "trigger": "conditional on input", "observable_from_outside": "none", "security_relevance": "low"}
+- getAllowedDirs fallback (same as read_file). Include.
+
+write_pdf:
+- {"behaviour": "Sends file extension and content/operation counts to telemetry (server_write_pdf)", "evidence": "tools/filesystem.js: writePdf — capture('server_write_pdf', ...)", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "medium"}
+
+create_directory: cross-cutting only.
+
+list_directory:
+- {"behaviour": "Each recursed subdirectory is validated via validatePath, which sends path-validation errors to telemetry", "evidence": "tools/filesystem.js: listDirectory → validatePath(fullPath)", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "low"}
+
+move_file: cross-cutting only.
+
+start_search, get_more_search_results, stop_search, list_searches: cross-cutting only (handlers not provided).
+
+get_file_info: cross-cutting only.
+
+edit_block:
+- {"behaviour": "Sends search/replace string lengths and line counts, expected replacements and file extension to telemetry (server_edit_block)", "evidence": "tools/edit.js: performSearchReplace — capture('server_edit_block', {fileExtension, oldStringLength, oldStringLines, newStringLength, newStringLines, expectedReplacements})", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "medium"}
+- {"behaviour": "When no exact match is found, runs a fuzzy search in a worker thread and appends a log entry — including the search text and the matched file text — to a local fuzzy-search log", "evidence": "tools/edit.js: performSearchReplace → runFuzzySearchInWorker + fuzzySearchLogger.log(logEntry)", "kind": "file_write", "trigger": "conditional on input", "observable_from_outside": "file", "security_relevance": "low"}
+- {"behaviour": "Sends fuzzy-search metrics (similarity, execution time, lengths) to telemetry (server_fuzzy_search_performed)", "evidence": "tools/edit.js: capture('server_fuzzy_search_performed', fuzzySearchData)", "kind": "network", "trigger": "conditional on input", "observable_from_outside": "network", "security_relevance": "low"}
+
+start_process:
+- {"behaviour": "Sends the command (paths redacted) to telemetry (server_start_process)", "evidence": "tools/improved-process-tools.js: startProcess — capture('server_start_process', {command, commands})", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "medium"}
+- {"behaviour": "Rewrites a command starting with 'ssh ' to 'ssh -t ' (forces TTY) before spawning", "evidence": "terminal-manager.js: executeCommand — enhancedCommand = command.replace(/^ssh /, 'ssh -t ')", "kind": "other", "trigger": "conditional on input", "observable_from_outside": "process", "security_relevance": "low"}
+- {"behaviour": "On Windows, repairs a corrupted inherited PATHEXT before spawning the shell", "evidence": "terminal-manager.js: executeCommand — spawnOptions.env.PATHEXT = getRepairedPathExt()", "kind": "config", "trigger": "conditional on configuration", "observable_from_outside": "process", "security_relevance": "low"}
+- {"behaviour": "The wait is capped at 50 s (MAX_PROCESS_WAIT_MS) regardless of timeout_ms; the process keeps running and the caller continues with read_process_output", "evidence": "config.js: MAX_PROCESS_WAIT_MS = 50000; tools/improved-process-tools.js: getProcessWaitLimit", "kind": "other", "trigger": "every call", "observable_from_outside": "process", "security_relevance": "low"}
+
+read_process_output:
+- {"behaviour": "The wait is capped at 50 s (MAX_PROCESS_WAIT_MS) regardless of timeout_ms", "evidence": "config.js: MAX_PROCESS_WAIT_MS; tools/improved-process-tools.js: getProcessWaitLimit(timeout_ms, maxWaitMs)", "kind": "other", "trigger": "every call", "observable_from_outside": "process", "security_relevance": "low"}
+- {"behaviour": "Defaults timeout_ms to 5000 when omitted (the description states no default)", "evidence": "tools/improved-process-tools.js: readProcessOutput — timeout_ms = 5000", "kind": "other", "trigger": "conditional on input", "observable_from_outside": "none", "security_relevance": "low"}
+
+interact_with_process:
+- {"behaviour": "Sends the pid and input length to telemetry (server_interact_with_process)", "evidence": "tools/improved-process-tools.js: interactWithProcess — capture('server_interact_with_process', {pid, inputLength})", "kind": "network", "trigger": "every call", "observable_from_outside": "network", "security_relevance": "medium"}
+- {"behaviour": "The wait is capped at 50 s (MAX_PROCESS_WAIT_MS) regardless of timeout_ms", "evidence": "config.js: MAX_PROCESS_WAIT_MS; tools/improved-process-tools.js: getProcessWaitLimit", "kind": "other", "trigger": "every call", "observable_from_outside": "process", "security_relevance": "low"}
+
+force_terminate: cross-cutting only.
+list_sessions: cross-cutting only.
+list_processes: cross-cutting only.
+kill_process: cross-cutting only.
+get_usage_stats: cross-cutting only.
+get_recent_tool_calls: cross-cutting only. (History exclusion documented.)
+give_feedback_to_desktop_commander: cross-cutting only.
+
+Now startup entries finalized:
+
+1. Telemetry on start (network, medium, not documented, observable network):
+- behaviour: "Sends a 'run_server_start' telemetry event (and a client_id UUID, created and stored in config.json on first use) via HTTPS POST to telemetry.desktopcommander.app/mp/collect, falling back to a Cloud Run URL"
+- evidence: "index.js: runServer → capture('run_server_start'); utils/capture.js: TELEMETRY_PROXY_URL/FALLBACK, getOrCreateClientId"
+- kind: network
+- documented_in_tool_descriptions: false
+- observable_from_outside: network
+- security_relevance: medium
+
+2. Telemetry on initialize (network, medium):
+- behaviour: "On MCP initialize, sends a 'run_server_mcp_initialized' event carrying raw host environment values (CLAUDE_CODE_ENTRYPOINT, AI_AGENT, basename of CLAUDE_PLUGIN_DATA)"
+- evidence: "server.js: InitializeRequestSchema handler → capture('run_server_mcp_initialized', {host_entrypoint, host_agent, host_plugin_id})"
+- kind: network
+- documented: false
+- observable: network
+- security: medium
+
+3. Chrome download (network+file, high):
+- behaviour: "After initialization, preemptively checks for and downloads Chrome for PDF generation (background)"
+- evidence: "index.js: server.oninitialized → ensureChromeAvailable() (imported from tools/pdf/markdown.js)"
+- kind: network (also file) — kind enum: file_write|subprocess|network|config|state|other. I'll say network.
+- documented: false
+- observable: network
+- security: high
+
+4. Package preload (file, low):
+- behaviour: "After initialization, loads the Excel, DOCX and PDF packages (file reads)"
+- evidence: "index.js: server.oninitialized → preloadFileSupport()"
+- kind: file_write? It's file reads. kind options don't include file_read. I'll use "other". Hmm, kind: file_write|subprocess|network|config|state|other. File reads → "other". 
+- documented: false
+- observable: file
+- security: low
+
+5. Config file creation (file_write, low):
+- behaviour: "Creates ~/.claude-server-commander/config.json with defaults (telemetryEnabled defaults to true) on first run"
+- evidence: "config-manager.js: init/loadStartupConfig → performConfigMutation(getDefaultConfig); config.js: CONFIG_FILE"
+- kind: file_write
+- documented: false
+- observable: file
+- security: low
+
+6. Config watcher (other, low):
+- behaviour: "Watches the config directory with fs.watch and reloads config.json ~20 ms after an external change"
+- evidence: "config-manager.js: startConfigWatcher"
+- kind: other
+- documented: false
+- observable: file
+- security: low
+
+7. Tool history file (file, low, documented):
+- behaviour: "Loads and trims tool-history.jsonl (up to 1000 in-memory entries, 5 MB on-disk cap) at startup; every tool call is appended and flushed every second"
+- evidence: "utils/toolHistory.js: constructor → loadFromDisk/startWriteProcessor"
+- kind: file_write
+- documented_in_tool_descriptions: true (get_recent_tool_calls description)
+- observable: file
+- security: low
+
+8. Threadpool (other, none):
+- behaviour: "Sets UV_THREADPOOL_SIZE=16 (if unset) before any fs work"
+- evidence: "bootstrap.js"
+- kind: other
+- documented: false
+- observable: none
+- security: none
+
+9. Installation tracking (network, medium):
+- behaviour: "A postinstall script (track-installation.js) detects the installation source (npm, npx, smithery, CI, docker, etc.) and POSTs it with the client_id to the telemetry proxy"
+- evidence: "track-installation.js: main → detectInstallationSource + trackInstallation → postTelemetryPayload"
+- kind: network
+- documented: false
+- observable: network
+- security: medium
+
+10. Corrupt config recovery (file_write, low, conditional):
+- behaviour: "If config.json is corrupt, backs it up and rewrites it with recoverable settings plus defaults, and sends a 'config_parse_error_recovered' telemetry event"
+- evidence: "config-manager.js: recoverCorruptConfig → backupCorruptConfig/writeConfigAtomically; emitCorruptConfigTelemetry"
+- kind: file_write
+- documented: false
+- observable: file
+- security: low
+- trigger: conditional on state — wait, the startup array schema doesn't have "trigger". Let me check the schema: startup entries have behaviour, evidence, kind, documented_in_tool_descriptions, observable_from_outside, security_relevance. No trigger field. OK, no trigger for startup.
+
+11. Welcome onboarding (other, low):
+- behaviour: "For eligible clients (A/B-tested, excluding desktop-commander clients and remote contexts), calls handleWelcomePageOnboarding on initialize (utils/welcome-onboarding.js not provided, so its effects — e.g. opening a browser — cannot be verified from the code given)"
+- evidence: "server.js: InitializeRequestSchema → handleWelcomePageOnboarding(currentClient.name)"
+- kind: other
+- documented: false
+- observable: none
+- security: low
+
+12. Uncaught exception exit (other, none):
+- behaviour: "Exits the process (exitProcess(1)) on uncaught exceptions other than JSON parse errors; unhandled rejections are logged and sent to telemetry without exiting"
+- evidence: "index.js: process.on('uncaughtException'/'unhandledRejection')"
+- kind: other
+- documented: false
+- observable: process
+- security: none
+
+Hmm, observable for #12: process. OK.
+
+Also should I include the deferred log flush? Skip.
+
+Now overall:
+- description_implementation_mismatch: "substantial"
+- summary: "Every tool call triggers undocumented network telemetry (server_call_tool plus tool-specific events), a usageStats write to config.json, a tool-history append, and — on success — a possible feedback-request injection into the result text. Startup additionally downloads Chrome for PDF support, creates and watches a config file, and a postinstall script phones home installation details; several tools have further undocumented behaviors (SSH command rewriting, write-mode data-loss protection, silent allowedDirectories defaulting, fuzzy-search log writes)."
+
+That's two sentences. Good.
+
+Now let me double-check a few evidence details:
+
+- server.js handleCallToolRequest finally: `if (name !== 'track_ui_event') { capture_call_tool('server_call_tool', {...}) }`. Yes.
+- trackToolCall: `trackToolCall(name, args);` yes.
+- toolHistory.addCall: `if (!EXCLUDED_TOOLS.includes(name)) { toolHistory.addCall(name, args, result, duration); }` — EXCLUDED_TOOLS = ['get_recent_tool_calls', 'track_ui_event']. Yes.
+- usageTracker.trackSuccess/trackFailure: yes, in the success/failure branches.
+- Feedback injection: `const shouldPrompt = await usageTracker.shouldPromptForFeedback();` ... `result.content[0].text = `${currentContent}${feedbackResult.message}``. Yes.
+- processDockerPrompt: `result = await processDockerPrompt(result, name);` yes.
+- set_config_value key telemetry: `if (name === 'set_config_value' && args && typeof args === 'object' && 'key' in args) { telemetryData.set_config_value_key_name = args.key; }` yes.
+- config-manager setValue telemetry opt-out: yes.
+- readFileFromDisk captures: yes.
+- validatePath captures: yes.
+- Directory fallback: yes.
+- getAllowedDirs: yes — `allowedDirectories = [os.homedir()]; await configManager.setValue('allowedDirectories', allowedDirectories);`. Note: this only happens when config.allowedDirectories is falsy or not an array. Default config has [] (empty array, truthy), so normally not triggered. But if config lacks the key, it triggers. Conditional on configuration. Good.
+- handleWriteFile mode protection: yes.
+- writePdf captures: yes.
+- listDirectory validatePath: yes.
+- edit.js captures and fuzzy log: yes. fuzzySearchLogger from utils/fuzzySearchLogger.js (not provided) — the log path is obtained via fuzzySearchLogger.getLogPath(). The log file name isn't visible in provided code. I'll say "a local fuzzy-search log (path from fuzzySearchLogger.getLogPath(); utils/fuzzySearchLogger.js not provided)". Evidence: tools/edit.js performSearchReplace → fuzzySearchLogger.log(logEntry).
+- startProcess capture: yes.
+- SSH rewrite: yes.
+- PATHEXT: yes.
+- MAX_PROCESS_WAIT_MS: config.js = 50000. getProcessWaitLimit in terminal-manager.js. startProcess passes maxWaitMs = MAX_PROCESS_WAIT_MS default. Yes.
+- readProcessOutput timeout default 5000: `const { pid, timeout_ms = 5000, ... } = parsed.data;` yes.
+- interactWithProcess capture: yes.
+- index.js ensureChromeAvailable: yes, in server.oninitialized.
+- preloadFileSupport: yes.
+- config-manager init: yes.
+- startConfigWatcher: yes.
+- toolHistory constructor: yes.
+- bootstrap: yes.
+- track-installation.js: yes.
+- recoverCorruptConfig: yes.
+- welcome onboarding: yes.
+- uncaughtException: yes.
+
+One more consideration: the get_config tool — does it send telemetry? getConfig itself doesn't capture, but the cross-cutting server_call_tool fires. Also getConfig is called by capture.js for telemetry events. Fine.
+
+For give_feedback: the description says "Open feedback form in browser" — tools/feedback.js not provided, so I can't verify the browser opening. matches_description: true (no visible contradiction). I'll note in undocumented_behaviours only cross-cutting.
+
+For list_processes and kill_process: handlers not provided. Cross-cutting only.
+
+For search tools: handlers not provided. Cross-cutting only. Note: filesystem.js searchFiles exists but is a legacy compatibility layer; the actual handler handleStartSearch is in handlers/index.js (not provided). I won't claim anything about search behavior.
+
+Now, matches_description for all: true. Any false? Let me scan for contradictions:
+
+- read_file description says "Can fetch content from URLs when isUrl parameter is set to true (URLs are always read in full regardless of offset/length)" — implementation matches.
+- write_file: "Files over 50 lines are still written successfully but may generate performance notes" — matches (writes + tip). The mode-protection is extra but doesn't contradict.
+- start_process: description includes Docker detection text — matches OS_GUIDANCE. No contradiction.
+- get_recent_tool_calls

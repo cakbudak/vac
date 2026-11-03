@@ -1,0 +1,556 @@
+```json
+{
+  "server": "obsidian",
+  "startup": [
+    {
+      "behaviour": "Writes diagnostic messages (warnings, errors) to stderr in a structured format",
+      "evidence": "cli.js: runCli / writeDiagnostic calls; diagnostics.js: writeDiagnostic",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Resolves and validates each vault path via fs.realpath and fs.stat, checks for .obsidian directory, checks read/write permissions",
+      "evidence": "vault.js: VaultRegistry.create",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Creates internal state directories inside each vault root: <vault>/.mcp-obsidian/transactions, .mcp-obsidian/trash, .mcp-obsidian/locks with mode 0o700",
+      "evidence": "transaction.js: TransactionManager.initialize / fs.mkdir calls",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "On startup, acquires a filesystem lock, scans the transactions directory and rolls back any incomplete (preparing/committing) transactions, then prunes old transaction journals based on --recovery-days and --recovery-max-bytes",
+      "evidence": "transaction.js: TransactionManager.initialize -> recoverIncomplete, prune",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Writes a JSON log line to stderr for every server start event",
+      "evidence": "cli.js: logger.log('info', 'server_started', ...)",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Registers SIGINT and SIGTERM signal handlers to close the MCP transport",
+      "evidence": "cli.js: process.once('SIGINT'...) / process.once('SIGTERM'...)",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "obsidian_list_vaults": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_read_note": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Automatically appends '.md' to the path if it does not already end with '.md'",
+          "evidence": "vault.js: VaultFs.normalizeRelative (option markdown:true); read-note/index.js: resolveExisting call with {markdown:true}",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Rejects paths that are symlinks or contain symlink components",
+          "evidence": "vault.js: VaultFs.assertComponentsSafe -> lstat symlink check",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects notes larger than 5 MiB",
+          "evidence": "vault.js: VaultFs.readBytes -> MAX_CONTENT_BYTES check",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Returns a SHA-256 etag computed over raw bytes of the note file",
+          "evidence": "vault.js: VaultFs.readText -> sha256(bytes); read-note/index.js execute return etag",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "The read cursor encodes (path, etag, offset) as base64url JSON; supplying a cursor for a note that has changed since the previous read raises INVALID_CURSOR",
+          "evidence": "read-note/index.js: decodeReadCursor checks value.etag !== etag",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_create_note": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Automatically appends '.md' to the path if it does not end with '.md'",
+          "evidence": "create-note/index.js: resolveNew with {markdown:true}",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Rejects symlinks in the path",
+          "evidence": "vault.js: VaultFs.assertComponentsSafe",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Writes a journaled transaction manifest under <vault>/.mcp-obsidian/transactions/<uuid>/manifest.json and snapshot files",
+          "evidence": "transaction.js: TransactionManager.execute -> writeManifest, atomicWrite",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Uses a filesystem lock (directory-based) to serialize writes within a vault",
+          "evidence": "transaction.js: TransactionManager.acquireLock",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Writes files atomically via a temporary file + rename/link, then syncs the directory",
+          "evidence": "transaction.js: atomicWrite, syncDirectory",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Returns a SHA-256 etag of the created content",
+          "evidence": "create-note/index.js: sha256(content)",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Rejects content exceeding 5 MiB (byte-level check)",
+          "evidence": "create-note/index.js: assertByteLimit(content)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_edit_note": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Automatically appends '.md' to path if missing",
+          "evidence": "edit-note/index.js: resolveExisting with {markdown:true}",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Also validates combined result does not exceed 5 MiB after append/prepend",
+          "evidence": "edit-note/index.js: assertByteLimit(next) after constructing composed content",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Writes a journaled transaction manifest and uses a filesystem lock",
+          "evidence": "transaction.js: TransactionManager.execute / acquireLock",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Rejects symlinks in the path",
+          "evidence": "vault.js: VaultFs.assertComponentsSafe",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Returns a SHA-256 etag of the resulting note content",
+          "evidence": "edit-note/index.js: sha256(next)",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_delete_note": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When mode='trash', copies the note content to <vault>/.mcp-obsidian/trash/<uuid>.md and writes a JSON metadata file <uuid>.json containing original_path, deleted_at, and reason",
+          "evidence": "delete-note/index.js: trashBase write operations",
+          "kind": "file_write",
+          "trigger": "conditional on input",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Writes a journaled transaction manifest and uses a filesystem lock",
+          "evidence": "transaction.js: TransactionManager.execute / acquireLock",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "When mode='permanent', the transaction snapshot for the deleted file is scrubbed (retainSnapshot=false path passed)",
+          "evidence": "delete-note/index.js: retainSnapshot: mode !== 'permanent'",
+          "kind": "file_write",
+          "trigger": "conditional on input",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "confirm_path is normalized and compared to the resolved relative path, not the raw input",
+          "evidence": "delete-note/index.js: mode === 'permanent' && confirm_path !== entry.relativePath",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Reads all markdown files in the vault to scan for backlinks when backlink_action='mark_broken'",
+          "evidence": "delete-note/index.js -> planLinkUpdates -> vaultFs.listMarkdown(); links.js: planLinkUpdates",
+          "kind": "file_write",
+          "trigger": "conditional on input",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_move_note": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Reads every markdown file in the vault to find and update backlinks when update_links=true (default)",
+          "evidence": "move-note/index.js -> planLinkUpdates -> vaultFs.listMarkdown(); links.js: planLinkUpdates",
+          "kind": "file_write",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Ambiguous backlinks (multiple candidates with same basename) are left unchanged and counted; count is returned in ambiguous_links",
+          "evidence": "links.js: resolveLink -> {kind:'ambiguous'}; planLinkUpdates increments ambiguousLinks",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Writes a journaled transaction manifest and uses a filesystem lock; the move is implemented as a write-new + delete-old pair in one transaction",
+          "evidence": "move-note/index.js: transactions.run([write, delete, ...links.changes])",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Automatically appends '.md' to both source and destination if missing",
+          "evidence": "move-note/index.js: resolveExisting/resolveNew with {markdown:true}",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_create_directory": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Uses fs.lstat (not stat) to detect existing path components, so symlinks at any component cause an error",
+          "evidence": "create-directory/index.js: fs.lstat(current)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Writes a journaled transaction manifest and uses a filesystem lock for each mkdir operation",
+          "evidence": "create-directory/index.js: service.transactions.run(missing.map(...))",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "When recursive=false and more than one path component is missing, returns NOTE_NOT_FOUND error rather than ALREADY_EXISTS",
+          "evidence": "create-directory/index.js: !recursive && missing.length > 1 -> ToolFailure NOTE_NOT_FOUND",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_search_vault": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Reads the full content of every markdown file in the vault (or scoped directory) during content/both/tag search",
+          "evidence": "search.js: matchesForFile -> vaultFs.readText; searchVault iterates all files",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Cursor encodes query, scope, mode, and case_sensitive as a signature; providing a cursor from a different query returns INVALID_CURSOR",
+          "evidence": "search.js: cursorSignature, decodeCursor signature check",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Unreadable notes are silently skipped and reported in a warnings array rather than failing the whole search",
+          "evidence": "search.js: searchVault catch block -> warnings.push",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Response size is additionally capped at MAX_RESPONSE_CHARACTERS-2000 bytes of JSON before the per-page limit is reached",
+          "evidence": "search.js: JSON.stringify(candidate).length > MAX_RESPONSE_CHARACTERS - 2_000",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Tag search matches tags that are a prefix hierarchy of the query (e.g. query 'foo' also matches 'foo/bar')",
+          "evidence": "search.js: tag === query || tag.startsWith(`${query}/`)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_add_tags": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Duplicate paths in the paths array are deduplicated before processing",
+          "evidence": "tag-mutation.js: executeTagMutation -> unique(input.paths)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Tags are validated against Obsidian tag grammar at execution time (not just schema); invalid tags raise INVALID_ARGUMENT",
+          "evidence": "tags.js: mutateTags -> normalizeTag -> validateTag",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Writes a journaled transaction manifest and uses a filesystem lock",
+          "evidence": "tag-mutation.js: service.transactions.run(changes)",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "When location includes frontmatter, YAML is parsed with the 'yaml' library and rewritten; invalid frontmatter raises INVALID_FRONTMATTER",
+          "evidence": "tags.js: readFrontmatterTags / writeFrontmatterTags -> YAML.parseDocument",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Tags already present (case-insensitively) are not duplicated; only net-new tags are added",
+          "evidence": "tags.js: mutateTags -> uniqueCaseInsensitive([...before, ...tags])",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "If no files actually changed, transaction_id is null and no file writes occur",
+          "evidence": "tag-mutation.js: changes.length === 0 ? null : await service.transactions.run(changes)",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_remove_tags": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Duplicate paths in the paths array are deduplicated before processing",
+          "evidence": "tag-mutation.js: executeTagMutation -> unique(input.paths)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Wildcard patterns support only a single '*' (not '**'); invalid patterns raise INVALID_ARGUMENT",
+          "evidence": "tags.js: validatePattern -> pattern.includes('**') check",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Writes a journaled transaction manifest and uses a filesystem lock; if no files changed, transaction_id is null",
+          "evidence": "tag-mutation.js: service.transactions.run(changes) / null branch",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "YAML frontmatter is parsed and rewritten by the 'yaml' library; invalid YAML raises INVALID_FRONTMATTER",
+          "evidence": "tags.js: readFrontmatterTags / writeFrontmatterTags -> YAML.parseDocument",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_rename_tag": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Reads every markdown file in the entire vault (not scoped) to find tags to rename",
+          "evidence": "rename-tag/index.js: service.fs.listMarkdown() with no scope argument",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "If no files actually needed updating, returns transaction_id=null and writes nothing",
+          "evidence": "rename-tag/index.js: changes.length === 0 -> return {updated, transaction_id: null}",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Writes a journaled transaction manifest and uses a filesystem lock when any file changes",
+          "evidence": "rename-tag/index.js: service.transactions.run(changes)",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Both old_tag and new_tag are validated and normalized before processing; invalid tag grammar raises INVALID_ARGUMENT",
+          "evidence": "rename-tag/index.js: normalizeTag(old_tag, normalization); normalizeTag(new_tag, normalization)",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "YAML frontmatter is parsed with the 'yaml' library; invalid YAML raises INVALID_FRONTMATTER",
+          "evidence": "tags.js: readFrontmatterTags -> YAML.parseDocument",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "obsidian_manage_tags": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Defaults location to 'frontmatter' for add and 'both' for remove when not supplied",
+          "evidence": "manage-tags/index.js: location ?? (operation === 'add' ? 'frontmatter' : 'both')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Duplicate paths in paths array are deduplicated before processing",
+          "evidence": "tag-mutation.js: executeTagMutation -> unique(input.paths)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Writes a journaled transaction manifest and uses a filesystem lock; if no files changed, transaction_id is null",
+          "evidence": "tag-mutation.js: service.transactions.run(changes) / null branch",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "YAML frontmatter is parsed by the 'yaml' library; invalid YAML raises INVALID_FRONTMATTER",
+          "evidence": "tags.js: readFrontmatterTags -> YAML.parseDocument",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All tool descriptions accurately reflect their primary operations; the main undocumented behaviours are implementation details common to every write tool: a journaled transaction system that creates manifest and snapshot files inside a hidden .mcp-obsidian directory within the vault, a directory-based filesystem lock, atomic writes via temporary files, and automatic .md extension appending. Startup silently creates those state directories and rolls back any previously interrupted transactions, which is also undocumented in the tool descriptions but consistent with the server's safety guarantees."
+  }
+}
+```

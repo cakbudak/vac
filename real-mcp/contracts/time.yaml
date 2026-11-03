@@ -1,0 +1,12 @@
+# Declared effect contract for mcp-server-time 2026.10.28
+# Derived ONLY from contracts/time.tools.json and the package README, before any probe.
+server: time
+scope:
+  roots: ["{root}"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  get_current_time: {read_only: true, doc_sufficient: true, expect_effect: {response_matches_any: ["datetime", "timezone"]}}
+  convert_time:     {read_only: true, doc_sufficient: true, expect_effect: {response_matches_any: ["datetime", "time_difference", "target"]}}

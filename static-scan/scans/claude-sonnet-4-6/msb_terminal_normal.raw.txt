@@ -1,0 +1,124 @@
+```json
+{
+  "server": "msb_terminal_normal",
+  "startup": [
+    {
+      "behaviour": "Initializes a module-level mutable list 'command_history' used to persist command history across all tool calls for the lifetime of the process",
+      "evidence": "terminal_controller.py: module level / line ~14",
+      "kind": "state",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Prints 'Starting Terminal Controller MCP Server...' to stderr on startup via main()",
+      "evidence": "terminal_controller.py: main()/line ~155",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Patches sys.modules[__name__].__call__ to attach a callable to the module object",
+      "evidence": "terminal_controller.py: module level / line ~168",
+      "kind": "state",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "execute_command": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Applies a minimal blocklist check against 'rm -rf /' and 'mkfs' (case-insensitive substring match) and refuses execution if matched; all other dangerous commands are permitted",
+          "evidence": "terminal_controller.py: execute_command() / dangerous_commands check",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Spawns a shell subprocess using asyncio.create_subprocess_shell with shell=True; on non-Windows uses /bin/bash as the executable",
+          "evidence": "terminal_controller.py: run_command() / asyncio.create_subprocess_shell calls",
+          "kind": "subprocess",
+          "trigger": "every call",
+          "observable_from_outside": "process",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Appends a record (timestamp, command string, success flag) to the in-memory command_history list on every successful subprocess completion; trims list to MAX_HISTORY_SIZE=50",
+          "evidence": "terminal_controller.py: run_command() / command_history.append and pop",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "On timeout, kills the subprocess and returns an error result without appending to history",
+          "evidence": "terminal_controller.py: run_command() / asyncio.TimeoutError handler with process.kill()",
+          "kind": "subprocess",
+          "trigger": "on error",
+          "observable_from_outside": "process",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Includes command execution duration in the returned output string",
+          "evidence": "terminal_controller.py: execute_command() / output formatting with result['duration']",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "get_command_history": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Clamps the requested count to the actual number of available history entries (min(count, len(command_history))) rather than returning fewer or an error",
+          "evidence": "terminal_controller.py: get_command_history() / count = min(count, len(command_history))",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Returns success/failure status (✓/✗) and ISO-format timestamps alongside each command in the output",
+          "evidence": "terminal_controller.py: get_command_history() / output formatting loop",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "get_current_directory": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "change_directory": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Mutates the process-wide working directory via os.chdir(), affecting all subsequent relative path operations in the process including future execute_command calls",
+          "evidence": "terminal_controller.py: change_directory() / os.chdir(path)",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "process",
+          "security_relevance": "medium"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All four tools broadly implement what their descriptions state, but execute_command silently applies a trivially narrow blocklist (only 'rm -rf /' and 'mkfs') without documenting it, and both execute_command and change_directory have undisclosed process-wide side effects (subprocess spawning with shell=True and mutation of the process working directory respectively). The remaining undocumented behaviours are minor output-formatting and in-memory state details."
+  }
+}
+```

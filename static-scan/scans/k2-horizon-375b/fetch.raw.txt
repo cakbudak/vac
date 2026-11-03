@@ -1,0 +1,188 @@
+
+```json
+{
+  "server": "fetch",
+  "startup": [
+    {
+      "behaviour": "Parses a --allow-private-ips flag that disables the guard refusing private, loopback and link-local addresses (SSRF protection, on by default).",
+      "evidence": "__init__.py: main() argparse --allow-private-ips",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "high"
+    },
+    {
+      "behaviour": "Parses a --ignore-robots-txt flag that disables robots.txt enforcement for the fetch tool.",
+      "evidence": "__init__.py: main() argparse --ignore-robots-txt",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Parses a --proxy-url flag (and honors HTTP_PROXY/HTTPS_PROXY/ALL_PROXY env vars) routing requests through a proxy; a socks:// value is rewritten to socks5://.",
+      "evidence": "__init__.py: main() argparse --proxy-url; server.py: normalize_proxy_url",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Parses a --user-agent flag overriding the default User-Agent sent with requests.",
+      "evidence": "__init__.py: main() argparse --user-agent",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Parses a --no-readability-js flag forcing the pure-Python extractor so Node.js/npm are never started.",
+      "evidence": "__init__.py: main() argparse --no-readability-js",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "At startup, rewrites socks:// to socks5:// in the HTTP_PROXY, http_proxy, HTTPS_PROXY, https_proxy, ALL_PROXY and all_proxy environment variables, mutating the process environment.",
+      "evidence": "server.py: create_server() calls normalize_proxy_env(); normalize_proxy_url",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Registers a second 'fetch' prompt (not a tool) that fetches a URL without consulting robots.txt and returns failures as prompt text; it is listed to the client via prompts/list.",
+      "evidence": "server.py: create_server() @server.prompt(name=\"fetch\", ...) fetch_prompt",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Reads the server version from the installed distribution's package metadata and reports it in serverInfo.",
+      "evidence": "server.py: SERVER_VERSION = version(\"mcp-server-fetch\")",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Serves the MCP protocol over stdio, supporting both the 2025-11-25 initialize handshake and the 2026-07-28 sessionless era.",
+      "evidence": "server.py: serve() -> server.run_stdio_async()",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Middleware rejects calls to unknown tools/prompts and prompt calls missing the 'url' argument with JSON-RPC -32602 before the SDK handles them.",
+      "evidence": "server.py: reject_unknown_names middleware appended in create_server()",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "fetch": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Before fetching, retrieves the site's robots.txt and refuses the fetch when it disallows the server's autonomous user agent (401/403/5xx robots.txt treated as disallow); each redirect hop is likewise checked against its own origin's robots.txt. Disabled only by the --ignore-robots-txt startup flag.",
+          "evidence": "server.py: fetch tool function (`if not ignore_robots_txt: await check_may_autonomously_fetch_url(...)`); fetch_url's _check_redirect_robots_txt hook",
+          "kind": "network",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Refuses to connect to hosts resolving to private, loopback, link-local or other non-public addresses (SSRF guard), including on redirect hops; disabled only by the --allow-private-ips startup flag.",
+          "evidence": "server.py: _refuse_private_destination request hook registered in fetch_url and check_may_autonomously_fetch_url",
+          "kind": "network",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "network",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "When extracting markdown from HTML, runs Readability.js under Node.js (an external subprocess, possibly via npm) when Node is on PATH and the server was not started with --no-readability-js.",
+          "evidence": "server.py: extract_content_from_html -> readabilipy.simple_json.simple_json_from_html_string(html, use_readability=use_readability_js); docstring notes Readability.js runs under Node when Node is on PATH",
+          "kind": "subprocess",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "process",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Follows HTTP redirects automatically.",
+          "evidence": "server.py: fetch_url `client.get(url, follow_redirects=True, ...)`",
+          "kind": "network",
+          "trigger": "conditional on input",
+          "observable_from_outside": "network",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Routes requests through a proxy taken from --proxy-url or the HTTP_PROXY/HTTPS_PROXY/ALL_PROXY environment variables.",
+          "evidence": "server.py: make_client -> httpx.AsyncClient(proxy=proxy_url)",
+          "kind": "network",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Sends a default User-Agent header identifying the client as 'ModelContextProtocol/1.0 (Autonomous; +https://github.com/modelcontextprotocol/servers)' (or a custom string from --user-agent).",
+          "evidence": "server.py: DEFAULT_USER_AGENT_AUTONOMOUS; headers={\"User-Agent\": user_agent} in fetch_url",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Applies a 30-second timeout to the request.",
+          "evidence": "server.py: fetch_url `client.get(..., timeout=30)`",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Raises an error (returned to the model as an isError result) when the response status code is 400 or above, instead of returning content.",
+          "evidence": "server.py: fetch_url `if response.status_code >= 400: raise ToolError(...)`",
+          "kind": "other",
+          "trigger": "on error",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Re-extracts pages whose hidden elements (display:none, visibility:hidden, hidden, aria-hidden) contain more text than the extracted content, unhiding them and keeping the richer result.",
+          "evidence": "server.py: _recover_hidden_content, called from extract_content_from_html",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Returns non-HTML content unconverted, prefixed with a note that the content type cannot be simplified to markdown.",
+          "evidence": "server.py: fetch_url returns (page_raw, f\"Content type {declared_type} cannot be simplified to markdown...\")",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Decodes the response body using a charset declared in a <meta> tag when the Content-Type header declares none.",
+          "evidence": "server.py: decode_page (MetaCharset HTMLParser over the first 1024 bytes)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "The fetch tool does what its description says — it fetches a URL and extracts markdown, with the documented max_length/start_index pagination and raw mode — but the description omits the server's operational behavior: robots.txt enforcement (including per-redirect-hop checks), a private/loopback/link-local address guard, automatic redirect following, proxy support, a default User-Agent, a 30-second timeout, erroring on HTTP status >= 400, and Readability.js execution under Node.js when Node is on PATH. Startup flags (--ignore-robots-txt, --allow-private-ips, --proxy-url, --user-agent, --no-readability-js), proxy-environment rewriting, and a second 'fetch' prompt that bypasses robots.txt are likewise not mentioned in the tool description."
+  }
+}
+```

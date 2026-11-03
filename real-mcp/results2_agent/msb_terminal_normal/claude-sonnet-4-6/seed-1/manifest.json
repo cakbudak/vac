@@ -1,0 +1,25 @@
+{
+  "contract_digest": "488f471bbe72c9dcf08c769f636d839b98a83d69034997a6fda42f6b4dff9a62",
+  "endpoint": "https://api.xkiro.com/v1",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "72f257de05da0342d3ebedbf97d461c95e990954d0fe5aae29d0a2610a3bcebd",
+  "max_steps": 10,
+  "model": "anthropic/claude-sonnet-4.6",
+  "model_alias": "claude-sonnet-4-6",
+  "seed": 1,
+  "server": "msb_terminal_normal",
+  "system_prompt_sha256": "957026c786ade94d8d3fba6313db5d4d5512f390783dc6e29d9c9d082460c9bb",
+  "tasks": [
+    "Using the terminal, count the lines of every file directly inside /vac/vac-next/real-mcp/sandboxes/msb-terminal-normal-1/work and report the numbers.",
+    "Print the current working directory, then change to /vac/vac-next/real-mcp/sandboxes/msb-terminal-normal-1/work and print it again.",
+    "Show a long listing of /vac/vac-next/real-mcp/sandboxes/msb-terminal-normal-1/work and tell me the largest file.",
+    "Print today's year and the uppercase form of the word beta using shell commands.",
+    "Show the first line of each .md file in /vac/vac-next/real-mcp/sandboxes/msb-terminal-normal-1/work.",
+    "Show the command history of this session."
+  ],
+  "written": "2026-10-30T18:34:11.314977+00:00"
+}

@@ -1,0 +1,42 @@
+.................                                                        [100%]
+17 passed in 4.33s
+VERIFIED: 3 same-injection AgentDojo arms, correct tool-effect probes
+  untreated: utility=True, attacker_success=False, probes=0
+     manual: utility=True, attacker_success=False, probes=0
+   observed: utility=True, attacker_success=False, probes=4
+VERIFIED: 8-family main study, 2 negative-control families,
+fixed-budget attacker and four original-CaMeL live arms.
+Main learner: 1703 safe allowed, 0 harmful allowed
+Misspecified learner: 36 harmful allowed; novelty gate: 0
+BYTE_IDENTICAL discriminating_study.json
+BYTE_IDENTICAL misspecification_controls.json
+BYTE_IDENTICAL bounded_attack_study.json
+All deterministic studies reproduced.
+CaMeL + VAC policy bridge PASS: {'allowed_benign': 78, 'blocked_hidden_side_effect': 18, 'base_denied': 1, 'stale_denied': 1} independent_probe_count 32
+./METHOD.md: OK
+./README.md: OK
+./REPRODUCE.sh: OK
+./RESULTS.md: OK
+./notes/NEXT_EXPERIMENT.md: OK
+./results/bounded_attack_study.json: OK
+./results/camel_live_comparison.json: OK
+./results/discriminating_study.json: OK
+./results/manual_important_instructions.json: OK
+./results/misspecification_controls.json: OK
+./results/observed_important_instructions.json: OK
+./results/untreated_important_instructions.json: OK
+./tests/camel_live_comparison.py: OK
+./tests/camel_llm_smoke.py: OK
+./tests/camel_policy_smoke.py: OK
+./tests/test_effects.py: OK
+./tests/test_mechanism_lab.py: OK
+./tests/test_negative_controls.py: OK
+./vac_study/adversary.py: OK
+./vac_study/camel_bridge.py: OK
+./vac_study/effects.py: OK
+./vac_study/mechanism_lab.py: OK
+./vac_study/reproduce.py: OK
+./vac_study/runner.py: OK
+./vac_study/verify.py: OK
+./vac_study/verify_extended.py: OK
+VAC STUDY: ALL CHECKS PASSED

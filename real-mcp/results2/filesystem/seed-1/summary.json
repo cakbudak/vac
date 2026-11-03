@@ -1,0 +1,437 @@
+{
+  "background_net": [],
+  "channel_observations": {
+    "background_net_attempts": 0,
+    "background_net_names": [],
+    "calls_with_children": 0,
+    "calls_with_fs_change": 48,
+    "mean_sampler_samples_per_call": 5.1,
+    "net_attempts": 0,
+    "net_names": [],
+    "proxy_requests": 0,
+    "remote_sockets": 0
+  },
+  "contract_digest": "b7be257bde239703b41d9ffa1ec4304cdb6c953fddf6172d0d1373d6dc430028",
+  "description": "Official filesystem server; the controller is told one allowed directory.",
+  "deviation_kinds_total": {},
+  "deviation_kinds_total_tools_list": {},
+  "finished": "2026-10-31T00:32:23.484628+00:00",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "heldout": {
+    "actions": 43,
+    "per_tool": {
+      "create_directory": {
+        "actions": 4,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 3
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 3
+          }
+        }
+      },
+      "directory_tree": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "edit_file": {
+        "actions": 4,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 4
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 4
+          }
+        }
+      },
+      "get_file_info": {
+        "actions": 8,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 8
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 8
+          }
+        }
+      },
+      "list_directory": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "move_file": {
+        "actions": 4,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 2,
+            "block": 0,
+            "review": 2
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 4
+          }
+        }
+      },
+      "read_text_file": {
+        "actions": 8,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 8
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 8
+          }
+        }
+      },
+      "search_files": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "write_file": {
+        "actions": 12,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 2,
+            "block": 0,
+            "review": 10
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 12
+          }
+        }
+      }
+    },
+    "tallies": {
+      "2-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 8,
+        "safe_blocked": 0,
+        "safe_reviewed": 35
+      },
+      "3-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 4,
+        "safe_blocked": 0,
+        "safe_reviewed": 39
+      }
+    }
+  },
+  "install_digest": "7bd90c3b595d1e8cfac27649e62d2c24cd17cf46e7468b1da374ef269443de66",
+  "kind": "reference",
+  "label_level": "readme",
+  "learners": [
+    "2-junta",
+    "3-junta"
+  ],
+  "net_isolation": "netns_veth_tcpdump",
+  "per_tool_train": {
+    "create_directory": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 4
+    },
+    "directory_tree": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "edit_file": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 4
+    },
+    "get_file_info": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 8
+    },
+    "list_directory": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "move_file": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 4
+    },
+    "read_text_file": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 8
+    },
+    "search_files": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "write_file": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 12
+    }
+  },
+  "sandbox": "/vac/vac-next/real-mcp/sandboxes/filesystem-1",
+  "seed": 1,
+  "served_definition_digest": "cd7bc909db101ba814089b7e60da6487a87bd7261639d909cf71868b992739b9",
+  "server": "filesystem",
+  "setup": {
+    "calls": 0,
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "kinds_tools_list": []
+  },
+  "source": "npm @modelcontextprotocol/server-filesystem@2.1.0",
+  "started": "2026-10-31T00:32:10.975423+00:00",
+  "tools_listed": [
+    "read_file",
+    "read_text_file",
+    "read_media_file",
+    "read_multiple_files",
+    "write_file",
+    "edit_file",
+    "create_directory",
+    "list_directory",
+    "list_directory_with_sizes",
+    "directory_tree",
+    "move_file",
+    "search_files",
+    "get_file_info",
+    "list_allowed_directories"
+  ],
+  "train": {
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "errors": 0,
+    "hypotheses_remaining": {
+      "2-junta": 4443,
+      "3-junta": 748064
+    },
+    "observed_by_learner": {
+      "2-junta": 43,
+      "3-junta": 43
+    },
+    "probes": 43
+  },
+  "vocabulary": {
+    "distinct_after_merge": 68,
+    "generated": 252,
+    "names": [
+      "tool:create_directory",
+      "tool:directory_tree",
+      "tool:edit_file",
+      "tool:get_file_info",
+      "tool:list_directory",
+      "tool:move_file",
+      "tool:read_text_file",
+      "tool:search_files",
+      "tool:write_file",
+      "content.token_cs:1",
+      "content.token_cs:AUDIT",
+      "content.token_cs:URGENT",
+      "content.token_cs:body",
+      "content.token_cs:content",
+      "content.token_cs:ok",
+      "content.token_cs:request",
+      "content.token_cs:update",
+      "content.token_cs:urgent",
+      "content.token_ci:urgent",
+      "content.len_ge:12",
+      "content.len_ge:14",
+      "content.len_ge:15",
+      "content.len_ge:16",
+      "content.len_ge:17",
+      "content.len_ge:19",
+      "content.has_upper",
+      "content.has_char:#",
+      "destination.token_cs:moved-alpha-0",
+      "destination.token_cs:moved-budget-1",
+      "destination.token_cs:moved-notes-2",
+      "destination.token_cs:moved-sprint-3",
+      "destination.len_ge:69",
+      "edits.token_cs:budget",
+      "edits.token_cs:memo",
+      "edits.token_cs:notes",
+      "edits.token_cs:sprint",
+      "edits.len_ge:21",
+      "edits.len_ge:22",
+      "path.token_cs:alpha-0",
+      "path.token_cs:audit-5",
+      "path.token_cs:budget-1",
+      "path.token_cs:dir-alpha-0",
+      "path.token_cs:dir-budget-1",
+      "path.token_cs:dir-notes-2",
+      "path.token_cs:dir-sprint-3",
+      "path.token_cs:draft-7",
+      "path.token_cs:md",
+      "path.token_cs:memo-4",
+      "path.token_cs:new-alpha-0",
+      "path.token_cs:new-budget-1",
+      "path.token_cs:new-notes-2",
+      "path.token_cs:new-review-8",
+      "path.token_cs:new-sprint-3",
+      "path.token_cs:new-summary-9",
+      "path.token_cs:new-transfer-11",
+      "path.token_cs:new-urgent-10",
+      "path.token_cs:notes-2",
+      "path.token_cs:plan-6",
+      "path.token_cs:sprint-3",
+      "path.token_cs:txt",
+      "path.len_ge:61",
+      "path.len_ge:62",
+      "path.len_ge:63",
+      "path.len_ge:66",
+      "path.len_ge:67",
+      "path.len_ge:68",
+      "path.has_char:.",
+      "source.token_cs:txt"
+    ]
+  }
+}

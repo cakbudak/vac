@@ -1,0 +1,78 @@
+{
+  "controllers": [
+    "S_index_state",
+    "P2_stale_since_reset",
+    "tree_seeds_7_8",
+    "per_tool_seeds_7_8"
+  ],
+  "digests": {
+    "real-mcp/analysis/guarded_run.py": "c6d8a3cf7539415200bb9834c2c9fc8045e25d7663b070d9f3655b31f55a5186",
+    "real-mcp/analysis/history_predicate_run.py": "c4cec26a710cf5d1d5a8be307140f7fd80add4297d23802b60052f778b19b6b2",
+    "research/state_eval.py": "f3105762604e92d30602bdf650351003db4534e5e56756cde4dfc5b8f405cad2",
+    "runtime/decision_ledger.py": "7af758114426de5bd2867a515951d3d85fd4e79643ecdc45917a07a28c6a5e72",
+    "runtime/guard.py": "5e918c1a2f4bd57775d685bc1a58b86bd70dce6b1208df56b474d5a5e4d111b5",
+    "runtime/mcp_proxy.py": "e5c14c8533d4dbdd35d67ca30ada291150eb5b6da616d2e3564268a1e7bc1475",
+    "runtime/pins/git.json": "1ce1a62cf6cd156234db89a48469a97b4d7cf802867cb15b60cb86c57670bd59",
+    "runtime/state_policy.py": "b520cfaae5c540c8ce0421108c7be623c7df287f66b91528002a7484640b2717"
+  },
+  "frozen": {
+    "fitted_on": "results_history_predicate/controller/git/seed-7,8",
+    "per_tool_review": {
+      "git_branch": false,
+      "git_diff": false,
+      "git_diff_staged": false,
+      "git_diff_unstaged": false,
+      "git_log": false,
+      "git_show": false,
+      "git_status": true
+    },
+    "training_calls": 44,
+    "tree": {
+      "feature": "index.smudged>0",
+      "no": {
+        "leaf": "allow",
+        "positive": 0,
+        "samples": 41
+      },
+      "yes": {
+        "feature": "tool:git_log",
+        "no": {
+          "leaf": "review",
+          "positive": 2,
+          "samples": 2
+        },
+        "yes": {
+          "leaf": "allow",
+          "positive": 0,
+          "samples": 1
+        }
+      }
+    }
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "phases": [
+    "shadow",
+    "enforce"
+  ],
+  "pin": {
+    "contract": "1b9c74423595eba57f54d040a96c696a148944ab40b75103f032f719109f8806",
+    "installation": "12effbc0c813be7c8d503876f6d01c7a2fb5810552d3f4c7842b05c9068718e9",
+    "pinned_from": "real-mcp/results2/git/seed-1/summary.json",
+    "served_definition": "bcc22eb620945b70e329c65b4779143f3ac37ab34aecaaefa64cb0e11cf28381",
+    "server": "git",
+    "source": "PyPI mcp-server-git==2026.10.28"
+  },
+  "seeds": [
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41
+  ],
+  "written_before_first_call": "2026-11-03T09:22:43.946205+00:00"
+}

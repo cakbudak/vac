@@ -1,0 +1,492 @@
+{
+  "background_net": [],
+  "channel_observations": {
+    "background_net_attempts": 0,
+    "background_net_names": [],
+    "calls_with_children": 48,
+    "calls_with_fs_change": 26,
+    "mean_sampler_samples_per_call": 6.2,
+    "net_attempts": 0,
+    "net_names": [],
+    "proxy_requests": 0,
+    "remote_sockets": 0
+  },
+  "contract_digest": "1b9c74423595eba57f54d040a96c696a148944ab40b75103f032f719109f8806",
+  "description": "Official git server on a small repository with tracked and untracked files.",
+  "deviation_kinds_total": {
+    "fs_change_by_readonly_tool": 2
+  },
+  "deviation_kinds_total_tools_list": {
+    "fs_change_by_readonly_tool": 2
+  },
+  "finished": "2026-10-31T00:33:04.204110+00:00",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "heldout": {
+    "actions": 24,
+    "per_tool": {
+      "git_add": {
+        "actions": 6,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 6
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 6
+          }
+        }
+      },
+      "git_branch": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          }
+        }
+      },
+      "git_checkout": {
+        "actions": 2,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          }
+        }
+      },
+      "git_commit": {
+        "actions": 2,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          }
+        }
+      },
+      "git_create_branch": {
+        "actions": 2,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          }
+        }
+      },
+      "git_diff": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          }
+        }
+      },
+      "git_diff_staged": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          }
+        }
+      },
+      "git_diff_unstaged": {
+        "actions": 1,
+        "deviations": 1,
+        "deviations_tools_list": 1,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          }
+        }
+      },
+      "git_log": {
+        "actions": 2,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          }
+        }
+      },
+      "git_reset": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          }
+        }
+      },
+      "git_show": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          }
+        }
+      },
+      "git_status": {
+        "actions": 4,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 4
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 4
+          }
+        }
+      }
+    },
+    "tallies": {
+      "2-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 1,
+        "errors": 0,
+        "safe_allowed": 0,
+        "safe_blocked": 0,
+        "safe_reviewed": 23
+      },
+      "3-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 1,
+        "errors": 0,
+        "safe_allowed": 0,
+        "safe_blocked": 0,
+        "safe_reviewed": 23
+      }
+    }
+  },
+  "install_digest": "12effbc0c813be7c8d503876f6d01c7a2fb5810552d3f4c7842b05c9068718e9",
+  "kind": "reference",
+  "label_level": "readme",
+  "learners": [
+    "2-junta",
+    "3-junta"
+  ],
+  "net_isolation": "netns_veth_tcpdump",
+  "per_tool_train": {
+    "git_add": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 6
+    },
+    "git_branch": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "git_checkout": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 2
+    },
+    "git_commit": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 2
+    },
+    "git_create_branch": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 2
+    },
+    "git_diff": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "git_diff_staged": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "git_diff_unstaged": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "git_log": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 2
+    },
+    "git_reset": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "git_show": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "git_status": {
+      "deviation_kinds": {
+        "fs_change_by_readonly_tool": 1
+      },
+      "deviation_kinds_tools_list": {
+        "fs_change_by_readonly_tool": 1
+      },
+      "deviations": 1,
+      "deviations_tools_list": 1,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": 2,
+      "flags": {},
+      "probes": 4
+    }
+  },
+  "sandbox": "/vac/vac-next/real-mcp/sandboxes/git-2",
+  "seed": 2,
+  "served_definition_digest": "bcc22eb620945b70e329c65b4779143f3ac37ab34aecaaefa64cb0e11cf28381",
+  "server": "git",
+  "setup": {
+    "calls": 0,
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "kinds_tools_list": []
+  },
+  "source": "PyPI mcp-server-git==2026.10.28",
+  "started": "2026-10-31T00:32:56.163601+00:00",
+  "tools_listed": [
+    "git_status",
+    "git_diff_unstaged",
+    "git_diff_staged",
+    "git_diff",
+    "git_commit",
+    "git_add",
+    "git_reset",
+    "git_log",
+    "git_create_branch",
+    "git_checkout",
+    "git_show",
+    "git_branch"
+  ],
+  "train": {
+    "deviations": 1,
+    "deviations_tools_list": 1,
+    "errors": 0,
+    "hypotheses_remaining": {
+      "2-junta": 0,
+      "3-junta": 0
+    },
+    "observed_by_learner": {
+      "2-junta": 24,
+      "3-junta": 24
+    },
+    "probes": 24
+  },
+  "vocabulary": {
+    "distinct_after_merge": 30,
+    "generated": 122,
+    "names": [
+      "tool:git_add",
+      "tool:git_branch",
+      "tool:git_checkout",
+      "tool:git_commit",
+      "tool:git_create_branch",
+      "tool:git_diff",
+      "tool:git_diff_staged",
+      "tool:git_diff_unstaged",
+      "tool:git_log",
+      "tool:git_reset",
+      "tool:git_show",
+      "tool:git_status",
+      "has_arg:branch_name",
+      "branch_name.token_cs:alpha-branch-0",
+      "branch_name.token_cs:budget-branch-1",
+      "branch_name.token_cs:main",
+      "branch_name.len_ge:14",
+      "files.token_cs:md",
+      "files.token_cs:txt",
+      "files.token_cs:u-alpha-0",
+      "files.token_cs:u-audit-5",
+      "files.token_cs:u-budget-1",
+      "files.token_cs:u-memo-4",
+      "files.token_cs:u-notes-2",
+      "files.token_cs:u-sprint-3",
+      "files.len_ge:13",
+      "max_count.token_cs:2",
+      "max_count.token_cs:5",
+      "message.token_cs:0",
+      "message.token_cs:1"
+    ]
+  }
+}

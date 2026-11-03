@@ -1,0 +1,79 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "none",
+    "summary": "The implementation closely matches the tool descriptions, providing transactional file operations, tag management, and search within configured Obsidian vaults. Startup behavior includes creating internal state directories and recovering incomplete transactions, which is not explicitly detailed in the tool descriptions but is consistent with the promised transactional guarantees."
+  },
+  "server": "obsidian",
+  "startup": [
+    {
+      "behaviour": "Creates 'transactions', 'trash', and 'locks' directories inside the vault's internal state directory, acquires a file lock, recovers incomplete transactions, and prunes old recovery data.",
+      "documented_in_tool_descriptions": false,
+      "evidence": "node_modules/obsidian-mcp/dist/utils/transaction.js: TransactionManager.initialize",
+      "kind": "file_write",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "obsidian_add_tags": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_create_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_create_note": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_delete_note": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_edit_note": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_list_vaults": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_manage_tags": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_move_note": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_read_note": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_remove_tags": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_rename_tag": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "obsidian_search_vault": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    }
+  }
+}

@@ -1,0 +1,113 @@
+```yaml
+server: sqlite
+scope:
+  roots:
+    - "{db}"
+    - "{db}-journal"
+    - "{db}-wal"
+    - "{db}-shm"
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_query:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Documentation says SELECT only; no file changes expected, no subprocess or network."
+  write_query:
+    read_only: false
+    fs:
+      may_create:
+        - "{db}"
+        - "{db}-journal"
+        - "{db}-wal"
+        - "{db}-shm"
+      may_modify:
+        - "{db}"
+        - "{db}-journal"
+        - "{db}-wal"
+        - "{db}-shm"
+      may_delete:
+        - "{db}-journal"
+        - "{db}-wal"
+        - "{db}-shm"
+    expect_effect:
+      fs_any_of:
+        - "{db}"
+        - "{db}-journal"
+        - "{db}-wal"
+        - "{db}-shm"
+      response_matches_any:
+        - "affected_rows"
+      unless_response_matches:
+        - "0 rows"
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Documentation confirms INSERT/UPDATE/DELETE on the db file; SQLite journal/WAL/shm side-files added from SQLite internals knowledge, not from README."
+  create_table:
+    read_only: false
+    fs:
+      may_create:
+        - "{db}"
+        - "{db}-journal"
+        - "{db}-wal"
+        - "{db}-shm"
+      may_modify:
+        - "{db}"
+        - "{db}-journal"
+        - "{db}-wal"
+        - "{db}-shm"
+      may_delete:
+        - "{db}-journal"
+        - "{db}-wal"
+        - "{db}-shm"
+    expect_effect:
+      fs_any_of:
+        - "{db}"
+        - "{db}-journal"
+        - "{db}-wal"
+        - "{db}-shm"
+      response_matches_any:
+        - "table"
+        - "created"
+        - "success"
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Documentation confirms CREATE TABLE modifies the db; SQLite journal/WAL/shm side-files added from SQLite internals knowledge."
+  list_tables:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Documentation says read-only schema introspection; returns array of table names."
+  describe_table:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Documentation says read-only schema introspection; returns column definitions for a named table."
+  append_insight:
+    read_only: true
+    subprocess: false
+    network: false
+    expect_effect:
+      response_matches_any:
+        - "insight"
+        - "memo"
+        - "added"
+        - "appended"
+    doc_sufficient: false
+    notes: "README says insights are stored in the in-memory memo://insights resource only; no file path is documented for persistence, so read_only: true; in-memory MCP resource update assumed from README description."
+readme_declared:
+  fs:
+    may_create: []
+    may_modify: []
+    may_delete: []
+  network: false
+  network_hosts: []
+```

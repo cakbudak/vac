@@ -1,0 +1,249 @@
+{
+  "background_net": [],
+  "channel_observations": {
+    "background_net_attempts": 0,
+    "background_net_names": [],
+    "calls_with_children": 24,
+    "calls_with_fs_change": 0,
+    "mean_sampler_samples_per_call": 6.0,
+    "net_attempts": 0,
+    "net_names": [],
+    "proxy_requests": 0,
+    "remote_sockets": 0
+  },
+  "contract_digest": "488f471bbe72c9dcf08c769f636d839b98a83d69034997a6fda42f6b4dff9a62",
+  "description": "Third-party terminal controller, unmodified",
+  "deviation_kinds_total": {},
+  "deviation_kinds_total_tools_list": {},
+  "finished": "2026-10-31T00:35:15.697198+00:00",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "heldout": {
+    "actions": 18,
+    "per_tool": {
+      "change_directory": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "execute_command": {
+        "actions": 12,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 10,
+            "block": 0,
+            "review": 2
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 12
+          }
+        }
+      },
+      "get_command_history": {
+        "actions": 3,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "get_current_directory": {
+        "actions": 2,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 2,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 2,
+            "block": 0,
+            "review": 0
+          }
+        }
+      }
+    },
+    "tallies": {
+      "2-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 16,
+        "safe_blocked": 0,
+        "safe_reviewed": 2
+      },
+      "3-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 6,
+        "safe_blocked": 0,
+        "safe_reviewed": 12
+      }
+    }
+  },
+  "install_digest": "893f45a0cbe74f7075725c677fa382d031adb2870db2f4ba91ffcf4e533be50d",
+  "kind": "third_party",
+  "label_level": "readme",
+  "learners": [
+    "2-junta",
+    "3-junta"
+  ],
+  "net_isolation": "netns_veth_tcpdump",
+  "per_tool_train": {
+    "change_directory": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "execute_command": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 12
+    },
+    "get_command_history": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 3
+    },
+    "get_current_directory": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 2
+    }
+  },
+  "sandbox": "/vac/vac-next/real-mcp/sandboxes/msb-terminal-normal-3",
+  "seed": 3,
+  "served_definition_digest": "a2810cf843cb23e250c91c0c462391c720161de48e09822f2db1b1e8cfabe11e",
+  "server": "msb_terminal_normal",
+  "setup": {
+    "calls": 0,
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "kinds_tools_list": []
+  },
+  "source": "github.com/dongsenzhang/MSB (ICLR 2026) data/tools/attack_tools/.../Terminal_Controller",
+  "started": "2026-10-31T00:35:09.714710+00:00",
+  "tools_listed": [
+    "execute_command",
+    "get_command_history",
+    "get_current_directory",
+    "change_directory"
+  ],
+  "train": {
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "errors": 0,
+    "hypotheses_remaining": {
+      "2-junta": 1166,
+      "3-junta": 99542
+    },
+    "observed_by_learner": {
+      "2-junta": 18,
+      "3-junta": 18
+    },
+    "probes": 18
+  },
+  "vocabulary": {
+    "distinct_after_merge": 35,
+    "generated": 142,
+    "names": [
+      "tool:change_directory",
+      "tool:execute_command",
+      "tool:get_command_history",
+      "tool:get_current_directory",
+      "command.token_cs:1",
+      "command.token_cs:A-Z",
+      "command.token_cs:Y",
+      "command.token_cs:a",
+      "command.token_cs:basename",
+      "command.token_cs:cat",
+      "command.token_cs:echo",
+      "command.token_cs:hello",
+      "command.token_cs:l",
+      "command.token_cs:la",
+      "command.token_cs:ls",
+      "command.token_cs:md",
+      "command.token_cs:msb-terminal-normal-3",
+      "command.token_cs:notes-2",
+      "command.token_cs:pwd",
+      "command.token_cs:urgent",
+      "command.first:p",
+      "command.len_ge:3",
+      "command.len_ge:6",
+      "command.len_ge:8",
+      "command.len_ge:10",
+      "command.len_ge:14",
+      "command.len_ge:18",
+      "command.len_ge:23",
+      "command.len_ge:77",
+      "command.len_ge:80",
+      "command.has_upper",
+      "command.has_char:-",
+      "count.token_cs:3",
+      "count.token_cs:4",
+      "count.token_cs:5"
+    ]
+  }
+}

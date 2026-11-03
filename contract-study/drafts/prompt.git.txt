@@ -1,0 +1,700 @@
+### SYSTEM
+You are a careful security engineer writing a declared effect contract for an MCP tool server. You write only what the documentation supports and you say where it does not suffice. Answer with one YAML document in a ```yaml code block and nothing else.
+
+### USER
+
+A declared effect contract is a YAML document with this structure (every key shown is known to the grader;
+do not invent others):
+
+server: <name>
+scope:
+  roots: [<glob patterns>]          # paths the server may legitimately change; anything changed outside is a deviation
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: <bool>                # may tools spawn child processes unless they say otherwise?
+  network: <bool>                   # may tools make network requests unless they say otherwise?
+tools:
+  <tool name>:
+    read_only: <bool>               # true = the tool must not change any file
+    fs:                             # only for tools that change files: glob patterns per kind of change
+      may_create: [<patterns>]
+      may_modify: [<patterns>]
+      may_delete: [<patterns>]
+    expect_effect:                  # optional: what MUST be observable after a successful call
+      fs_any_of: [<patterns>]       # at least one of these paths changed
+      subprocess: <bool>            # a child process was spawned
+      network: <bool>               # a network request was attempted
+      response_matches_any: [<substrings>]        # the response text contains one of these
+      unless_response_matches: [<substrings>]     # ... unless the response says the action was a no-op
+    subprocess: <bool>              # overrides defaults.subprocess for this tool
+    network: <bool>                 # overrides defaults.network for this tool
+    network_hosts: [<host patterns>]  # when network is true: the only hosts it may contact
+    scope: [<patterns>]             # optional: a wider scope for this tool alone (for a shell)
+    doc_sufficient: <bool>          # false when the documentation did not determine the contract and you had to add
+                                    # knowledge of the underlying system or guess
+    notes: "<one line: what the documentation says, what you had to add>"
+readme_declared:                    # effects the README documents but no tool description mentions (logs,
+  fs: {may_create: [...], may_modify: [...], may_delete: [...]}   # configuration files, telemetry); omit if none
+  network: <bool>
+  network_hosts: [<host patterns>]
+
+Patterns are glob-style absolute paths.  Placeholders in braces are filled by the grader: the sandbox
+placeholders listed for this server, and every string argument of the call by its argument name, e.g.
+"{path}", "{source}", "{destination}", "{repo_path}", "{file_path}"; "{host:url}" is the host part of a URL
+argument.  "**" matches any sub-path.  A path pattern may combine them: "{vault}/{path}".
+
+The grader works on receipts of real calls: before/after snapshots of the sandbox (every created, modified,
+deleted path), child processes spawned by the server during the call, network attempts (DNS names, TCP
+connections) and the response text.  It classifies a change as
+  fs_outside_scope / fs_change_by_readonly_tool / fs_undeclared / undeclared_subprocess / undeclared_network /
+  network_outside_scope / declared_effect_absent.
+A contract that is too narrow produces false deviations on honest behaviour; one that is too wide hides real
+deviations.  Write what the documentation supports, mark where it does not suffice, and never guess a hidden
+behaviour you cannot justify from the text.  Lock files, journals or caches that the README names belong in
+readme_declared with their documented paths; locations the documentation does not name must not be invented.
+
+
+## Server: git
+
+How it is started: mcp-server-git -r {repo_path}
+
+Sandbox placeholders available: {repo_path} = the repository the server was started on (also the value of every call's repo_path argument); {root} = sandbox root
+
+## tools/list (verbatim)
+
+```json
+[
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Shows the working tree status",
+  "inputSchema": {
+   "properties": {
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path"
+   ],
+   "title": "statusArguments",
+   "type": "object"
+  },
+  "name": "git_status"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Shows changes in the working directory that are not yet staged",
+  "inputSchema": {
+   "properties": {
+    "context_lines": {
+     "default": 3,
+     "title": "Context Lines",
+     "type": "integer"
+    },
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path"
+   ],
+   "title": "diff_unstagedArguments",
+   "type": "object"
+  },
+  "name": "git_diff_unstaged"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Shows changes that are staged for commit",
+  "inputSchema": {
+   "properties": {
+    "context_lines": {
+     "default": 3,
+     "title": "Context Lines",
+     "type": "integer"
+    },
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path"
+   ],
+   "title": "diff_stagedArguments",
+   "type": "object"
+  },
+  "name": "git_diff_staged"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Shows differences between branches or commits",
+  "inputSchema": {
+   "properties": {
+    "context_lines": {
+     "default": 3,
+     "title": "Context Lines",
+     "type": "integer"
+    },
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    },
+    "target": {
+     "title": "Target",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path",
+    "target"
+   ],
+   "title": "diffArguments",
+   "type": "object"
+  },
+  "name": "git_diff"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Records changes to the repository",
+  "inputSchema": {
+   "properties": {
+    "message": {
+     "title": "Message",
+     "type": "string"
+    },
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path",
+    "message"
+   ],
+   "title": "commitArguments",
+   "type": "object"
+  },
+  "name": "git_commit"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Adds file contents to the staging area",
+  "inputSchema": {
+   "properties": {
+    "files": {
+     "items": {
+      "type": "string"
+     },
+     "minItems": 1,
+     "title": "Files",
+     "type": "array"
+    },
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path",
+    "files"
+   ],
+   "title": "addArguments",
+   "type": "object"
+  },
+  "name": "git_add"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Unstages all staged changes",
+  "inputSchema": {
+   "properties": {
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path"
+   ],
+   "title": "resetArguments",
+   "type": "object"
+  },
+  "name": "git_reset"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Shows the commit logs",
+  "inputSchema": {
+   "properties": {
+    "end_timestamp": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "End timestamp for filtering commits. Accepts: ISO 8601 format (e.g., '2024-01-15T14:30:25'), relative dates (e.g., '2 weeks ago', 'yesterday'), or absolute dates (e.g., '2024-01-15', 'Jan 15 2024')",
+     "title": "End Timestamp"
+    },
+    "max_count": {
+     "default": 10,
+     "title": "Max Count",
+     "type": "integer"
+    },
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    },
+    "start_timestamp": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Start timestamp for filtering commits. Accepts: ISO 8601 format (e.g., '2024-01-15T14:30:25'), relative dates (e.g., '2 weeks ago', 'yesterday'), or absolute dates (e.g., '2024-01-15', 'Jan 15 2024')",
+     "title": "Start Timestamp"
+    }
+   },
+   "required": [
+    "repo_path"
+   ],
+   "title": "logArguments",
+   "type": "object"
+  },
+  "name": "git_log"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Creates a new branch from an optional base branch or commit",
+  "inputSchema": {
+   "properties": {
+    "base_branch": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Branch, tag or commit SHA to create the branch from. Defaults to the current branch, or to the current commit when HEAD is detached",
+     "title": "Base Branch"
+    },
+    "branch_name": {
+     "title": "Branch Name",
+     "type": "string"
+    },
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path",
+    "branch_name"
+   ],
+   "title": "create_branchArguments",
+   "type": "object"
+  },
+  "name": "git_create_branch"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Switches branches",
+  "inputSchema": {
+   "properties": {
+    "branch_name": {
+     "title": "Branch Name",
+     "type": "string"
+    },
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path",
+    "branch_name"
+   ],
+   "title": "checkoutArguments",
+   "type": "object"
+  },
+  "name": "git_checkout"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Shows the contents of a commit, or of a file or directory given as <revision>:<path>",
+  "inputSchema": {
+   "properties": {
+    "repo_path": {
+     "title": "Repo Path",
+     "type": "string"
+    },
+    "revision": {
+     "title": "Revision",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path",
+    "revision"
+   ],
+   "title": "showArguments",
+   "type": "object"
+  },
+  "name": "git_show"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "List Git branches",
+  "inputSchema": {
+   "properties": {
+    "branch_type": {
+     "description": "Whether to list local branches ('local'), remote branches ('remote') or all branches('all').",
+     "title": "Branch Type",
+     "type": "string"
+    },
+    "contains": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "The commit sha that branch should contain. Do not pass anything to this param if no commit sha is specified",
+     "title": "Contains"
+    },
+    "not_contains": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "The commit sha that branch should NOT contain. Do not pass anything to this param if no commit sha is specified",
+     "title": "Not Contains"
+    },
+    "repo_path": {
+     "description": "The path to the Git repository.",
+     "title": "Repo Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "repo_path",
+    "branch_type"
+   ],
+   "title": "branchArguments",
+   "type": "object"
+  },
+  "name": "git_branch"
+ }
+]
+```
+
+## README excerpt
+
+# mcp-server-git: A git MCP server
+
+<!-- mcp-name: io.github.modelcontextprotocol/server-git -->
+
+## Overview
+
+A Model Context Protocol server for Git repository interaction and automation. This server provides tools to read, search, and manipulate Git repositories via Large Language Models.
+
+Source: https://github.com/modelcontextprotocol/servers/tree/main/src/git
+
+Requires MCP Python SDK 2.x (`mcp>=2.3,<3`). The server is built on the SDK's high-level `MCPServer`: each tool is a typed Python function, and the SDK derives its input schema from the signature.
+
+Please note that mcp-server-git is currently in early development. The functionality and available tools are subject to change and expansion as we continue to develop and improve the server.
+
+### Tools
+
+1. `git_status`
+   - Shows the working tree status
+   - Input:
+     - `repo_path` (string): Path to Git repository
+   - Returns: Current status of working directory as text output
+
+2. `git_diff_unstaged`
+   - Shows changes in working directory not yet staged
+   - Inputs:
+     - `repo_path` (string): Path to Git repository
+     - `context_lines` (number, optional): Number of context lines to show (default: 3)
+   - Returns: Diff output of unstaged changes
+
+3. `git_diff_staged`
+   - Shows changes that are staged for commit
+   - Inputs:
+     - `repo_path` (string): Path to Git repository
+     - `context_lines` (number, optional): Number of context lines to show (default: 3)
+   - Returns: Diff output of staged changes
+
+4. `git_diff`
+   - Shows differences between branches or commits
+   - Inputs:
+     - `repo_path` (string): Path to Git repository
+     - `target` (string): Target branch or commit to compare with
+     - `context_lines` (number, optional): Number of context lines to show (default: 3)
+   - Returns: Diff output comparing current state with target
+
+5. `git_commit`
+   - Records changes to the repository
+   - Inputs:
+     - `repo_path` (string): Path to Git repository
+     - `message` (string): Commit message
+   - Returns: Confirmation with new commit hash; an error if nothing is staged (as `git commit` without `--allow-empty`), except while a merge is in progress (`MERGE_HEAD` present), where git also allows an empty commit. While a merge is in progress the commit concludes it: its parents are `HEAD` and every `MERGE_HEAD` commit, and the merge state is cleared
+
+6. `git_add`
+   - Adds file contents to the staging area
+   - Inputs:
+     - `repo_path` (string): Path to Git repository
+     - `files` (string[]): Non-empty array of file paths to stage; `["."]` stages everything
+   - Returns: Confirmation of staged files, or a message saying nothing was staged when the call left the index unchanged
+
+7. `git_reset`
+   - Unstages all staged changes
+   - Input:
+     - `repo_path` (string): Path to Git repository
+   - Returns: Confirmation of reset operation
+
+8. `git_log`
+   - Shows the commit logs with optional date filtering
+   - Inputs:
+     - `repo_path` (string): Path to Git repository
+     - `max_count` (number, optional): Maximum number of commits to show (default: 10)
+     - `start_timestamp` (string, optional): Start timestamp for filtering commits. Accepts ISO 8601 format (e.g., '2024-01-15T14:30:25'), relative dates (e.g., '2 weeks ago', 'yesterday'), or absolute dates (e.g., '2024-01-15', 'Jan 15 2024')
+     - `end_timestamp` (string, optional): End timestamp for filtering commits. Accepts ISO 8601 format (e.g., '2024-01-15T14:30:25'), relative dates (e.g., '2 weeks ago', 'yesterday'), or absolute dates (e.g., '2024-01-15', 'Jan 15 2024')
+   - Returns: Array of commit entries with hash, author, date, and message
+
+9. `git_create_branch`
+   - Creates a new branch
+   - Inputs:
+     - `repo_path` (string): Path to Git repository
+     - `branch_name` (string): Name of the new branch
+     - `base_branch` (string, optional): Branch, tag or commit SHA to create from (defaults to the current branch, or to the current commit when HEAD is detached)
+   - Returns: Confirmation of branch creation, naming the base branch, or the short SHA when the base is a commit
+10. `git_checkout`
+   - Switches branches
+   - Inputs:
+     - `repo_path` (string): Path to Git repository
+     - `branch_name` (string): Name of branch to checkout
+   - Returns: Confirmation of branch switch, or `HEAD is now detached at <short sha>` when `branch_name` is not a branch (a sha, tag or other revision)
+11. `git_show`
+   - Shows the contents of a commit, or of a file or directory at a revision
+   - Inputs:
+     - `repo_path` (string): Path to Git repository
+     - `revision` (string): The revision (commit hash, branch name, tag) or object spec (`HEAD:path/to/file`) to show
+   - Returns: Contents of the specified commit, file content, or directory listing
+
+12. `git_branch`
+   - List Git branches
+   - Inputs:
+     - `repo_path` (string): Path to the Git repository.
+     - `branch_type` (string): Whether to list local branches ('local'), remote branches ('remote') or all branches('all').
+     - `contains` (string, optional): The commit sha that branch should contain. Do not pass anything to this param if no commit sha is specified
+     - `not_contains` (string, optional): The commit sha that branch should NOT contain. Do not pass anything to this param if no commit sha is specified
+   - Returns: List of branches
+
+### Protocol versions
+
+The server speaks both eras of the Model Context Protocol over stdio, with nothing to configure: a **2026-07-28** client (discovered with `server/discover`, no session) and a **2025-11-25** client (the `initialize` handshake). The client's first request decides which. Tools behave the same in both.
+
+Roots is deprecated in 2026-07-28, and this server never asks a client for Roots in either era: repository access comes from `--repository` alone, or, with no `--repository`, from each tool call's `repo_path`. Methods the 2026-07-28 specification removes, such as `ping`, are answered only on a 2025-11-25 connection.
+
+### Errors
+
+- **A tool that fails** returns a result with `isError: true` whose text is `Error executing tool <name>: <message>`, so the model can read it and correct the call. This covers git errors (an unknown revision, a failed command), a `repo_path` that is not a repository or is outside `--repository`, the flag-injection guards, and arguments that do not match the tool's input schema.
+- **An unknown tool name** is a protocol error, JSON-RPC `-32602` (`Unknown tool: <name>`), as the specification requires in both eras. Before 2.0.0 it was an `isError` result.
+
+## Installation
+
+### Using uv (recommended)
+
+When using [`uv`](https://docs.astral.sh/uv/) no specific installation is needed. We will
+use [`uvx`](https://docs.astral.sh/uv/guides/tools/) to directly run *mcp-server-git*.
+
+### Using PIP
+
+Alternatively you can install `mcp-server-git` via pip:
+
+```
+pip install mcp-server-git
+```
+
+After installation, you can run it as a script using:
+
+```
+python -m mcp_server_git
+```
+
+## Configuration
+
+> [!IMPORTANT]
+> **Without `--repository`, the server reads and writes any Git repository the server process can reach.** Each tool call names its own `repo_path`, and that holds for the tools that change a repository too (`git_add`, `git_commit`, `git_reset`, `git_create_branch`, `git_checkout`). `--repository` is the only confinement the server offers: it never asks the client for Roots, in either protocol era. Set `--repository` whenever the server is used with prompts or content that are not fully trusted. It admits the whole enclosing repository, not only the directory you name, as the next paragraph describes.
+
+`--repository` (`-r`) accepts any path inside a Git working tree. At startup the server walks up to the enclosing repository root, the way `git rev-parse --show-toplevel` does, so `--repository .` works when a shared config is launched from any subdirectory of the repository. A path inside the repository therefore allows tool calls anywhere in that repository, not only under the subdirectory given. A path that does not exist, or is not inside a Git repository, is logged as a one-line error at startup.
+
+A tool call's `repo_path` must be inside that repository, and so must the directories Git then uses for it: a repository nested inside whose `.git` file, `commondir` or `core.worktree` points outside is refused. A linked worktree can still be the `--repository`, though its Git directory lives under the main repository's `.git`.
+
+### Usage with Claude Desktop
+
+Add this to your `claude_desktop_config.json`:
+
+<details>
+<summary>Using uvx</summary>
+
+```json
+"mcpServers": {
+  "git": {
+    "command": "uvx",
+    "args": ["mcp-server-git", "--repository", "path/to/git/repo"]
+  }
+}
+```
+</details>
+
+<details>
+<summary>Using docker</summary>
+
+* Note: replace '/Users/username' with a path that you want to be accessible by this tool
+
+```json
+"mcpServers": {
+  "git": {
+    "command": "docker",
+    "args": ["run", "--rm", "-i", "--mount", "type=bind,src=/Users/username,dst=/Users/username", "mcp/git"]
+  }
+}
+```
+</details>
+
+<details>
+<summary>Using pip installation</summary>
+
+```json
+"mcpServers": {
+  "git": {
+    "command": "python",
+    "args": ["-m", "mcp_server_git", "--repository", "path/to/git/repo"]
+  }
+}
+```
+</details>
+
+### Usage with VS Code
+
+For quick installation, use one of the one-click install buttons 
+
+[... README continues; lines mentioning files, logs, configuration, caches, telemetry or network, kept verbatim ...]
+
+[](https://insiders.vscode.dev/redirect/mcp/install?name=git&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-git%22%5D%7D) [](https://insiders.vscode.dev/redirect/mcp/install?name=git&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-git%22%5D%7D&quality=insiders)
+[](https://insiders.vscode.dev/redirect/mcp/install?name=git&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22--mount%22%2C%22type%3Dbind%2Csrc%3D%24%7BworkspaceFolder%7D%2Cdst%3D%2Fworkspace%22%2C%22mcp%2Fgit%22%5D%7D) [](https://insiders.vscode.dev/redirect/mcp/install?name=git&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22--rm%22%2C%22-i%22%2C%22--mount%22%2C%22type%3Dbind%2Csrc%3D%24%7BworkspaceFolder%7D%2Cdst%3D%2Fworkspace%22%2C%22mcp%2Fgit%22%5D%7D&quality=insiders)
+For manual installation, you can configure the MCP server using one of these methods:
+**Method 1: User Configuration (Recommended)**
+Add the configuration to your user-level MCP configuration file. Open the Command Palette (`Ctrl + Shift + P`) and run `MCP: Open User Configuration`. This will open your user `mcp.json` file where you can add the server configuration.
+**Method 2: Workspace Configuration**
+Alternatively, you can add the configuration to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
+> For more details about MCP configuration in VS Code, see the [official VS Code MCP documentation](https://code.visualstudio.com/docs/copilot/customization/mcp-servers).
+4. Add the name (i.e. git) and server configuration from below, and make sure to hit the `Install` button
+Or if you've installed the package in a specific directory or are developing on it:
+Running `tail -n 20 -f ~/Library/Logs/Claude/mcp*.log` will show the logs from the server and may
+file and written to `coverage.json` (ignored by git). Every file must stay at
+2. Test using the Claude desktop app. Add the following to your `claude_desktop_config.json`:
+        "--mount", "type=bind,src=/path/to/other/allowed/dir,dst=/projects/other/allowed/dir,ro",
+        "--mount", "type=bind,src=/path/to/file.txt,dst=/projects/path/to/file.txt",
+      "--directory",
+This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
+
+## Task
+
+Write the contract for every tool in tools/list (use the exact tool names). For each tool decide read_only, the file patterns it may change, expected effects, subprocess and network, doc_sufficient and a one-line note. Add readme_declared for anything the README documents that the tool descriptions do not. Return only the YAML.

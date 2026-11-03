@@ -1,0 +1,47 @@
+server: sqlite
+scope:
+  roots:
+  - '{db}'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_query:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation states it executes SELECT queries and returns results; no
+      file modifications.
+  write_query:
+    read_only: false
+    fs:
+      may_modify:
+      - '{db}'
+    expect_effect:
+      response_matches_any:
+      - affected_rows
+    doc_sufficient: true
+    notes: Documentation states it executes INSERT, UPDATE, or DELETE and returns
+      affected_rows.
+  create_table:
+    read_only: false
+    fs:
+      may_modify:
+      - '{db}'
+    doc_sufficient: true
+    notes: Documentation states it creates a table in the SQLite database, modifying
+      the database file.
+  list_tables:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation states it lists tables with no file modifications mentioned.
+  describe_table:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation states it returns schema information with no file modifications
+      mentioned.
+  append_insight:
+    read_only: true
+    doc_sufficient: false
+    notes: Documentation describes a dynamic memo resource but does not specify file
+      persistence; assuming no file effects.

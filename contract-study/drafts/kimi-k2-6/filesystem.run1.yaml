@@ -1,0 +1,130 @@
+server: filesystem
+scope:
+  roots:
+  - '{work}/**'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Deprecated read-only tool; documentation describes a pure file read with
+      no side effects.
+  read_text_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only tool; documentation describes a pure file read with no side effects.
+  read_media_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only tool; documentation describes a pure file read returning base64
+      content with no side effects.
+  read_multiple_files:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only tool; documentation describes a pure read of multiple files with
+      no side effects.
+  list_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only tool; documentation describes a pure directory listing with no
+      side effects.
+  list_directory_with_sizes:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only tool; documentation describes a pure directory listing with no
+      side effects.
+  directory_tree:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only tool; documentation describes a pure recursive tree read with
+      no side effects.
+  search_files:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only tool; documentation describes a pure file search with no side
+      effects.
+  get_file_info:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only tool; documentation describes a pure metadata read with no side
+      effects.
+  list_allowed_directories:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only tool; documentation describes returning the allowed directory
+      list with no side effects.
+  write_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{path}'
+      may_modify:
+      - '{path}'
+    expect_effect:
+      fs_any_of:
+      - '{path}'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Documentation states it creates or overwrites the single file at path;
+      no other filesystem effects are documented.
+  edit_file:
+    read_only: false
+    fs:
+      may_modify:
+      - '{path}'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Documentation states it modifies the file at path unless dryRun is true;
+      no other filesystem effects are documented.
+  create_directory:
+    read_only: false
+    fs:
+      may_create:
+      - '{path}'
+      - '{work}/**'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Documentation states it creates the directory at path and any needed parent
+      directories under allowed directories.
+  move_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{destination}'
+      may_delete:
+      - '{source}'
+    expect_effect:
+      fs_any_of:
+      - '{source}'
+      - '{destination}'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Documentation states it moves source to destination, deleting source and
+      creating destination; cross-filesystem moves copy then remove.

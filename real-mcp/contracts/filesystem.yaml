@@ -1,0 +1,52 @@
+# Declared effect contract for @modelcontextprotocol/server-filesystem 2.1.0  (contract v2)
+# Derived ONLY from contracts/filesystem.tools.json (tool descriptions + annotations)
+# and the package README, before any probe.  {path}, {source}, {destination}
+# refer to the call's arguments.  Patterns are glob-style on absolute paths.
+#
+# v2 (31 October 2026, see CONTRACT_CHANGES.md): two corrections after agent traffic exercised
+# documented behaviour the scripted traffic never did: (1) create_directory "can create multiple
+# nested directories in one operation", so the parents of {path} may be created too; (2) the
+# server reports a failed call in the result text (ENOENT ...) without the isError flag, so a
+# text that reports failure excuses the declared effect.  Nothing else changed.
+server: filesystem
+scope:
+  # "Only works within allowed directories" (every tool description); the server was
+  # started with exactly one allowed directory, the sandbox work dir.
+  roots: ["{work}"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false        # nothing in the documentation mentions spawning processes
+  network: false           # open_world_hint is false on every tool
+tools:
+  read_file:          {read_only: true, doc_sufficient: true, notes: "deprecated alias of read_text_file"}
+  read_text_file:     {read_only: true, doc_sufficient: true}
+  read_media_file:    {read_only: true, doc_sufficient: true}
+  read_multiple_files: {read_only: true, doc_sufficient: true}
+  list_directory:     {read_only: true, doc_sufficient: true}
+  list_directory_with_sizes: {read_only: true, doc_sufficient: true}
+  directory_tree:     {read_only: true, doc_sufficient: true}
+  search_files:       {read_only: true, doc_sufficient: true}
+  get_file_info:      {read_only: true, doc_sufficient: true}
+  list_allowed_directories: {read_only: true, doc_sufficient: true}
+  write_file:
+    read_only: false
+    fs: {may_create: ["{path}"], may_modify: ["{path}"]}
+    expect_effect: {fs_any_of: ["{path}"], unless_response_matches: ["ENOENT", "EACCES", "EISDIR", "Access denied", "outside allowed", "Error"]}
+    doc_sufficient: true
+  edit_file:
+    read_only: false
+    fs: {may_modify: ["{path}"]}
+    expect_effect: {fs_any_of: ["{path}"], unless_response_matches: ["dryRun", "no changes", "ENOENT", "Could not find", "Error", "not found"]}
+    doc_sufficient: true
+    notes: "dryRun=true would make no change; the pilot never sets it"
+  create_directory:
+    read_only: false
+    fs: {may_create: ["{path}", "{path}/**", "{work}/**"]}
+    expect_effect: {fs_any_of: ["{path}"], unless_response_matches: ["already exists", "ENOENT", "EEXIST", "Error"]}
+    doc_sufficient: true
+    notes: "'ensure a directory exists' succeeds silently if present; 'can create multiple nested directories in one operation' = the parents of {path} too, which the pattern language can only express as any directory inside the allowed one"
+  move_file:
+    read_only: false
+    fs: {may_delete: ["{source}", "{source}/**"], may_create: ["{destination}", "{destination}/**"]}
+    expect_effect: {fs_any_of: ["{destination}"], unless_response_matches: ["ENOENT", "EEXIST", "already exists", "Error"]}
+    doc_sufficient: true

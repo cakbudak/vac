@@ -1,0 +1,175 @@
+```yaml
+server: git
+scope:
+  roots:
+    - "{repo_path}/**"
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  git_status:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "README documents read-only status query; open_world_hint false, no fs changes."
+
+  git_diff_unstaged:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "README documents read-only diff of unstaged changes; no fs changes."
+
+  git_diff_staged:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "README documents read-only diff of staged changes; no fs changes."
+
+  git_diff:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "README documents read-only diff between branches/commits; no fs changes."
+
+  git_commit:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify:
+        - "{repo_path}/.git/COMMIT_EDITMSG"
+        - "{repo_path}/.git/HEAD"
+        - "{repo_path}/.git/index"
+        - "{repo_path}/.git/logs/**"
+        - "{repo_path}/.git/refs/**"
+        - "{repo_path}/.git/packed-refs"
+        - "{repo_path}/.git/MERGE_HEAD"
+        - "{repo_path}/.git/MERGE_MSG"
+        - "{repo_path}/.git/objects/**"
+      may_delete:
+        - "{repo_path}/.git/MERGE_HEAD"
+        - "{repo_path}/.git/MERGE_MSG"
+        - "{repo_path}/.git/MERGE_MODE"
+    expect_effect:
+      fs_any_of:
+        - "{repo_path}/.git/objects/**"
+        - "{repo_path}/.git/refs/**"
+        - "{repo_path}/.git/packed-refs"
+        - "{repo_path}/.git/COMMIT_EDITMSG"
+      unless_response_matches:
+        - "isError"
+        - "Error executing tool"
+        - "nothing to commit"
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "README says records changes to repository; git internals (.git/objects, refs, logs, MERGE_HEAD cleanup) inferred from git commit behaviour, not explicitly documented."
+
+  git_add:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify:
+        - "{repo_path}/.git/index"
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{repo_path}/.git/index"
+      unless_response_matches:
+        - "nothing was staged"
+        - "isError"
+        - "Error executing tool"
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "README says adds file contents to staging area; index modification is standard git behaviour inferred, not explicitly named in README."
+
+  git_reset:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify:
+        - "{repo_path}/.git/index"
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{repo_path}/.git/index"
+      unless_response_matches:
+        - "isError"
+        - "Error executing tool"
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "README says unstages all staged changes; index modification is standard git behaviour inferred, not explicitly named in README."
+
+  git_log:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "README documents read-only log query with optional date filtering; no fs changes."
+
+  git_create_branch:
+    read_only: false
+    fs:
+      may_create:
+        - "{repo_path}/.git/refs/heads/{branch_name}"
+      may_modify:
+        - "{repo_path}/.git/packed-refs"
+        - "{repo_path}/.git/logs/refs/heads/{branch_name}"
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{repo_path}/.git/refs/heads/{branch_name}"
+        - "{repo_path}/.git/packed-refs"
+        - "{repo_path}/.git/logs/refs/heads/{branch_name}"
+      unless_response_matches:
+        - "isError"
+        - "Error executing tool"
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "README says creates a new branch; ref file creation under .git/refs/heads inferred from git branch behaviour, not explicitly documented."
+
+  git_checkout:
+    read_only: false
+    fs:
+      may_create:
+        - "{repo_path}/.git/refs/heads/{branch_name}"
+      may_modify:
+        - "{repo_path}/.git/HEAD"
+        - "{repo_path}/.git/index"
+        - "{repo_path}/.git/logs/HEAD"
+        - "{repo_path}/.git/logs/refs/heads/{branch_name}"
+        - "{repo_path}/**"
+      may_delete:
+        - "{repo_path}/**"
+    expect_effect:
+      fs_any_of:
+        - "{repo_path}/.git/HEAD"
+      unless_response_matches:
+        - "isError"
+        - "Error executing tool"
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "README says switches branches; HEAD update, index and working tree changes inferred from git checkout behaviour; working tree files may change but paths are not specified in docs."
+
+  git_show:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "README documents read-only show of commit contents or file at revision; no fs changes."
+
+  git_branch:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "README documents read-only branch listing; no fs changes."
+```

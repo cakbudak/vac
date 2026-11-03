@@ -1,0 +1,721 @@
+```json
+{
+  "server": "filesystem",
+  "startup": [
+    {
+      "behaviour": "Resolves command-line directory arguments with fs.realpath (via realpathWithRetry), storing both the original normalized path and the realpath when they differ (e.g. macOS /tmp → /private/tmp)",
+      "evidence": "index.js: resolveAllowedDirectories",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Warns to stderr and skips directories that are not accessible or not directories; exits with code 1 if all specified directories are inaccessible",
+      "evidence": "index.js: resolveAllowedDirectories / main",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Prints 'Secure MCP Filesystem Server running on stdio' to stderr at startup",
+      "evidence": "index.js: main",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "After initialize handshake (2025-era clients), fetches MCP roots via server.listRoots() and replaces allowed directories with validated roots; if client has no roots capability and no command-line directories, closes the connection and calls onCannotOperate (process.exit(1))",
+      "evidence": "server.js: initialize, updateAllowedDirectoriesFromRoots, oninitialized handler",
+      "kind": "network",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "high"
+    },
+    {
+      "behaviour": "Installs a notification handler for 'notifications/roots/list_changed' that fetches updated roots and replaces the allowed directory list at runtime; installs a barrier so in-flight tool calls wait for the updated roots",
+      "evidence": "server.js: setNotificationHandler('notifications/roots/list_changed', ...)",
+      "kind": "network",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "high"
+    },
+    {
+      "behaviour": "Reads package.json from disk at module load time to determine the SERVER_VERSION string reported in serverInfo",
+      "evidence": "version.js: resolvePackageVersion",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "read_file": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Path is validated via validatePath which resolves symlinks with fs.realpath and refuses paths whose realpath falls outside allowed directories; also performs Unicode/case respelling of the allowed-directory prefix",
+          "evidence": "server.js: readTextFileHandler calls validatePath; lib.js: validatePath",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "If both 'head' and 'tail' are specified simultaneously, throws an error rather than reading the file",
+          "evidence": "server.js: readTextFileHandler",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Filesystem calls are bounded by a 15-second timeout (FS_CALL_TIMEOUT_MS); a timeout returns FsTimeoutError instead of file content",
+          "evidence": "lib.js: withFsTimeout, realpathWithTimeout",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and the connection is 'modern' era (2026-07-28), returns an error content block instead of reading the file",
+          "evidence": "server.js: registerTool wrapper checking options.era === 'modern' && allowedDirectories.length === 0",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper, barrier await loop",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "read_text_file": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Path is validated via validatePath which resolves symlinks with fs.realpath and refuses paths whose realpath falls outside allowed directories",
+          "evidence": "server.js: readTextFileHandler calls validatePath; lib.js: validatePath",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "If both 'head' and 'tail' are specified simultaneously, throws an error",
+          "evidence": "server.js: readTextFileHandler",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Filesystem calls are bounded by a 15-second timeout; a timeout returns FsTimeoutError",
+          "evidence": "lib.js: withFsTimeout, realpathWithTimeout",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper, barrier await loop",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "read_media_file": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Path is validated via validatePath which resolves symlinks with fs.realpath and refuses paths outside allowed directories",
+          "evidence": "server.js: read_media_file handler calls validatePath",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "File is read via a Node.js ReadStream (createReadStream), buffered in memory and encoded to base64; the MIME type is determined solely by file extension from a fixed lookup table; unrecognised extensions map to 'application/octet-stream'",
+          "evidence": "server.js: readFileAsBase64Stream, read_media_file handler mimeTypes map",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "A file URI (pathToFileURL) is embedded in the resource.uri field for non-image/non-audio files",
+          "evidence": "server.js: read_media_file handler, pathToFileURL(validPath).href",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "read_multiple_files": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Each path is validated via validatePath (symlink resolution, allow-list check) individually; errors per file are captured as error strings in the result rather than stopping the operation",
+          "evidence": "server.js: read_multiple_files handler, validatePath per path in Promise.all",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Results are joined with '\\n---\\n' separators between files",
+          "evidence": "server.js: read_multiple_files handler, results.join('\\n---\\n')",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "write_file": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Path is validated via validatePath (symlink resolution, allow-list check) before writing",
+          "evidence": "server.js: write_file handler calls validatePath; lib.js: validatePath",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "For new files, uses O_EXCL | O_CREAT to atomically create the file, refusing to follow a pre-existing symlink at that path (EEXIST triggers overwrite path instead)",
+          "evidence": "lib.js: writeFileContent calls createFileInDirectory; pinned-directory.js: createFileInDirectory uses O_EXCL",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "For existing files, overwrites in-place through a single descriptor (not via rename), using O_NOFOLLOW and inode identity checks to prevent TOCTOU symlink attacks; uses process.chdir to anchor the directory",
+          "evidence": "lib.js: overwriteInPlace calls overwriteFileInDirectory; pinned-directory.js: overwriteFileInDirectory, openInDirectory, inDirectory with process.chdir",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Refuses to write if the path points to a non-regular file (e.g. a symlink or directory detected via lstat)",
+          "evidence": "lib.js: overwriteInPlace checks expected.isFile()",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block without writing",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "edit_file": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Path is validated via validatePath (symlink resolution, allow-list check) before editing",
+          "evidence": "server.js: edit_file handler calls validatePath",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Falls back to whitespace-tolerant line-by-line matching (trimmed comparison) when an exact string match is not found; re-indents replacement lines to match the file's indentation style",
+          "evidence": "lib.js: applyFileEdits, whitespace matching loop, reindentLine",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Detects the file's predominant line ending (CRLF vs LF) and writes the file back with the same line ending",
+          "evidence": "lib.js: applyFileEdits calls detectLineEnding; modifiedContent converted back if CRLF",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "The number of backticks in the returned diff fence is dynamically increased if the diff content itself contains three or more consecutive backticks",
+          "evidence": "lib.js: applyFileEdits, numBackticks loop",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "When dryRun is false, overwrites the file in-place using the same TOCTOU-resistant mechanism as write_file (process.chdir anchor, O_NOFOLLOW, inode identity check)",
+          "evidence": "lib.js: applyFileEdits calls overwriteInPlace; pinned-directory.js: overwriteFileInDirectory",
+          "kind": "file_write",
+          "trigger": "conditional on input",
+          "observable_from_outside": "file",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Throws an error (aborting remaining edits) if a given oldText cannot be found by exact or whitespace-tolerant match",
+          "evidence": "lib.js: applyFileEdits, 'Could not find exact match' throw",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "create_directory": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Path is validated via validatePath (symlink resolution, allow-list check) before creating the directory",
+          "evidence": "server.js: create_directory handler calls validatePath",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Directory creation uses process.chdir anchoring (createDirectoryInPlace), verifying the working directory after each chdir to detect directory swap attacks; creates parent directories one component at a time with this check at each step",
+          "evidence": "lib.js: createDirectory calls createDirectoryInPlace; pinned-directory.js: createDirectoryInPlace, inDirectory, verifyWorkingDirectory",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "list_directory": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Path is validated via validatePath (symlink resolution, allow-list check) before listing",
+          "evidence": "server.js: list_directory handler calls validatePath",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Directory is read with fs.readdir using withFileTypes:true; no timeout is applied to this readdir call (unlike readdirWithTimeout used elsewhere)",
+          "evidence": "server.js: list_directory handler calls fs.readdir directly",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "list_directory_with_sizes": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Path is validated via validatePath before listing; each entry's path is also individually validated, and symlinks whose targets are outside allowed directories are listed with size 0 and mtime epoch instead of the target's stats",
+          "evidence": "server.js: list_directory_with_sizes handler calls validatePath for root and for each entry (validatePath(entryPath, allowedDirectories))",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Output includes a summary line with total file count, directory count, and combined size",
+          "evidence": "server.js: list_directory_with_sizes handler, summary array construction",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "When sortBy='size', entries are sorted descending by size; entries with errors (outside allowed dirs or unreadable) are assigned size 0",
+          "evidence": "server.js: list_directory_with_sizes handler, sortedEntries sort comparator",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "directory_tree": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Each directory in the recursive walk is validated via validatePath (symlink resolution, allow-list check) before its entries are read",
+          "evidence": "server.js: buildTree calls validatePath(currentPath, allowedDirectories)",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "The walk is bounded by MAX_WALK_ENTRIES (100,000 entries); exceeding this throws WalkLimitError",
+          "evidence": "server.js: directory_tree handler uses createEntryBudget; lib.js: createEntryBudget, WalkLimitError",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Each readdir call is bounded by FS_CALL_TIMEOUT_MS (15 seconds) via readdirWithTimeout; a timeout throws FsTimeoutError",
+          "evidence": "server.js: buildTree calls readdirWithTimeout; lib.js: readdirWithTimeout",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Non-glob excludePatterns are matched against relative paths using both exact minimatch and '**/<pattern>' and '**/<pattern>/**' forms",
+          "evidence": "server.js: buildTree shouldExclude logic",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "move_file": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Both source and destination paths are validated via validatePath (symlink resolution, allow-list check) before the move",
+          "evidence": "server.js: move_file handler calls validatePath for both source and destination",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Uses fs.rename anchored in the destination directory via process.chdir (renameIntoDirectory / inDirectory); if the rename fails with EXDEV (cross-device), falls back to a copy-then-unlink operation that preserves mode and timestamps",
+          "evidence": "lib.js: moveFile calls renameIntoDirectory, catches EXDEV and calls moveFileAcrossDevices; pinned-directory.js: renameIntoDirectory, moveFileAcrossDevices",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Cross-device copy temporarily creates the destination file with mode 0o600 (owner-only) until the copy is complete and permissions are set from the source",
+          "evidence": "pinned-directory.js: copyIntoNewFile, openInDirectory called with mode 0o600",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Refuses to move a directory across device boundaries; refuses to move non-regular files (symlinks, FIFOs, etc.) across devices",
+          "evidence": "pinned-directory.js: openSourceInDirectory checks isDirectory and isFile",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "search_files": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Root path is validated via validatePath before the walk; each entry is also individually validated, and entries that fail validation (e.g. symlinks pointing outside) are silently skipped",
+          "evidence": "lib.js: searchFilesWithValidation calls validatePath per entry; server.js: search_files handler calls validatePath for rootPath",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "The walk is bounded by MAX_WALK_ENTRIES (100,000 entries); exceeding this or a readdir timeout throws and propagates the error",
+          "evidence": "lib.js: searchFilesWithValidation uses createEntryBudget; WalkLimitError and FsTimeoutError are re-thrown",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Each readdir call is bounded by FS_CALL_TIMEOUT_MS (15 seconds) via readdirWithTimeout",
+          "evidence": "lib.js: searchFilesWithValidation calls readdirWithTimeout",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Excluded entries (matched by excludePatterns via minimatch) are skipped before validatePath is called, so their symlinks are never resolved",
+          "evidence": "lib.js: searchFilesWithValidation, shouldExclude check before visit() and validatePath",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "get_file_info": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Path is validated via validatePath (symlink resolution, allow-list check) before stat",
+          "evidence": "server.js: get_file_info handler calls validatePath",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Uses fs.stat (follows symlinks) rather than lstat to get file info, so the reported metadata is for the symlink target",
+          "evidence": "lib.js: getFileStats calls fs.stat",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "The returned info includes 'hardLinks' (nlink count), which is documented in the description as 'hard-link count' — matches description",
+          "evidence": "lib.js: getFileStats returns hardLinks: stats.nlink",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "list_allowed_directories": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns the current in-memory allowedDirectories list, which may differ from the startup command-line directories if the client's MCP roots have since replaced them",
+          "evidence": "server.js: list_allowed_directories handler returns allowedDirectories closure variable; updateAllowedDirectoriesFromRoots replaces it",
+          "kind": "state",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "If the server has no allowed directories and connection is 'modern' era, returns an error content block instead of the directory list",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Tool call blocks (awaits barrier) while a roots/list refresh is in progress",
+          "evidence": "server.js: registerTool wrapper",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All tools are implemented as described and no declared effects are missing; the mismatches are that every tool silently performs symlink resolution and allow-list validation via validatePath (with process.chdir anchoring and inode identity checks for writes), applies a 15-second filesystem-call timeout, blocks on a roots-refresh barrier, and returns a special error block when no allowed directories exist on a modern-era connection — none of which is mentioned in any tool description. Additionally, the server dynamically replaces its allowed-directory list at runtime from MCP client Roots, so list_allowed_directories may return directories different from those provided at startup."
+  }
+}
+```

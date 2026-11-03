@@ -1,0 +1,266 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "substantial",
+    "summary": "The git_commit tool has substantial undocumented behavior for handling merge commits including creating merge commits with multiple parents, clearing merge state files, and applying autostash. The git_show tool also has substantial undocumented behavior with different handling for blobs, trees, and commits including full diff generation."
+  },
+  "server": "git",
+  "startup": [
+    {
+      "behaviour": "Resolves repository path to working tree root using git.Repo with search_parent_directories=True",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: serve/line 491-502",
+      "kind": "other",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "git_add": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates each file path resolves within repository working tree to prevent path traversal",
+          "evidence": "server.py: git_add/line 207-216",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "high",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Checks index entries before and after to determine if anything was actually staged",
+          "evidence": "server.py: git_add/line 221-227",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "git_branch": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates contains and not_contains values don't start with '-' to prevent flag injection",
+          "evidence": "server.py: git_branch/line 380-386",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "git_checkout": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates branch name doesn't start with '-' to prevent flag injection",
+          "evidence": "server.py: git_checkout/line 308-312",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Validates branch_name is a real git ref using repo.rev_parse",
+          "evidence": "server.py: git_checkout/line 313-314",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Detects detached HEAD state and reports it differently from branch switch",
+          "evidence": "server.py: git_checkout/line 317-319",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "git_commit": {
+      "declared_effect_not_implemented": null,
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Checks if there are staged changes before committing, raises error if none",
+          "evidence": "server.py: git_commit/line 152-156",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Detects ongoing merge via MERGE_HEAD file and creates merge commit with multiple parents",
+          "evidence": "server.py: git_commit/line 158-165",
+          "kind": "state",
+          "observable_from_outside": "file",
+          "security_relevance": "medium",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Clears merge state files (MERGE_HEAD, MERGE_MSG, MERGE_MODE, AUTO_MERGE) after merge commit",
+          "evidence": "server.py: git_commit/line 166-168",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "medium",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Applies autostash from MERGE_AUTOSTASH file if present, stores in stash list on conflict",
+          "evidence": "server.py: _apply_merge_autostash/line 175-192",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "medium",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "git_create_branch": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates branch names don't start with '-' to prevent flag injection",
+          "evidence": "server.py: git_create_branch/line 266-272",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Checks if branch already exists before creating, raises error if it does",
+          "evidence": "server.py: git_create_branch/line 297-301",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "git_diff": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sets core.quotepath=false for the git command to prevent octal escaping of non-ASCII paths",
+          "evidence": "server.py: _git_text/line 95-96",
+          "kind": "config",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Validates target is a real git ref using repo.rev_parse before running diff",
+          "evidence": "server.py: git_diff/line 120",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "git_diff_staged": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sets core.quotepath=false for the git command to prevent octal escaping of non-ASCII paths",
+          "evidence": "server.py: _git_text/line 95-96",
+          "kind": "config",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "git_diff_unstaged": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sets core.quotepath=false for the git command to prevent octal escaping of non-ASCII paths",
+          "evidence": "server.py: _git_text/line 95-96",
+          "kind": "config",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "git_log": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates timestamps don't start with '-' to prevent flag injection",
+          "evidence": "server.py: git_log/line 234-241",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "git_reset": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "git_show": {
+      "declared_effect_not_implemented": null,
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Validates revision doesn't start with '-' to prevent flag injection",
+          "evidence": "server.py: git_show/line 325-329",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Handles git.Blob objects by reading and decoding data stream",
+          "evidence": "server.py: git_show/line 331-332",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Handles git.Tree objects by listing contents with trailing slash for subdirectories",
+          "evidence": "server.py: git_show/line 333-336",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Generates full diff output for commits including parent diff or NULL_TREE diff for root commits",
+          "evidence": "server.py: git_show/line 347-367",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "git_status": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sets core.quotepath=false for the git command to prevent octal escaping of non-ASCII paths",
+          "evidence": "server.py: _git_text/line 95-96",
+          "kind": "config",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    }
+  }
+}

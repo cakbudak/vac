@@ -1,0 +1,2541 @@
+{
+  "cost": {
+    "claude-sonnet-4-6": {
+      "calls": 13,
+      "errors": 0,
+      "parsed": 13,
+      "seconds": 187.4,
+      "tokens": 11727
+    },
+    "claude-sonnet-5-5": {
+      "calls": 13,
+      "errors": 13,
+      "parsed": 0,
+      "seconds": 0.0,
+      "tokens": 0
+    },
+    "deepseek-v4-1-flash": {
+      "calls": 14,
+      "errors": 1,
+      "parsed": 13,
+      "seconds": 1406.6,
+      "tokens": 148496
+    },
+    "gemini-3-5-flash": {
+      "calls": 13,
+      "errors": 13,
+      "parsed": 0,
+      "seconds": 0.0,
+      "tokens": 0
+    },
+    "glm-5-3": {
+      "calls": 4,
+      "errors": 3,
+      "parsed": 0,
+      "seconds": 123.5,
+      "tokens": 23197
+    },
+    "gpt-5-4-mini": {
+      "calls": 13,
+      "errors": 13,
+      "parsed": 0,
+      "seconds": 0.0,
+      "tokens": 0
+    },
+    "gpt-oss-120b": {
+      "calls": 27,
+      "errors": 18,
+      "parsed": 9,
+      "seconds": 190.2,
+      "tokens": 46026
+    },
+    "k2-horizon-375b": {
+      "calls": 13,
+      "errors": 0,
+      "parsed": 12,
+      "seconds": 667.2,
+      "tokens": 191085
+    },
+    "kimi-k2-6": {
+      "calls": 19,
+      "errors": 16,
+      "parsed": 3,
+      "seconds": 404.0,
+      "tokens": 50039
+    },
+    "qwen3-8-27b": {
+      "calls": 7,
+      "errors": 3,
+      "parsed": 4,
+      "seconds": 476.8,
+      "tokens": 89379
+    },
+    "spark-x2-5": {
+      "calls": 2,
+      "errors": 1,
+      "parsed": 1,
+      "seconds": 540.4,
+      "tokens": 14663
+    }
+  },
+  "models": [
+    "claude-sonnet-4-6",
+    "deepseek-v4-1-flash",
+    "gpt-oss-120b",
+    "k2-horizon-375b",
+    "kimi-k2-6",
+    "qwen3-8-27b",
+    "spark-x2-5"
+  ],
+  "results": [
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 86,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 14,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "14/14",
+        "network": "14/14",
+        "read_only": "14/14",
+        "subprocess": "14/14"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": "14/14",
+      "receipts": 86,
+      "scope_roots": [
+        "{work}/**"
+      ],
+      "server": "filesystem",
+      "tools": 14,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.042,
+      "confusion": {
+        "both_deviation": 2,
+        "both_ok": 0,
+        "draft_false_alarms": 46,
+        "draft_misses": 0
+      },
+      "covered": 12,
+      "doc_insufficient_draft": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "doc_insufficient_human": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 1,
+        "fs_undeclared": 14,
+        "undeclared_subprocess": 46
+      },
+      "false_alarm_tools": {
+        "git_add": 12,
+        "git_checkout": 4,
+        "git_commit": 4,
+        "git_create_branch": 4,
+        "git_log": 4,
+        "git_status": 8
+      },
+      "flag_agreement": {
+        "doc_sufficient": "12/12",
+        "network": "12/12",
+        "read_only": "12/12",
+        "subprocess": "0/12"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 0.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "git_diff_unstaged:fs_change_by_readonly_tool": "2/2"
+      },
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": "12/12",
+      "receipts": 48,
+      "scope_roots": [
+        "{repo_path}/**"
+      ],
+      "server": "git",
+      "tools": 12,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 46,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 6,
+      "doc_insufficient_draft": [
+        "write_query",
+        "create_table",
+        "append_insight"
+      ],
+      "doc_insufficient_human": [
+        "append_insight"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "4/6",
+        "network": "6/6",
+        "read_only": "6/6",
+        "subprocess": "6/6"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.667,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": true,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": null,
+      "receipts": 46,
+      "scope_roots": [
+        "{db}",
+        "{db}-journal",
+        "{db}-wal",
+        "{db}-shm"
+      ],
+      "server": "sqlite",
+      "tools": 6,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 38,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 9,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "9/9",
+        "network": "9/9",
+        "read_only": "9/9",
+        "subprocess": "9/9"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": true,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": "9/9",
+      "receipts": 38,
+      "scope_roots": [
+        "{memory_file}",
+        "{work}/*.lock",
+        "{work}/*.lock.break"
+      ],
+      "server": "memory",
+      "tools": 9,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.667,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 24,
+        "draft_false_alarms": 12,
+        "draft_misses": 0
+      },
+      "covered": 16,
+      "doc_insufficient_draft": [
+        "toggle-simulated-logging",
+        "toggle-subscriber-updates"
+      ],
+      "doc_insufficient_human": [
+        "toggle-simulated-logging",
+        "toggle-subscriber-updates"
+      ],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 12
+      },
+      "false_alarm_tools": {
+        "echo": 10,
+        "gzip-file-as-resource": 2
+      },
+      "flag_agreement": {
+        "doc_sufficient": "16/16",
+        "network": "16/16",
+        "read_only": "14/16",
+        "subprocess": "16/16"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 0.875,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": "15/16",
+      "receipts": 36,
+      "scope_roots": [],
+      "server": "everything",
+      "tools": 16,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 12,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 1,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "1/1",
+        "network": "1/1",
+        "read_only": "1/1",
+        "subprocess": "0/1"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 0.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": "1/1",
+      "receipts": 12,
+      "scope_roots": [],
+      "server": "fetch",
+      "tools": 1,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 24,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 2,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "2/2",
+        "network": "2/2",
+        "read_only": "2/2",
+        "subprocess": "2/2"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": "2/2",
+      "receipts": 24,
+      "scope_roots": [],
+      "server": "time",
+      "tools": 2,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 36,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_command",
+        "get_command_history",
+        "change_directory"
+      ],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "3/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.75,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "/**"
+      ],
+      "server": "msb_terminal_normal",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.667,
+      "confusion": {
+        "both_deviation": 24,
+        "both_ok": 0,
+        "draft_false_alarms": 0,
+        "draft_misses": 12
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_the_command",
+        "get_commands_history"
+      ],
+      "doc_insufficient_human": [
+        "execute_the_command",
+        "change_the_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "2/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.5,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "execute_the_command:declared_effect_absent": "24/24"
+      },
+      "missed_kinds": {
+        "declared_effect_absent": 12
+      },
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "/**"
+      ],
+      "server": "msb_terminal_tool_transfer",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 36,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_command",
+        "change_directory"
+      ],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "4/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "/**"
+      ],
+      "server": "msb_terminal_out_of_scope_parameter",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 36,
+        "both_ok": 0,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_command",
+        "get_command_history",
+        "change_directory"
+      ],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "3/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.75,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "execute_command:declared_effect_absent": "24/24"
+      },
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "/**"
+      ],
+      "server": "msb_terminal_false_error",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.966,
+      "confusion": {
+        "both_deviation": 75,
+        "both_ok": 11,
+        "draft_false_alarms": 2,
+        "draft_misses": 1
+      },
+      "covered": 25,
+      "doc_insufficient_draft": [
+        "set_config_value",
+        "start_process",
+        "interact_with_process",
+        "give_feedback_to_desktop_commander"
+      ],
+      "doc_insufficient_human": [
+        "set_config_value",
+        "start_search",
+        "start_process",
+        "interact_with_process",
+        "give_feedback_to_desktop_commander"
+      ],
+      "false_alarm_kinds": {
+        "fs_outside_scope": 2,
+        "undeclared_subprocess": 2
+      },
+      "false_alarm_tools": {
+        "start_search": 2
+      },
+      "flag_agreement": {
+        "doc_sufficient": "24/25",
+        "network": "23/25",
+        "read_only": "21/25",
+        "subprocess": "23/25"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.96,
+        "network": 0.92,
+        "read_only": 0.84,
+        "subprocess": 0.92
+      },
+      "has_readme_declared": true,
+      "known_findings": {
+        "read_file:undeclared_subprocess": "14/14",
+        "write_file:undeclared_network": "4/4",
+        "write_file:undeclared_subprocess": "16/16"
+      },
+      "missed_kinds": {
+        "undeclared_network": 1
+      },
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": "25/25",
+      "receipts": 89,
+      "scope_roots": [
+        "{work}/**"
+      ],
+      "server": "desktop_commander",
+      "tools": 25,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 38,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 12,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "obsidian_delete_note",
+        "obsidian_move_note"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "10/12",
+        "network": "12/12",
+        "read_only": "12/12",
+        "subprocess": "12/12"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.833,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": true,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "claude-sonnet-4-6",
+      "read_only_vs_annotation": "12/12",
+      "receipts": 38,
+      "scope_roots": [
+        "{vault}/**"
+      ],
+      "server": "obsidian",
+      "tools": 12,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 86,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 14,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "14/14",
+        "network": "14/14",
+        "read_only": "14/14",
+        "subprocess": "14/14"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": "14/14",
+      "receipts": 86,
+      "scope_roots": [
+        "{work}/**"
+      ],
+      "server": "filesystem",
+      "tools": 14,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.688,
+      "confusion": {
+        "both_deviation": 2,
+        "both_ok": 31,
+        "draft_false_alarms": 15,
+        "draft_misses": 0
+      },
+      "covered": 12,
+      "doc_insufficient_draft": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "doc_insufficient_human": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "false_alarm_kinds": {
+        "fs_undeclared": 15
+      },
+      "false_alarm_tools": {
+        "git_add": 12,
+        "git_checkout": 1,
+        "git_commit": 2
+      },
+      "flag_agreement": {
+        "doc_sufficient": "12/12",
+        "network": "12/12",
+        "read_only": "12/12",
+        "subprocess": "12/12"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "git_diff_unstaged:fs_change_by_readonly_tool": "2/2"
+      },
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": "12/12",
+      "receipts": 48,
+      "scope_roots": [
+        "{repo_path}/**"
+      ],
+      "server": "git",
+      "tools": 12,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 46,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 6,
+      "doc_insufficient_draft": [
+        "append_insight"
+      ],
+      "doc_insufficient_human": [
+        "append_insight"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "6/6",
+        "network": "6/6",
+        "read_only": "5/6",
+        "subprocess": "6/6"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 0.833,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": null,
+      "receipts": 46,
+      "scope_roots": [
+        "{db}"
+      ],
+      "server": "sqlite",
+      "tools": 6,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.974,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 37,
+        "draft_false_alarms": 1,
+        "draft_misses": 0
+      },
+      "covered": 9,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {
+        "fs_undeclared": 1
+      },
+      "false_alarm_tools": {
+        "create_entities": 1
+      },
+      "flag_agreement": {
+        "doc_sufficient": "9/9",
+        "network": "9/9",
+        "read_only": "9/9",
+        "subprocess": "9/9"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": true,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": "9/9",
+      "receipts": 38,
+      "scope_roots": [
+        "{memory_file}",
+        "{memory_file}.lock",
+        "{memory_file}.lock.break"
+      ],
+      "server": "memory",
+      "tools": 9,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.944,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 34,
+        "draft_false_alarms": 2,
+        "draft_misses": 0
+      },
+      "covered": 16,
+      "doc_insufficient_draft": [
+        "gzip-file-as-resource"
+      ],
+      "doc_insufficient_human": [
+        "toggle-simulated-logging",
+        "toggle-subscriber-updates"
+      ],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 2
+      },
+      "false_alarm_tools": {
+        "gzip-file-as-resource": 2
+      },
+      "flag_agreement": {
+        "doc_sufficient": "13/16",
+        "network": "16/16",
+        "read_only": "13/16",
+        "subprocess": "16/16"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.812,
+        "network": 1.0,
+        "read_only": 0.812,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": "16/16",
+      "receipts": 36,
+      "scope_roots": [
+        "{root}/**"
+      ],
+      "server": "everything",
+      "tools": 16,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 12,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 1,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "1/1",
+        "network": "1/1",
+        "read_only": "1/1",
+        "subprocess": "0/1"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 0.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": "1/1",
+      "receipts": 12,
+      "scope_roots": [],
+      "server": "fetch",
+      "tools": 1,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 0,
+        "draft_false_alarms": 24,
+        "draft_misses": 0
+      },
+      "covered": 2,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 24
+      },
+      "false_alarm_tools": {
+        "convert_time": 12,
+        "get_current_time": 12
+      },
+      "flag_agreement": {
+        "doc_sufficient": "2/2",
+        "network": "2/2",
+        "read_only": "2/2",
+        "subprocess": "2/2"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": "2/2",
+      "receipts": 24,
+      "scope_roots": [],
+      "server": "time",
+      "tools": 2,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 36,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "2/4",
+        "network": "3/4",
+        "read_only": "3/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.5,
+        "network": 0.75,
+        "read_only": 0.75,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "{work}/**",
+        "{root}/**"
+      ],
+      "server": "msb_terminal_normal",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.667,
+      "confusion": {
+        "both_deviation": 24,
+        "both_ok": 0,
+        "draft_false_alarms": 0,
+        "draft_misses": 12
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "execute_the_command",
+        "change_the_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "2/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.5,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "execute_the_command:declared_effect_absent": "24/24"
+      },
+      "missed_kinds": {
+        "declared_effect_absent": 12
+      },
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "**"
+      ],
+      "server": "msb_terminal_tool_transfer",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 36,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "2/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.5,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "**"
+      ],
+      "server": "msb_terminal_out_of_scope_parameter",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.667,
+      "confusion": {
+        "both_deviation": 24,
+        "both_ok": 0,
+        "draft_false_alarms": 0,
+        "draft_misses": 12
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_command"
+      ],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "3/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.75,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "execute_command:declared_effect_absent": "24/24"
+      },
+      "missed_kinds": {
+        "declared_effect_absent": 12
+      },
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "{root}/**"
+      ],
+      "server": "msb_terminal_false_error",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.854,
+      "confusion": {
+        "both_deviation": 76,
+        "both_ok": 0,
+        "draft_false_alarms": 13,
+        "draft_misses": 0
+      },
+      "covered": 25,
+      "doc_insufficient_draft": [
+        "set_config_value",
+        "start_process",
+        "give_feedback_to_desktop_commander"
+      ],
+      "doc_insufficient_human": [
+        "set_config_value",
+        "start_search",
+        "start_process",
+        "interact_with_process",
+        "give_feedback_to_desktop_commander"
+      ],
+      "false_alarm_kinds": {
+        "fs_outside_scope": 2,
+        "fs_undeclared": 11,
+        "undeclared_network": 7
+      },
+      "false_alarm_tools": {
+        "start_process": 11,
+        "start_search": 2
+      },
+      "flag_agreement": {
+        "doc_sufficient": "23/25",
+        "network": "25/25",
+        "read_only": "21/25",
+        "subprocess": "22/25"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.92,
+        "network": 1.0,
+        "read_only": 0.84,
+        "subprocess": 0.88
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "read_file:undeclared_subprocess": "14/14",
+        "write_file:undeclared_network": "4/4",
+        "write_file:undeclared_subprocess": "16/16"
+      },
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": "25/25",
+      "receipts": 89,
+      "scope_roots": [
+        "{work}/**"
+      ],
+      "server": "desktop_commander",
+      "tools": 25,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 38,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 12,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "obsidian_delete_note",
+        "obsidian_move_note"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "10/12",
+        "network": "12/12",
+        "read_only": "12/12",
+        "subprocess": "12/12"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.833,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": true,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "deepseek-v4-1-flash",
+      "read_only_vs_annotation": "12/12",
+      "receipts": 38,
+      "scope_roots": [
+        "{vault}/**"
+      ],
+      "server": "obsidian",
+      "tools": 12,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.442,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 38,
+        "draft_false_alarms": 48,
+        "draft_misses": 0
+      },
+      "covered": 14,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 24,
+        "fs_undeclared": 48
+      },
+      "false_alarm_tools": {
+        "create_directory": 8,
+        "edit_file": 8,
+        "move_file": 8,
+        "write_file": 24
+      },
+      "flag_agreement": {
+        "doc_sufficient": "14/14",
+        "network": "14/14",
+        "read_only": "14/14",
+        "subprocess": "14/14"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "gpt-oss-120b",
+      "read_only_vs_annotation": "14/14",
+      "receipts": 86,
+      "scope_roots": [
+        "{work}"
+      ],
+      "server": "filesystem",
+      "tools": 14,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.292,
+      "confusion": {
+        "both_deviation": 2,
+        "both_ok": 12,
+        "draft_false_alarms": 34,
+        "draft_misses": 0
+      },
+      "covered": 12,
+      "doc_insufficient_draft": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "doc_insufficient_human": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "false_alarm_kinds": {
+        "fs_undeclared": 14,
+        "undeclared_subprocess": 20
+      },
+      "false_alarm_tools": {
+        "git_add": 12,
+        "git_branch": 2,
+        "git_diff": 2,
+        "git_log": 4,
+        "git_show": 2,
+        "git_status": 8
+      },
+      "flag_agreement": {
+        "doc_sufficient": "12/12",
+        "network": "12/12",
+        "read_only": "12/12",
+        "subprocess": "5/12"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 0.417
+      },
+      "has_readme_declared": true,
+      "known_findings": {
+        "git_diff_unstaged:fs_change_by_readonly_tool": "2/2"
+      },
+      "missed_kinds": {},
+      "model": "gpt-oss-120b",
+      "read_only_vs_annotation": "12/12",
+      "receipts": 48,
+      "scope_roots": [
+        "{repo_path}/**"
+      ],
+      "server": "git",
+      "tools": 12,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 46,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 6,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "append_insight"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "5/6",
+        "network": "6/6",
+        "read_only": "6/6",
+        "subprocess": "6/6"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.833,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "gpt-oss-120b",
+      "read_only_vs_annotation": null,
+      "receipts": 46,
+      "scope_roots": [
+        "{db}"
+      ],
+      "server": "sqlite",
+      "tools": 6,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 0,
+        "draft_false_alarms": 12,
+        "draft_misses": 0
+      },
+      "covered": 1,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 12
+      },
+      "false_alarm_tools": {
+        "fetch": 12
+      },
+      "flag_agreement": {
+        "doc_sufficient": "1/1",
+        "network": "1/1",
+        "read_only": "1/1",
+        "subprocess": "0/1"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 0.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "gpt-oss-120b",
+      "read_only_vs_annotation": "1/1",
+      "receipts": 12,
+      "scope_roots": [],
+      "server": "fetch",
+      "tools": 1,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 24,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 2,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "2/2",
+        "network": "2/2",
+        "read_only": "2/2",
+        "subprocess": "2/2"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": true,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "gpt-oss-120b",
+      "read_only_vs_annotation": "2/2",
+      "receipts": 24,
+      "scope_roots": [],
+      "server": "time",
+      "tools": 2,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 36,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_command"
+      ],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "3/4",
+        "network": "4/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.75,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "gpt-oss-120b",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [],
+      "server": "msb_terminal_normal",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 0,
+        "draft_false_alarms": 0,
+        "draft_misses": 36
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_the_command"
+      ],
+      "doc_insufficient_human": [
+        "execute_the_command",
+        "change_the_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "3/4",
+        "network": "4/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.75,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "execute_the_command:declared_effect_absent": "0/24"
+      },
+      "missed_kinds": {
+        "declared_effect_absent": 36
+      },
+      "model": "gpt-oss-120b",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [],
+      "server": "msb_terminal_tool_transfer",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 36,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "2/4",
+        "network": "4/4",
+        "read_only": "3/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.5,
+        "network": 1.0,
+        "read_only": 0.75,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "gpt-oss-120b",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [],
+      "server": "msb_terminal_out_of_scope_parameter",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 0,
+        "draft_false_alarms": 0,
+        "draft_misses": 36
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_command"
+      ],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "3/4",
+        "network": "4/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.75,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "execute_command:declared_effect_absent": "0/24"
+      },
+      "missed_kinds": {
+        "declared_effect_absent": 36
+      },
+      "model": "gpt-oss-120b",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [],
+      "server": "msb_terminal_false_error",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 86,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 14,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "14/14",
+        "network": "14/14",
+        "read_only": "14/14",
+        "subprocess": "14/14"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": "14/14",
+      "receipts": 86,
+      "scope_roots": [
+        "{work}"
+      ],
+      "server": "filesystem",
+      "tools": 14,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.667,
+      "confusion": {
+        "both_deviation": 2,
+        "both_ok": 30,
+        "draft_false_alarms": 16,
+        "draft_misses": 0
+      },
+      "covered": 12,
+      "doc_insufficient_draft": [
+        "git_commit"
+      ],
+      "doc_insufficient_human": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 2,
+        "fs_undeclared": 14
+      },
+      "false_alarm_tools": {
+        "git_add": 12,
+        "git_commit": 4
+      },
+      "flag_agreement": {
+        "doc_sufficient": "8/12",
+        "network": "12/12",
+        "read_only": "12/12",
+        "subprocess": "12/12"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.667,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "git_diff_unstaged:fs_change_by_readonly_tool": "2/2"
+      },
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": "12/12",
+      "receipts": 48,
+      "scope_roots": [
+        "{repo_path}/**"
+      ],
+      "server": "git",
+      "tools": 12,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 46,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 6,
+      "doc_insufficient_draft": [
+        "append_insight"
+      ],
+      "doc_insufficient_human": [
+        "append_insight"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "6/6",
+        "network": "6/6",
+        "read_only": "5/6",
+        "subprocess": "6/6"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 0.833,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": null,
+      "receipts": 46,
+      "scope_roots": [
+        "{db}"
+      ],
+      "server": "sqlite",
+      "tools": 6,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.556,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 20,
+        "draft_false_alarms": 16,
+        "draft_misses": 0
+      },
+      "covered": 16,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "toggle-simulated-logging",
+        "toggle-subscriber-updates"
+      ],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 16
+      },
+      "false_alarm_tools": {
+        "echo": 10,
+        "get-annotated-message": 2,
+        "get-structured-content": 2,
+        "gzip-file-as-resource": 2
+      },
+      "flag_agreement": {
+        "doc_sufficient": "14/16",
+        "network": "16/16",
+        "read_only": "13/16",
+        "subprocess": "16/16"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.875,
+        "network": 1.0,
+        "read_only": 0.812,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": "16/16",
+      "receipts": 36,
+      "scope_roots": [],
+      "server": "everything",
+      "tools": 16,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 12,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 1,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "1/1",
+        "network": "1/1",
+        "read_only": "1/1",
+        "subprocess": "0/1"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 0.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": "1/1",
+      "receipts": 12,
+      "scope_roots": [],
+      "server": "fetch",
+      "tools": 1,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 24,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 2,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "2/2",
+        "network": "2/2",
+        "read_only": "2/2",
+        "subprocess": "2/2"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": "2/2",
+      "receipts": 24,
+      "scope_roots": [],
+      "server": "time",
+      "tools": 2,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 36,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_command"
+      ],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "3/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.75,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "{root}/**"
+      ],
+      "server": "msb_terminal_normal",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.667,
+      "confusion": {
+        "both_deviation": 24,
+        "both_ok": 0,
+        "draft_false_alarms": 0,
+        "draft_misses": 12
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_the_command"
+      ],
+      "doc_insufficient_human": [
+        "execute_the_command",
+        "change_the_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "3/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.75,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "execute_the_command:declared_effect_absent": "24/24"
+      },
+      "missed_kinds": {
+        "declared_effect_absent": 12
+      },
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "{root}/**"
+      ],
+      "server": "msb_terminal_tool_transfer",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 36,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "2/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.5,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "/**"
+      ],
+      "server": "msb_terminal_out_of_scope_parameter",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 0,
+        "draft_false_alarms": 0,
+        "draft_misses": 36
+      },
+      "covered": 4,
+      "doc_insufficient_draft": [
+        "execute_command"
+      ],
+      "doc_insufficient_human": [
+        "execute_command",
+        "change_directory"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "3/4",
+        "network": "3/4",
+        "read_only": "4/4",
+        "subprocess": "4/4"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.75,
+        "network": 0.75,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "execute_command:declared_effect_absent": "0/24"
+      },
+      "missed_kinds": {
+        "declared_effect_absent": 36
+      },
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": null,
+      "receipts": 36,
+      "scope_roots": [
+        "{root}/**"
+      ],
+      "server": "msb_terminal_false_error",
+      "tools": 4,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.854,
+      "confusion": {
+        "both_deviation": 76,
+        "both_ok": 0,
+        "draft_false_alarms": 13,
+        "draft_misses": 0
+      },
+      "covered": 25,
+      "doc_insufficient_draft": [
+        "set_config_value",
+        "give_feedback_to_desktop_commander"
+      ],
+      "doc_insufficient_human": [
+        "set_config_value",
+        "start_search",
+        "start_process",
+        "interact_with_process",
+        "give_feedback_to_desktop_commander"
+      ],
+      "false_alarm_kinds": {
+        "fs_outside_scope": 2,
+        "fs_undeclared": 11
+      },
+      "false_alarm_tools": {
+        "start_process": 11,
+        "start_search": 2
+      },
+      "flag_agreement": {
+        "doc_sufficient": "22/25",
+        "network": "24/25",
+        "read_only": "21/25",
+        "subprocess": "24/25"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.88,
+        "network": 0.96,
+        "read_only": 0.84,
+        "subprocess": 0.96
+      },
+      "has_readme_declared": true,
+      "known_findings": {
+        "read_file:undeclared_subprocess": "14/14",
+        "write_file:undeclared_network": "4/4",
+        "write_file:undeclared_subprocess": "16/16"
+      },
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": "25/25",
+      "receipts": 89,
+      "scope_roots": [
+        "{work}/**"
+      ],
+      "server": "desktop_commander",
+      "tools": 25,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 38,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 12,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [
+        "obsidian_delete_note",
+        "obsidian_move_note"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "10/12",
+        "network": "12/12",
+        "read_only": "12/12",
+        "subprocess": "12/12"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.833,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": true,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "k2-horizon-375b",
+      "read_only_vs_annotation": "12/12",
+      "receipts": 38,
+      "scope_roots": [
+        "{vault}"
+      ],
+      "server": "obsidian",
+      "tools": 12,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 86,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 14,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "14/14",
+        "network": "14/14",
+        "read_only": "14/14",
+        "subprocess": "14/14"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "kimi-k2-6",
+      "read_only_vs_annotation": "14/14",
+      "receipts": 86,
+      "scope_roots": [
+        "{work}/**"
+      ],
+      "server": "filesystem",
+      "tools": 14,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 0.958,
+      "confusion": {
+        "both_deviation": 2,
+        "both_ok": 44,
+        "draft_false_alarms": 2,
+        "draft_misses": 0
+      },
+      "covered": 12,
+      "doc_insufficient_draft": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "doc_insufficient_human": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 2
+      },
+      "false_alarm_tools": {
+        "git_commit": 2
+      },
+      "flag_agreement": {
+        "doc_sufficient": "12/12",
+        "network": "12/12",
+        "read_only": "12/12",
+        "subprocess": "12/12"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "git_diff_unstaged:fs_change_by_readonly_tool": "2/2"
+      },
+      "missed_kinds": {},
+      "model": "kimi-k2-6",
+      "read_only_vs_annotation": "12/12",
+      "receipts": 48,
+      "scope_roots": [
+        "{repo_path}/**"
+      ],
+      "server": "git",
+      "tools": 12,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 46,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 6,
+      "doc_insufficient_draft": [
+        "append_insight"
+      ],
+      "doc_insufficient_human": [
+        "append_insight"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "6/6",
+        "network": "6/6",
+        "read_only": "6/6",
+        "subprocess": "6/6"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "kimi-k2-6",
+      "read_only_vs_annotation": null,
+      "receipts": 46,
+      "scope_roots": [
+        "{db}"
+      ],
+      "server": "sqlite",
+      "tools": 6,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 86,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 1,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "1/1",
+        "network": "1/1",
+        "read_only": "1/1",
+        "subprocess": "1/1"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "qwen3-8-27b",
+      "read_only_vs_annotation": "1/1",
+      "receipts": 86,
+      "scope_roots": [
+        "{work}",
+        "{work}/**"
+      ],
+      "server": "filesystem",
+      "tools": 14,
+      "unknown_tool_calls": 86
+    },
+    {
+      "agreement_rate": 0.958,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 46,
+        "draft_false_alarms": 0,
+        "draft_misses": 2
+      },
+      "covered": 1,
+      "doc_insufficient_draft": [
+        "git_status"
+      ],
+      "doc_insufficient_human": [
+        "git_commit",
+        "git_add",
+        "git_reset",
+        "git_create_branch",
+        "git_checkout"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "0/1",
+        "network": "1/1",
+        "read_only": "1/1",
+        "subprocess": "1/1"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {
+        "git_diff_unstaged:fs_change_by_readonly_tool": "0/2"
+      },
+      "missed_kinds": {
+        "fs_change_by_readonly_tool": 2
+      },
+      "model": "qwen3-8-27b",
+      "read_only_vs_annotation": "1/1",
+      "receipts": 48,
+      "scope_roots": [
+        "{repo_path}/**"
+      ],
+      "server": "git",
+      "tools": 12,
+      "unknown_tool_calls": 40
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 46,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 6,
+      "doc_insufficient_draft": [
+        "write_query",
+        "create_table",
+        "append_insight"
+      ],
+      "doc_insufficient_human": [
+        "append_insight"
+      ],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "4/6",
+        "network": "6/6",
+        "read_only": "6/6",
+        "subprocess": "6/6"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 0.667,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "qwen3-8-27b",
+      "read_only_vs_annotation": null,
+      "receipts": 46,
+      "scope_roots": [
+        "{db}"
+      ],
+      "server": "sqlite",
+      "tools": 6,
+      "unknown_tool_calls": 0
+    },
+    {
+      "agreement_rate": 1.0,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 38,
+        "draft_false_alarms": 0,
+        "draft_misses": 0
+      },
+      "covered": 1,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {},
+      "false_alarm_tools": {},
+      "flag_agreement": {
+        "doc_sufficient": "1/1",
+        "network": "1/1",
+        "read_only": "1/1",
+        "subprocess": "1/1"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "qwen3-8-27b",
+      "read_only_vs_annotation": "1/1",
+      "receipts": 38,
+      "scope_roots": [
+        "{memory_file}",
+        "{memory_file}.lock",
+        "{memory_file}.lock.break"
+      ],
+      "server": "memory",
+      "tools": 9,
+      "unknown_tool_calls": 34
+    },
+    {
+      "agreement_rate": 0.535,
+      "confusion": {
+        "both_deviation": 0,
+        "both_ok": 46,
+        "draft_false_alarms": 40,
+        "draft_misses": 0
+      },
+      "covered": 14,
+      "doc_insufficient_draft": [],
+      "doc_insufficient_human": [],
+      "false_alarm_kinds": {
+        "declared_effect_absent": 32,
+        "fs_undeclared": 40
+      },
+      "false_alarm_tools": {
+        "edit_file": 8,
+        "move_file": 8,
+        "write_file": 24
+      },
+      "flag_agreement": {
+        "doc_sufficient": "14/14",
+        "network": "14/14",
+        "read_only": "14/14",
+        "subprocess": "14/14"
+      },
+      "flag_agreement_rate": {
+        "doc_sufficient": 1.0,
+        "network": 1.0,
+        "read_only": 1.0,
+        "subprocess": 1.0
+      },
+      "has_readme_declared": false,
+      "known_findings": {},
+      "missed_kinds": {},
+      "model": "spark-x2-5",
+      "read_only_vs_annotation": "14/14",
+      "receipts": 86,
+      "scope_roots": [
+        "{work}"
+      ],
+      "server": "filesystem",
+      "tools": 14,
+      "unknown_tool_calls": 0
+    }
+  ]
+}

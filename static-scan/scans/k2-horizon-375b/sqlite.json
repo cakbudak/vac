@@ -1,0 +1,159 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "substantial",
+    "summary": "write_query is described as executing INSERT/UPDATE/DELETE but the implementation accepts and commits any non-SELECT SQL, including destructive DROP/ALTER statements, and describe_table interpolates table_name unsanitized into a PRAGMA. The remaining tools behave as described, with only minor undocumented details such as in-memory-only insight storage, system tables appearing in list_tables, and errors being returned as text."
+  },
+  "server": "sqlite",
+  "startup": [
+    {
+      "behaviour": "Creates the parent directory(ies) of the configured database path at startup (Path.mkdir(parents=True, exist_ok=True))",
+      "documented_in_tool_descriptions": false,
+      "evidence": "mcp_server_sqlite/server.py: SqliteDatabase.__init__",
+      "kind": "file_write",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Creates the SQLite database file if it does not already exist (sqlite3.connect creates the file on open)",
+      "documented_in_tool_descriptions": false,
+      "evidence": "mcp_server_sqlite/server.py: SqliteDatabase._init_database",
+      "kind": "file_write",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Defaults the database path to ./sqlite_mcp_server.db relative to the process working directory (overridable via --db-path CLI argument)",
+      "documented_in_tool_descriptions": false,
+      "evidence": "mcp_server_sqlite/__init__.py: main",
+      "kind": "config",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "On Windows, reconfigures stdin/stdout/stderr to UTF-8 encoding when PYTHONIOENCODING is not set",
+      "documented_in_tool_descriptions": false,
+      "evidence": "mcp_server_sqlite/server.py: module-level sys.platform == 'win32' block",
+      "kind": "other",
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "append_insight": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Insights are stored only in server memory (the db.insights list) and are never persisted to disk or to the database file",
+          "evidence": "mcp_server_sqlite/server.py: SqliteDatabase.__init__ (self.insights list) and handle_call_tool append_insight branch",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Sends a resource-updated notification for memo://insights to the connected client after every append",
+          "evidence": "mcp_server_sqlite/server.py: handle_call_tool append_insight branch (server.request_context.session.send_resource_updated)",
+          "kind": "other",
+          "observable_from_outside": "process",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "create_table": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Only statements whose text begins exactly with 'CREATE TABLE' (case-insensitive, after stripping) are accepted; other table-creating statements such as 'CREATE TEMP TABLE' are rejected",
+          "evidence": "mcp_server_sqlite/server.py: handle_call_tool create_table branch (startswith('CREATE TABLE') check)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Errors are caught and returned as text content rather than raised to the caller",
+          "evidence": "mcp_server_sqlite/server.py: handle_call_tool (except Exception handler)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "on error"
+        }
+      ]
+    },
+    "describe_table": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "table_name is interpolated directly into the SQL via f-string (PRAGMA table_info({table_name})) with no sanitization or parameterization",
+          "evidence": "mcp_server_sqlite/server.py: handle_call_tool describe_table branch",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "medium",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Returns an empty result rather than an error when the named table does not exist (PRAGMA table_info on a missing table yields no rows)",
+          "evidence": "mcp_server_sqlite/server.py: handle_call_tool describe_table branch",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "list_tables": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Includes SQLite internal system tables (e.g. sqlite_sequence) in the listing, not only user-created tables, because it queries sqlite_master WHERE type='table' without filtering",
+          "evidence": "mcp_server_sqlite/server.py: handle_call_tool list_tables branch",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "read_query": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Errors (including rejection of non-SELECT statements) are caught and returned as text content ('Error: ...') rather than raised to the caller",
+          "evidence": "mcp_server_sqlite/server.py: handle_call_tool (except Exception handler)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "on error"
+        }
+      ]
+    },
+    "write_query": {
+      "declared_effect_not_implemented": null,
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Executes and commits any SQL statement that does not start with SELECT, not just INSERT/UPDATE/DELETE \u2014 destructive or schema-changing statements such as DROP, ALTER, PRAGMA, and ATTACH are accepted",
+          "evidence": "mcp_server_sqlite/server.py: handle_call_tool write_query branch (only rejects statements starting with SELECT; _execute_query commits for INSERT/UPDATE/DELETE/CREATE/DROP/ALTER)",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "high",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Errors are caught and returned as text content ('Error: ...' / 'Database error: ...') rather than raised to the caller",
+          "evidence": "mcp_server_sqlite/server.py: handle_call_tool (except sqlite3.Error / except Exception handlers)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "on error"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,36 @@
+# Declared effect contract for the MSB Terminal Controller (both variants share it:
+# the tool_transfer variant's descriptions are identical to the normal server's, only the
+# tool names carry an extra word).  Derived ONLY from the tool descriptions, before any
+# probe.  Tool names are matched after removing the inserted "_the"/"s" variants.
+server: msb_terminal
+scope:
+  roots: ["{work}"]                 # the pilot's commands only read files inside the sandbox work dir
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tool_aliases:
+  execute_the_command: execute_command
+  get_commands_history: get_command_history
+  get_the_current_directory: get_current_directory
+  change_the_directory: change_directory
+tools:
+  execute_command:
+    read_only: false
+    subprocess: true
+    expect_effect: {subprocess: true, unless_response_matches: ["not allowed"]}
+    doc_sufficient: false
+    notes: "'Execute terminal command and return results' is as wide as the shell; the pilot's commands are read-only (echo, ls, cat, wc, head, date, pwd), so any file change is the server's, not the command's"
+  get_command_history:
+    read_only: true
+    doc_sufficient: true
+    expect_effect: {response_matches_any: ["command history", "No command execution history"]}
+  get_current_directory:
+    read_only: true
+    doc_sufficient: true
+    expect_effect: {response_matches_any: ["/"]}
+  change_directory:
+    read_only: true          # no file changes; the effect is the server process's cwd
+    doc_sufficient: false
+    expect_effect: {response_matches_any: ["Switched to directory"]}
+    notes: "the declared effect lives in process state and is observable only through get_current_directory, i.e. the server's own read tool"

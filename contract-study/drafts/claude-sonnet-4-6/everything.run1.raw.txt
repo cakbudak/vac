@@ -1,0 +1,130 @@
+```yaml
+server: everything
+
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+
+defaults:
+  subprocess: false
+  network: false
+
+tools:
+  echo:
+    read_only: true
+    subprocess: false
+    network: false
+    expect_effect:
+      response_matches_any: []
+    doc_sufficient: true
+    notes: "Echoes back the input message; read-only, no fs/network/subprocess effects documented."
+
+  get-annotated-message:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns annotated content demonstrating annotation patterns; read-only, no fs/network/subprocess effects documented."
+
+  get-env:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns environment variables with credential masking; read-only, no fs/network/subprocess effects documented."
+
+  get-header-params:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns region argument and HTTP header value; read-only, no fs/network/subprocess effects documented."
+
+  get-resource-links:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns resource links; read-only, no fs/network/subprocess effects documented."
+
+  get-resource-reference:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns a resource reference; read-only, no fs/network/subprocess effects documented."
+
+  get-structured-content:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns structured content with output schema; read-only, no fs/network/subprocess effects documented."
+
+  get-sum:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns sum of two numbers; read-only, no fs/network/subprocess effects documented."
+
+  get-tiny-image:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns a tiny MCP logo image; read-only, no fs/network/subprocess effects documented."
+
+  gzip-file-as-resource:
+    read_only: true
+    subprocess: false
+    network: true
+    network_hosts: ["**"]
+    expect_effect:
+      network: true
+      unless_response_matches: ["data:"]
+    doc_sufficient: true
+    notes: "Fetches a URL (or accepts data: URI without fetch) and returns gzip-compressed result as resource or resource link; no fs writes documented, network fetch required for non-data URIs; GZIP_ALLOWED_DOMAINS may restrict hosts."
+
+  trigger-list-changed:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Sends a list_changed notification for tools/prompts/resources; read-only, no fs/network/subprocess effects documented."
+
+  trigger-log-messages:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Sends log messages at each logging level; read-only, no fs/network/subprocess effects documented."
+
+  trigger-long-running-operation:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Demonstrates long-running operation with progress updates; read-only, no fs/network/subprocess effects documented."
+
+  trigger-resource-update:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Sends a resources/updated notification for a given URI; read-only, no fs/network/subprocess effects documented."
+
+  toggle-simulated-logging:
+    read_only: false
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Toggles in-memory simulated logging state (read_only_hint false); no fs paths documented so no fs patterns can be declared—state is in-process memory only per documentation."
+
+  toggle-subscriber-updates:
+    read_only: false
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Toggles in-memory simulated resource subscription updates (read_only_hint false); no fs paths documented so no fs patterns can be declared—state is in-process memory only per documentation."
+```

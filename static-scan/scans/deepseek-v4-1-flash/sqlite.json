@@ -1,0 +1,66 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All six tools implement their declared effects faithfully. The only deviation is that append_insight additionally broadcasts a resource_updated notification to clients, which the tool description does not mention."
+  },
+  "server": "sqlite",
+  "startup": [
+    {
+      "behaviour": "Creates parent directories for the configured database path",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: SqliteDatabase.__init__ / Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)",
+      "kind": "file_write",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Opens (and implicitly creates) the SQLite database file on startup",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: SqliteDatabase._init_database / sqlite3.connect(self.db_path)",
+      "kind": "file_write",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "append_insight": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Emits an MCP resource_updated notification for memo://insights to connected clients",
+          "evidence": "server.py: handle_call_tool / await server.request_context.session.send_resource_updated(AnyUrl(\"memo://insights\"))",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "create_table": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "describe_table": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "list_tables": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "read_query": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "write_query": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    }
+  }
+}

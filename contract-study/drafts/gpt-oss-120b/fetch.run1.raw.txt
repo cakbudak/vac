@@ -1,0 +1,22 @@
+```yaml
+server: fetch
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  fetch:
+    read_only: true
+    expect_effect:
+      network: true
+      subprocess: true
+    subprocess: true
+    network: true
+    network_hosts:
+      - "{host:url}"
+    scope: []
+    doc_sufficient: true
+    notes: "Tool is read‑only, performs a network fetch; may spawn a Node.js subprocess for HTML extraction per README."
+```

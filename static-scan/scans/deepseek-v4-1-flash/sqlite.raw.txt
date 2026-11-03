@@ -1,0 +1,68 @@
+```json
+{
+  "server": "sqlite",
+  "startup": [
+    {
+      "behaviour": "Creates parent directories for the configured database path",
+      "evidence": "server.py: SqliteDatabase.__init__ / Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Opens (and implicitly creates) the SQLite database file on startup",
+      "evidence": "server.py: SqliteDatabase._init_database / sqlite3.connect(self.db_path)",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "read_query": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "write_query": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "create_table": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "list_tables": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "describe_table": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "append_insight": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Emits an MCP resource_updated notification for memo://insights to connected clients",
+          "evidence": "server.py: handle_call_tool / await server.request_context.session.send_resource_updated(AnyUrl(\"memo://insights\"))",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All six tools implement their declared effects faithfully. The only deviation is that append_insight additionally broadcasts a resource_updated notification to clients, which the tool description does not mention."
+  }
+}
+```

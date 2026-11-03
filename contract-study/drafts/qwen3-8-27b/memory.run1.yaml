@@ -1,0 +1,24 @@
+server: memory
+scope:
+  roots:
+  - '{memory_file}'
+  - '{memory_file}.lock'
+  - '{memory_file}.lock.break'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  create_entities:
+    read_only: false
+    fs:
+      may_create:
+      - '{memory_file}'
+      may_modify:
+      - '{memory_file}'
+      may_delete: []
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: README says mutations persist to MEMORY_FILE_PATH; lock files are declared
+      in readme_declared.

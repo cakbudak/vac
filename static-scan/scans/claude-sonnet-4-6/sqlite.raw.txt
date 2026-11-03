@@ -1,0 +1,185 @@
+```json
+{
+  "server": "sqlite",
+  "startup": [
+    {
+      "behaviour": "Creates parent directories for the database file path if they do not exist (mkdir parents=True)",
+      "evidence": "server.py: SqliteDatabase.__init__/Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Opens (and implicitly creates) the SQLite database file on disk at the configured path",
+      "evidence": "server.py: SqliteDatabase._init_database/sqlite3.connect(self.db_path)",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "A ServerWrapper instance is instantiated at module import time with a hardcoded 'test.db' path",
+      "evidence": "server.py: module level/wrapper = ServerWrapper()",
+      "kind": "state",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "On Windows, reconfigures stdin/stdout/stderr to UTF-8 encoding if PYTHONIOENCODING is unset",
+      "evidence": "server.py: module level/sys.stdin.reconfigure, sys.stdout.reconfigure, sys.stderr.reconfigure",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Registers a memo://insights resource and an mcp-demo prompt in addition to the tools",
+      "evidence": "server.py: handle_list_resources, handle_list_prompts",
+      "kind": "state",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "network",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "read_query": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Rejects any query that does not begin with SELECT, raising a ValueError returned as an error message",
+          "evidence": "server.py: handle_call_tool/if not arguments['query'].strip().upper().startswith('SELECT'): raise ValueError",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Opens a new SQLite connection per call (no persistent connection pool); each call opens and closes a file handle",
+          "evidence": "server.py: SqliteDatabase._execute_query/with closing(sqlite3.connect(self.db_path))",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "write_query": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Rejects SELECT queries explicitly, raising a ValueError returned as an error message",
+          "evidence": "server.py: handle_call_tool/if arguments['query'].strip().upper().startswith('SELECT'): raise ValueError",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Also accepts and executes CREATE, DROP, ALTER statements (not only INSERT/UPDATE/DELETE) because _execute_query commits on those prefixes too",
+          "evidence": "server.py: SqliteDatabase._execute_query/query.strip().upper().startswith(('INSERT','UPDATE','DELETE','CREATE','DROP','ALTER'))",
+          "kind": "file_write",
+          "trigger": "conditional on input",
+          "observable_from_outside": "file",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Returns the number of affected rows, not the modified data",
+          "evidence": "server.py: SqliteDatabase._execute_query/return [{\"affected_rows\": affected}]",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "create_table": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Rejects any query that does not begin with CREATE TABLE, raising a ValueError returned as an error message",
+          "evidence": "server.py: handle_call_tool/if not arguments['query'].strip().upper().startswith('CREATE TABLE'): raise ValueError",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Returns fixed string 'Table created successfully' instead of row/schema details",
+          "evidence": "server.py: handle_call_tool/return [types.TextContent(type='text', text='Table created successfully')]",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "list_tables": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Queries sqlite_master system table specifically; result also includes any SQLite internal or view entries that match type='table'",
+          "evidence": "server.py: handle_call_tool/db._execute_query(\"SELECT name FROM sqlite_master WHERE type='table'\")",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "describe_table": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Uses PRAGMA table_info with the table name interpolated directly into the SQL string without parameterisation (SQL injection risk)",
+          "evidence": "server.py: handle_call_tool/f\"PRAGMA table_info({arguments['table_name']})\"",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "high"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "append_insight": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Appends the insight to an in-memory list (db.insights) that persists only for the server process lifetime; insights are not written to the database",
+          "evidence": "server.py: handle_call_tool/db.insights.append(arguments['insight'])",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Sends an MCP resource-updated notification for memo://insights to all connected clients",
+          "evidence": "server.py: handle_call_tool/await server.request_context.session.send_resource_updated(AnyUrl('memo://insights'))",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Calls _synthesize_memo() and discards the result (side-effect-free call, but synthesises memo in memory)",
+          "evidence": "server.py: handle_call_tool/_ = db._synthesize_memo()",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All six tools broadly implement what their descriptions state, but several undocumented constraints and behaviours exist: read_query enforces a SELECT-only check, write_query silently accepts DDL statements beyond INSERT/UPDATE/DELETE, describe_table interpolates user input directly into SQL creating an injection risk, and append_insight triggers an MCP network notification to clients. No declared effect is entirely absent from the implementation."
+  }
+}
+```

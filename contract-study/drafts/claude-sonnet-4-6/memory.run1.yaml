@@ -1,0 +1,150 @@
+server: memory
+scope:
+  roots:
+  - '{memory_file}'
+  - '{work}/*.lock'
+  - '{work}/*.lock.break'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  create_entities:
+    read_only: false
+    fs:
+      may_create:
+      - '{memory_file}'
+      may_modify:
+      - '{memory_file}'
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+      - '{memory_file}'
+      unless_response_matches:
+      - skipped
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Writes updated graph to MEMORY_FILE_PATH; skips duplicate entity names;
+      lock file created/deleted transiently per README but not a persistent artifact.
+  create_relations:
+    read_only: false
+    fs:
+      may_create:
+      - '{memory_file}'
+      may_modify:
+      - '{memory_file}'
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+      - '{memory_file}'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Writes updated graph to MEMORY_FILE_PATH; skips duplicate relations; fails
+      if source or target entity does not exist.
+  add_observations:
+    read_only: false
+    fs:
+      may_create:
+      - '{memory_file}'
+      may_modify:
+      - '{memory_file}'
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+      - '{memory_file}'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Appends observations to existing entities in MEMORY_FILE_PATH; fails if
+      entity does not exist.
+  delete_entities:
+    read_only: false
+    fs:
+      may_create:
+      - '{memory_file}'
+      may_modify:
+      - '{memory_file}'
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+      - '{memory_file}'
+      unless_response_matches:
+      - not found
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Removes entities and cascades to relations in MEMORY_FILE_PATH; no error
+      for missing entities.
+  delete_observations:
+    read_only: false
+    fs:
+      may_create:
+      - '{memory_file}'
+      may_modify:
+      - '{memory_file}'
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+      - '{memory_file}'
+      unless_response_matches:
+      - 0 deleted
+      - 'deleted: 0'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Removes specific observations from entities in MEMORY_FILE_PATH; no error
+      if observation does not exist.
+  delete_relations:
+    read_only: false
+    fs:
+      may_create:
+      - '{memory_file}'
+      may_modify:
+      - '{memory_file}'
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+      - '{memory_file}'
+      unless_response_matches:
+      - 0 deleted
+      - 'deleted: 0'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Removes specific relations from MEMORY_FILE_PATH; no error if relation
+      does not exist.
+  read_graph:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only; returns full graph from MEMORY_FILE_PATH; no file mutations.
+  search_nodes:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only; searches entities/types/observations in MEMORY_FILE_PATH; no
+      file mutations.
+  open_nodes:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Read-only; retrieves named nodes from MEMORY_FILE_PATH; silently skips
+      missing nodes.
+readme_declared:
+  fs:
+    may_create:
+    - '{work}/*.lock'
+    - '{work}/*.lock.break'
+    may_modify:
+    - '{work}/*.lock'
+    - '{work}/*.lock.break'
+    may_delete:
+    - '{work}/*.lock'
+    - '{work}/*.lock.break'
+  network: false
+  network_hosts: []

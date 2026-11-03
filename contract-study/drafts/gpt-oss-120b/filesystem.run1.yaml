@@ -1,0 +1,84 @@
+server: filesystem
+scope:
+  roots:
+  - '{work}'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_file:
+    read_only: true
+    doc_sufficient: true
+    notes: Deprecated read_file is read‑only per description
+  read_text_file:
+    read_only: true
+    doc_sufficient: true
+    notes: Read file as text, read‑only
+  read_media_file:
+    read_only: true
+    doc_sufficient: true
+    notes: Read file as base64 media, read‑only
+  read_multiple_files:
+    read_only: true
+    doc_sufficient: true
+    notes: Read multiple files, read‑only
+  write_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/{path}'
+      may_modify:
+      - '{work}/{path}'
+    expect_effect:
+      fs_any_of:
+      - '{work}/{path}'
+    doc_sufficient: true
+    notes: Creates or overwrites file at given path
+  edit_file:
+    read_only: false
+    fs:
+      may_modify:
+      - '{work}/{path}'
+    doc_sufficient: true
+    notes: Edits file content; may modify given path
+  create_directory:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/{path}'
+    doc_sufficient: true
+    notes: Ensures directory exists, may create
+  list_directory:
+    read_only: true
+    doc_sufficient: true
+    notes: Lists directory contents, read‑only
+  list_directory_with_sizes:
+    read_only: true
+    doc_sufficient: true
+    notes: Lists directory with sizes, read‑only
+  directory_tree:
+    read_only: true
+    doc_sufficient: true
+    notes: Recursive JSON tree, read‑only
+  move_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/{destination}'
+      may_delete:
+      - '{work}/{source}'
+    doc_sufficient: true
+    notes: Moves/renames file or directory
+  search_files:
+    read_only: true
+    doc_sufficient: true
+    notes: Recursively searches, read‑only
+  get_file_info:
+    read_only: true
+    doc_sufficient: true
+    notes: Retrieves metadata, read‑only
+  list_allowed_directories:
+    read_only: true
+    doc_sufficient: true
+    notes: Lists allowed directories, read‑only

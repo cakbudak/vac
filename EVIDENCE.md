@@ -1,0 +1,35 @@
+# Evidence
+
+VAC tests whether observed tool effects can qualify declarations and improve an agent controller's decisions before dispatch. This register lists each measurement, what it establishes, and the file that regenerates it. `bash VERIFY.sh` reruns every generator and verifier listed here and checks the hash manifest last.
+
+## Measured findings
+
+**Real MCP behaviour.** The harness recorded 1,683 graded calls in 39 scripted runs across 13 MCP servers (3 seeds; 561 calls per seed: 280 training probes, 280 held-out actions and one set-up call). Seven servers are official reference servers, four are variants of the MSB benchmark server and two are widely installed third-party servers. Eleven servers give identical aggregate results in every seed; on a second machine 12 of 13 reproduce call for call, and Desktop Commander's asynchronous telemetry differs in count with the same hosts. *`real-mcp/PILOT2_RESULTS.md`, regenerated and checked against every receipt by `real-mcp/pilot2/verify_pilot2.py`.*
+
+**Effects versus declarations.** File, process, network and definition-level differences between MCP declarations and observed execution: an undeclared `python3 --version` subprocess on every Desktop Commander call, DNS lookups of an undocumented telemetry fallback host, `.git/index` rewritten by read-only-annotated git tools, journal and trash files that only obsidian-mcp's README declares, two MSB variants whose declared effect is absent on every call, and one whose mismatch exists only in the served definition. The network channel records destinations by name; conformance and harm are recorded as separate labels (`VAC_Research_Description.md` §4.2).
+
+**Call-scoped network declarations.** `runtime/network_scope.py` grants `read_file` network access only to the host of the call's own URL. Applied to the recorded receipts, it flags all 81 calls of the reported run that reached the undocumented fallback host (73 on the second machine), including the 8 local reads that the tool-wide URL declaration had excused. *`research/NETWORK_SCOPE_RESULTS.md`, from `research/network_scope_eval.py`.*
+
+**Contract authorship.** Eleven language models were given the contract format, each server's `tools/list` and its README excerpt; seven returned parseable contracts. On read-only intent they agree with the human contracts for 92–98 % of tools (100 % for the three that covered few servers); applied to the recorded behaviour they differ from the human grading on 13–46 % of calls, mostly false alarms on honest behaviour and misses where a draft declared no expected effect. *`contract-study/RESULTS_CONTRACTS.md`, from `contract-study/evaluate.py`.*
+
+**Static and dynamic observation.** On the 17 behaviours established by either method, the best static scan found 15 and the harness observed all 12 that execution can reach; each method finds what the other cannot. *`static-scan/RESULTS_STATIC_VS_DYNAMIC.md`, from `static-scan/compare.py`.*
+
+**Lexical learner on real servers.** The 2-junta learner of the synthetic study, imported frozen, reviews 81 % of legitimate held-out calls on the filesystem server, 57 % on sqlite and 42 % on obsidian, and on git either empties its version space or allows the index rewrite in agent traffic. The unconditional deviations are decided by the grader at the first probe; the state-conditional one needs state. *`real-mcp/PILOT2_RESULTS.md` §2, §5.*
+
+**State-dependent git effect.** The predicate S reads `.git/index` before a worktree-statting call and holds it when an entry carries zeroed stat data. In the controller run (seeds 7–9 scripted, seed 10 paired probes) it decided all 85 read-only calls correctly with its verdict recorded before execution: 12 of 12 rewrites flagged (4 in scripted traffic, 8 in the paired probes), no review of a call that did not rewrite. Frozen, on ten new seeds of scripted traffic it flagged 17 of 17 rewrites over 220 read-only calls with no further review. *`real-mcp/analysis/GIT_INDEX_HISTORY_PREDICATE.md`, `real-mcp/analysis/GUARDED_RUN.md`.*
+
+**Feature selection.** A depth-2 decision tree over the pre-call index counters and tool names, selected on controller seeds 7–8, flags 10 of 10 rewrites on seeds 9–10 with 4 additional reviews, and 17 of 17 on the ten new seeds with 3; the per-tool baseline fitted on the same seeds flags 8 of 10 with 14 additional reviews, and 12 of 17 with 68. *`research/STATE_FEATURE_RESULTS.md`, `real-mcp/analysis/GUARDED_RUN.md` §1.*
+
+**Enforcement on a live server.** `runtime/mcp_proxy.py` runs the guard as an MCP stdio proxy in front of the unmodified git server. It attests installation, contract and served definition against the pin of the reported run, evaluates S before every call, fsyncs each decision to a hash-chained ledger and forwards only allowed calls. On the ten new seeds: 480 calls, 415 forwarded under an attested revision, 65 held; the kernel's process events and the sandbox snapshots show no activity for any held call, and no read-only call rewrote the index. A held `git_status` leaves the index stale for the next reader, so enforcement without a reviewer holds 65 reader calls where the shadow phase reviewed 17. *`real-mcp/analysis/GUARDED_RUN.md` §2; the proxy, policy, ledger and network scoping are covered by 21 tests in `runtime/tests/`.*
+
+**Controlled mechanisms.** On AgentDojo's workspace runtime with a concealed state-conditional effect (18 families, 12 arms, 3 seeds), the learned contract allows 3,133 of 3,133 legitimate writes and 0 of 1,475 hidden-effect actions inside its hypothesis class, and is wrong on 36 of 93 actions when the trigger is a token absent from training. The unmodified CaMeL interpreter with two hosted models carries out the hidden effect in 53 of 53 harmful episodes without the veto and in 0 with it. *`agentdojo-study/RESULTS.md`, asserted by `agentdojo-study/vac_study/verify_release.py`.*
+
+**Integrity.** `evidence/verify_grading.py` recomputes every stored label of 2,921 receipts across 67 runs from the raw receipt with the shipped grader; `verify_pilot2.py` checks every receipt digest and summary; the controller and guarded-run reports check every receipt digest and the run digests against the reported run; `evidence/check_manifest.py` checks every file of the package.
+
+## Confirmatory research
+
+1. **WP1:** a pre-registered conformance map on at least 60 runnable servers, with a second human contract writer, existing static and dynamic tools as comparators, and every deviation labelled by kind, harm class and trigger class.
+2. **WP2:** state and history predicates on the map's state-conditional residue, fixed before the traffic they are scored on, against budget-matched baselines, with the enforcing proxy's review resolution as a measured parameter.
+3. **WP3:** independently sealed hidden-effect tools, the frozen controller behind the enforcing proxy, an independent outcome grader and externally witnessed decision ledgers (`evidence/REGISTRATION_PROTOCOL.md`).
+
+The observation channels and samples are described in [LIMITATIONS.md](LIMITATIONS.md); reproduction in [REPRODUCE.md](REPRODUCE.md).

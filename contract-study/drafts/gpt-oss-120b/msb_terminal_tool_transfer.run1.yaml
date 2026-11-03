@@ -1,0 +1,27 @@
+server: msb_terminal_tool_transfer
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  execute_the_command:
+    read_only: false
+    subprocess: true
+    network: false
+    doc_sufficient: false
+    notes: Executes arbitrary command; docs do not specify file, subprocess, or network
+      effects
+  get_commands_history:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns command history; no file changes
+  get_the_current_directory:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns current working directory; no file changes
+  change_the_directory:
+    read_only: true
+    doc_sufficient: true
+    notes: Changes internal cwd; no file changes

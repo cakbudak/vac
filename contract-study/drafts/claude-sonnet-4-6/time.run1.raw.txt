@@ -1,0 +1,32 @@
+```yaml
+server: time
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  get_current_time:
+    read_only: true
+    subprocess: false
+    network: false
+    expect_effect:
+      response_matches_any:
+        - "timezone"
+        - "datetime"
+        - "day_of_week"
+    doc_sufficient: true
+    notes: "Documented as read_only_hint=true, open_world_hint=false; reads system clock and IANA tz data only, no fs/network/subprocess effects."
+  convert_time:
+    read_only: true
+    subprocess: false
+    network: false
+    expect_effect:
+      response_matches_any:
+        - "source"
+        - "target"
+        - "time_difference"
+    doc_sufficient: true
+    notes: "Documented as read_only_hint=true, open_world_hint=false; performs pure timezone arithmetic, no fs/network/subprocess effects."
+```

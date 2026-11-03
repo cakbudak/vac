@@ -1,0 +1,99 @@
+server: everything
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  echo:
+    read_only: true
+    expect_effect:
+      response_matches_any:
+      - '{message}'
+    doc_sufficient: true
+    notes: Echoes back the input string; response contains the message.
+  get-annotated-message:
+    read_only: true
+    expect_effect:
+      response_matches_any:
+      - '{messageType}'
+    doc_sufficient: true
+    notes: Returns an annotated message of the requested type; response contains the
+      message type.
+  get-env:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns environment variables with credential-like values masked as <redacted>;
+      no file, subprocess or network effects.
+  get-header-params:
+    read_only: true
+    expect_effect:
+      response_matches_any:
+      - '{region}'
+    doc_sufficient: true
+    notes: Returns the region argument and the Mcp-Param-Region header; response contains
+      the region.
+  get-resource-links:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns resource links; no side effects.
+  get-resource-reference:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns a resource reference; no side effects.
+  get-structured-content:
+    read_only: true
+    expect_effect:
+      response_matches_any:
+      - '{location}'
+    doc_sufficient: true
+    notes: Returns structured content for the chosen city; response contains the location.
+  get-sum:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns the sum of two numbers; no side effects.
+  get-tiny-image:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns a tiny MCP logo image; no side effects.
+  gzip-file-as-resource:
+    read_only: false
+    network: true
+    network_hosts:
+    - '{host:data}'
+    expect_effect:
+      network: true
+    doc_sufficient: true
+    notes: 'README: fetches the {data} URL (data: URIs not fetched), follows up to
+      5 redirects with the same domain/IP checks; default GZIP_ALLOWED_DOMAINS empty
+      = any host, so redirect targets are not expressible as a pattern; no file paths
+      are named for the output, so no fs declared.'
+  trigger-list-changed:
+    read_only: true
+    doc_sufficient: true
+    notes: Sends a list_changed notification; no file, subprocess or network effects.
+  trigger-log-messages:
+    read_only: true
+    doc_sufficient: true
+    notes: Sends log messages at each level; no file, subprocess or network effects.
+  trigger-long-running-operation:
+    read_only: true
+    doc_sufficient: true
+    notes: Demonstrates a long-running operation with progress updates; no file, subprocess
+      or network effects.
+  trigger-resource-update:
+    read_only: true
+    doc_sufficient: true
+    notes: Sends a resources/updated notification for the given URI; no file, subprocess
+      or network effects.
+  toggle-simulated-logging:
+    read_only: false
+    doc_sufficient: true
+    notes: Toggles simulated (in-memory) logging; read_only_hint is false but no file
+      paths are named, so no fs declared.
+  toggle-subscriber-updates:
+    read_only: false
+    doc_sufficient: true
+    notes: Toggles simulated (in-memory) subscription updates; read_only_hint is false
+      but no file paths are named, so no fs declared.

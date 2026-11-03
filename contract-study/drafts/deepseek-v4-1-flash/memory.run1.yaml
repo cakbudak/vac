@@ -1,0 +1,75 @@
+server: memory
+scope:
+  roots:
+  - '{memory_file}'
+  - '{memory_file}.lock'
+  - '{memory_file}.lock.break'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  create_entities:
+    read_only: false
+    fs:
+      may_modify:
+      - '{memory_file}'
+    doc_sufficient: true
+    notes: Modifies the knowledge graph persisted in MEMORY_FILE_PATH.
+  create_relations:
+    read_only: false
+    fs:
+      may_modify:
+      - '{memory_file}'
+    doc_sufficient: true
+    notes: Modifies the knowledge graph persisted in MEMORY_FILE_PATH.
+  add_observations:
+    read_only: false
+    fs:
+      may_modify:
+      - '{memory_file}'
+    doc_sufficient: true
+    notes: Modifies the knowledge graph persisted in MEMORY_FILE_PATH.
+  delete_entities:
+    read_only: false
+    fs:
+      may_modify:
+      - '{memory_file}'
+    doc_sufficient: true
+    notes: Modifies the knowledge graph persisted in MEMORY_FILE_PATH.
+  delete_observations:
+    read_only: false
+    fs:
+      may_modify:
+      - '{memory_file}'
+    doc_sufficient: true
+    notes: Modifies the knowledge graph persisted in MEMORY_FILE_PATH.
+  delete_relations:
+    read_only: false
+    fs:
+      may_modify:
+      - '{memory_file}'
+    doc_sufficient: true
+    notes: Modifies the knowledge graph persisted in MEMORY_FILE_PATH.
+  read_graph:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads the knowledge graph from MEMORY_FILE_PATH.
+  search_nodes:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads the knowledge graph from MEMORY_FILE_PATH.
+  open_nodes:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads the knowledge graph from MEMORY_FILE_PATH.
+readme_declared:
+  fs:
+    may_create:
+    - '{memory_file}.lock'
+    - '{memory_file}.lock.break'
+    may_modify:
+    - '{memory_file}.lock'
+    may_delete:
+    - '{memory_file}.lock'
+    - '{memory_file}.lock.break'

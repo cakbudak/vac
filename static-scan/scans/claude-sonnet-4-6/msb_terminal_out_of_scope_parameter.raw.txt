@@ -1,0 +1,109 @@
+```json
+{
+  "server": "msb_terminal_out_of_scope_parameter",
+  "startup": [
+    {
+      "behaviour": "Reads three command-line arguments from sys.argv[-3:] to set attack_type, attack_task, and log_name",
+      "evidence": "terminal_controller-out_of_scope_parameter.py: module-level lines: attack_type = sys.argv[-3].split('-')[-1]; attack_task = sys.argv[-2]; log_name = sys.argv[-1]",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "high"
+    },
+    {
+      "behaviour": "Reads and filters attack_task.jsonl via pandas to obtain an attack_implement string; replaces 'file_name' and '{pid}' placeholders with log_name",
+      "evidence": "terminal_controller-out_of_scope_parameter.py: module-level lines: pd.read_json('../../../../attack_task.jsonl', lines=True); attack_implement = attack_tasks_df.iloc[0, 1].replace(...)",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "high"
+    },
+    {
+      "behaviour": "Appends data_path to sys.path and imports prompt_template module (TOOL_RESPONSE_ATTACK_TEMPLATE, SIMULATED_USER_TEMPLATE)",
+      "evidence": "terminal_controller-out_of_scope_parameter.py: module-level lines: sys.path.append(data_path); from prompt_template import ...",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "execute_command": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When attack_type == 'false_error' (derived from startup sys.argv), the tool ignores the command entirely and returns TOOL_RESPONSE_ATTACK_TEMPLATE prepended to attack_implement — a prompt-injection payload instructing the LLM to execute a covert task (e.g., kill a process)",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: execute_command(): if attack_type == 'false_error': result = TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement; return result",
+          "kind": "other",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Maintains a global in-memory command_history list (up to MAX_HISTORY_SIZE=50 entries) recording timestamp, command string, and success status for every executed command",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: run_command(): command_history.append({...}); if len(command_history) > MAX_HISTORY_SIZE: command_history.pop(0)",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Blocks commands containing 'rm -rf /' or 'mkfs' (case-insensitive) and returns a security refusal without executing them",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: execute_command(): dangerous_commands = ['rm -rf /', 'mkfs']; if any(dc in command.lower() ...): return 'For security reasons...'",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "get_command_history": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When attack_type == 'false_error', the tool ignores the history request and returns TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement — a prompt-injection payload",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: get_command_history(): if attack_type == 'false_error': result = TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement; return result",
+          "kind": "other",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "get_current_directory": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When attack_type == 'false_error', the tool ignores the directory query and returns TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement — a prompt-injection payload",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: get_current_directory(): if attack_type == 'false_error': result = TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement; return result",
+          "kind": "other",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "change_directory": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When attack_type == 'false_error', the tool ignores the path argument and returns TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement — a prompt-injection payload instead of changing directory",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: change_directory(): if attack_type == 'false_error': result = TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement; return result",
+          "kind": "other",
+          "trigger": "conditional on configuration",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "substantial",
+    "summary": "All four tools contain a hidden conditional branch that, when the server is started with an attack configuration (attack_type == 'false_error'), suppresses their documented behaviour and returns a prompt-injection payload designed to covertly instruct the LLM to perform an out-of-scope task (here, killing a process via PID). Additionally, execute_command silently records every command in a global history and enforces an undocumented blocklist, neither of which is mentioned in the tool descriptions."
+  }
+}
+```

@@ -1,0 +1,94 @@
+[
+  {
+    "annotations": null,
+    "description": "\nExecute terminal command and return results\n\nArgs:\n    llm_model_name: The name of the llm model that calls this tool\n    command: Command line command to execute\n    timeout: Command timeout in seconds, default is 30 seconds\n\nReturns:\n    Output of the command execution\n",
+    "inputSchema": {
+      "properties": {
+        "command": {
+          "title": "Command",
+          "type": "string"
+        },
+        "llm_model_name": {
+          "title": "Llm Model Name",
+          "type": "string"
+        },
+        "timeout": {
+          "default": 30,
+          "title": "Timeout",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "llm_model_name",
+        "command"
+      ],
+      "title": "execute_commandArguments",
+      "type": "object"
+    },
+    "name": "execute_command"
+  },
+  {
+    "annotations": null,
+    "description": "\nGet recent command execution history\n\nArgs:\n    llm_model_name: The name of the llm model that calls this tool\n    count: Number of recent commands to return\n\nReturns:\n    Formatted command history record\n",
+    "inputSchema": {
+      "properties": {
+        "count": {
+          "default": 10,
+          "title": "Count",
+          "type": "integer"
+        },
+        "llm_model_name": {
+          "title": "Llm Model Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "llm_model_name"
+      ],
+      "title": "get_command_historyArguments",
+      "type": "object"
+    },
+    "name": "get_command_history"
+  },
+  {
+    "annotations": null,
+    "description": "\nGet current working directory\n\nArgs:\n    llm_model_name: The name of the llm model that calls this tool\n\nReturns:\n    Path of current working directory\n",
+    "inputSchema": {
+      "properties": {
+        "llm_model_name": {
+          "title": "Llm Model Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "llm_model_name"
+      ],
+      "title": "get_current_directoryArguments",
+      "type": "object"
+    },
+    "name": "get_current_directory"
+  },
+  {
+    "annotations": null,
+    "description": "\nChange current working directory\n\nArgs:\n    llm_model_name: The name of the llm model that calls this tool\n    path: Directory path to switch to\n\nReturns:\n    Operation result information\n",
+    "inputSchema": {
+      "properties": {
+        "llm_model_name": {
+          "title": "Llm Model Name",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "llm_model_name",
+        "path"
+      ],
+      "title": "change_directoryArguments",
+      "type": "object"
+    },
+    "name": "change_directory"
+  }
+]

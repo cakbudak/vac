@@ -1,0 +1,202 @@
+```json
+{
+  "server": "memory",
+  "startup": [
+    {
+      "behaviour": "Reads MEMORY_FILE_PATH environment variable to determine the graph file path",
+      "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: ensureMemoryFilePath / process.env.MEMORY_FILE_PATH",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Expands leading '~' in MEMORY_FILE_PATH to the user's home directory",
+      "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: expandHome",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Renames legacy 'memory.json' to 'memory.jsonl' if the new file does not exist",
+      "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: ensureMemoryFilePath / fs.rename",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Acquires an exclusive file lock (<file>.lock) with heartbeat and stale lock breaking for all graph mutations",
+      "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: withFileLock / KnowledgeGraphManager.withLock",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Writes graph to a temporary file and renames it over the target file to prevent truncation",
+      "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: KnowledgeGraphManager.saveGraph / fs.writeFile + fs.rename",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Preserves the original graph file's permission bits when rewriting it",
+      "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: KnowledgeGraphManager.saveGraph / fs.stat + fs.chmod",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "medium"
+    }
+  ],
+  "tools": {
+    "create_entities": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends an MCP resources/updated notification to subscribers of the knowledge-graph resource",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: create_entities handler / notifyGraphUpdated()",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "create_relations": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Throws an error if the 'from' or 'to' entity does not exist in the graph",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: KnowledgeGraphManager.createRelations / throw new Error(`Entity with name ${r.from} not found`)",
+          "kind": "state",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Sends an MCP resources/updated notification to subscribers of the knowledge-graph resource",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: create_relations handler / notifyGraphUpdated()",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "add_observations": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Skips duplicate observations that already exist on the entity",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: KnowledgeGraphManager.addObservations / o.contents.filter((content) => !entity.observations.includes(content))",
+          "kind": "state",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Sends an MCP resources/updated notification to subscribers of the knowledge-graph resource",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: add_observations handler / notifyGraphUpdated()",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "delete_entities": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends an MCP resources/updated notification to subscribers of the knowledge-graph resource",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: delete_entities handler / notifyGraphUpdated()",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "delete_observations": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends an MCP resources/updated notification to subscribers of the knowledge-graph resource",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: delete_observations handler / notifyGraphUpdated()",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "delete_relations": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends an MCP resources/updated notification to subscribers of the knowledge-graph resource",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: delete_relations handler / notifyGraphUpdated()",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "read_graph": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "search_nodes": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Performs case-insensitive substring matching on entity names, types, and observations",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: KnowledgeGraphManager.searchNodes / .toLowerCase().includes()",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Returns relations where at least one endpoint matches the search results, not just relations between matched nodes",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: KnowledgeGraphManager.searchNodes / filteredRelations = graph.relations.filter((r) => filteredEntityNames.has(r.from) || filteredEntityNames.has(r.to))",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "open_nodes": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns relations where at least one endpoint is in the requested set of names",
+          "evidence": "node_modules/@modelcontextprotocol/server-memory/dist/index.js: KnowledgeGraphManager.openNodes / filteredRelations = graph.relations.filter((r) => filteredEntityNames.has(r.from) || filteredEntityNames.has(r.to))",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "The server's persistence mechanisms, including file locking, atomic writes, and legacy migration, are not described in the tool definitions. Tool implementations mostly match their descriptions, with minor undocumented validation in relation creation, implicit relation inclusion in node searches, and standard MCP resource notifications on mutation."
+  }
+}
+```

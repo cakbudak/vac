@@ -1,0 +1,356 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All fourteen tools implement their described core functions, and the divergences are edge-case behaviors: edit_file applies whitespace-tolerant matching despite the 'must match exactly' schema text, read_text_file decodes only utf-8 despite claiming to handle various encodings, and several tools have undocumented limits (100,000-entry walk cap, 15-second readdir timeout) and output extras (size summary footer, preserved inode/permissions on overwrite). At startup the server additionally resolves symlinks, prunes inaccessible directories, exits when none are usable, and can replace its entire allow-list at runtime from client-provided roots."
+  },
+  "server": "filesystem",
+  "startup": [
+    {
+      "behaviour": "Resolves symlinks of command-line allowed directories at startup (realpath) and keeps both the advertised and resolved spellings for later path matching.",
+      "documented_in_tool_descriptions": false,
+      "evidence": "dist/index.js: resolveAllowedDirectories",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Warns on stderr and drops allowed directories that are missing or not directories; exits the process with code 1 if every specified directory is inaccessible.",
+      "documented_in_tool_descriptions": false,
+      "evidence": "dist/index.js: resolveAllowedDirectories",
+      "kind": "config",
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Prints usage notes and 'Secure MCP Filesystem Server running on stdio' to stderr; sets process.exitCode = 1 when the stdio transport fails.",
+      "documented_in_tool_descriptions": false,
+      "evidence": "dist/index.js: main",
+      "kind": "other",
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Reads the package's package.json at startup to determine the server version reported in serverInfo.",
+      "documented_in_tool_descriptions": false,
+      "evidence": "dist/version.js: resolvePackageVersion",
+      "kind": "other",
+      "observable_from_outside": "file",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "On 2025-era connections, after initialize the server requests roots from the client (roots/list) and replaces its allowed directories with the validated roots; every roots/list_changed notification re-fetches and replaces them, and a client withdrawing all roots revokes all access.",
+      "documented_in_tool_descriptions": false,
+      "evidence": "dist/server.js: createServer (oninitialized, initialize, setNotificationHandler for notifications/roots/list_changed)",
+      "kind": "network",
+      "observable_from_outside": "network",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Exits the process with code 1 when it cannot operate (no command-line directories and a client that cannot provide roots); on 2026-07-28 connections started with no directories, every tool call returns an error instead of operating.",
+      "documented_in_tool_descriptions": false,
+      "evidence": "dist/index.js: main (onCannotOperate); dist/server.js: initialize and the registerTool wrapper",
+      "kind": "state",
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "create_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "directory_tree": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "The walk stops with an error after 100,000 visited entries (WalkLimitError), and any readdir that takes over 15 seconds fails the whole call (FsTimeoutError).",
+          "evidence": "dist/lib.js: createEntryBudget, readdirWithTimeout; dist/server.js: directory_tree handler",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "An excludePattern without wildcards matches a name anywhere below the root (via **/ prefix), not only exact relative paths.",
+          "evidence": "dist/server.js: directory_tree handler (shouldExclude logic)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "A symlink inside the tree that points outside the allowed directories fails the entire call rather than being skipped.",
+          "evidence": "dist/server.js: directory_tree handler (validatePath at the start of buildTree)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "edit_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When oldText does not match exactly, the edit still succeeds via whitespace-tolerant line matching (trimmed line comparison) and the replacement lines are reindented to the file's indentation, despite the schema stating oldText 'must match exactly'.",
+          "evidence": "dist/lib.js: applyFileEdits (line-by-line fallback, reindentLine)",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "The file's predominant line ending is preserved: a CRLF file is written back with CRLF endings.",
+          "evidence": "dist/lib.js: applyFileEdits, detectLineEnding",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "All edits are applied in memory and the file is written only if every edit matches; a failing edit leaves the file completely unchanged.",
+          "evidence": "dist/lib.js: applyFileEdits",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "on error"
+        },
+        {
+          "behaviour": "The write goes through overwriteInPlace, so the file's inode, creation time, hard links and permission bits are preserved.",
+          "evidence": "dist/lib.js: applyFileEdits (calls overwriteInPlace)",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "get_file_info": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Uses fs.stat, which follows symlinks, so the reported metadata describes the link target rather than the link itself.",
+          "evidence": "dist/lib.js: getFileStats",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "list_allowed_directories": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "The returned list can change at runtime: on 2025-era connections the client's roots replace the command-line directories, and a client withdrawing all roots empties the list entirely.",
+          "evidence": "dist/server.js: updateAllowedDirectoriesFromRoots, list_allowed_directories handler",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "medium",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Each directory may appear twice in the list: the advertised spelling and its realpath-resolved spelling.",
+          "evidence": "dist/index.js: resolveAllowedDirectories; dist/roots-utils.js: parseRootUri",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "list_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "list_directory_with_sizes": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Appends a summary footer (total file/directory counts and combined size) that the description does not mention.",
+          "evidence": "dist/server.js: list_directory_with_sizes handler (summary block)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Symlinks whose targets lie outside the allowed directories are listed with size 0 and an epoch mtime rather than being followed.",
+          "evidence": "dist/server.js: list_directory_with_sizes handler (per-entry validatePath, catch returns size 0)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Sorting by size is descending.",
+          "evidence": "dist/server.js: list_directory_with_sizes handler (sort comparator)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "move_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When source and destination are on different devices, the move copies the file (preserving mode and timestamps) and then removes the source, so the moved file gets a new inode.",
+          "evidence": "dist/lib.js: moveFile (EXDEV fallback); dist/pinned-directory.js: moveFileAcrossDevices, copyIntoNewFile, keepModeAndTimes",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Directories cannot be moved across devices; the call fails with an error.",
+          "evidence": "dist/pinned-directory.js: openSourceInDirectory",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "A failed cross-device move removes the partial copy and leaves the source file in place.",
+          "evidence": "dist/pinned-directory.js: moveFileAcrossDevices (discardCopy)",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "on error"
+        }
+      ]
+    },
+    "read_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns an error when both head and tail are given: 'Cannot specify both head and tail parameters simultaneously'.",
+          "evidence": "dist/server.js: readTextFileHandler",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "head/tail normalize line endings (CRLF is converted to LF; tail strips one trailing newline), so the returned text differs from the raw file bytes.",
+          "evidence": "dist/lib.js: headFile, tailFile",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "read_media_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "The MIME type is chosen solely from the file extension via a fixed map; any other extension is reported as application/octet-stream.",
+          "evidence": "dist/server.js: read_media_file handler (mimeTypes map)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "The entire file is buffered in memory and base64-encoded before being returned.",
+          "evidence": "dist/server.js: readFileAsBase64Stream",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "read_multiple_files": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "read_text_file": {
+      "declared_effect_not_implemented": "The description claims it 'Handles various text encodings', but the implementation reads only as utf-8 (dist/lib.js: readFileContent).",
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns an error when both head and tail are given: 'Cannot specify both head and tail parameters simultaneously'.",
+          "evidence": "dist/server.js: readTextFileHandler",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "head/tail normalize line endings (CRLF is converted to LF; tail strips one trailing newline), so the returned text differs from the raw file bytes.",
+          "evidence": "dist/lib.js: headFile, tailFile",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "search_files": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Entries that fail validation (e.g. symlinks pointing outside the allowed directories) are silently skipped.",
+          "evidence": "dist/lib.js: searchFilesWithValidation (catch continues)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "The walk stops with an error after 100,000 visited entries or a 15-second readdir stall, rather than returning partial results.",
+          "evidence": "dist/lib.js: searchFilesWithValidation, createEntryBudget, readdirWithTimeout",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "write_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Overwriting writes in place through the existing file, preserving its inode, creation time, hard links and permission bits, rather than replacing the file.",
+          "evidence": "dist/lib.js: writeFileContent, overwriteInPlace",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "The write is not crash-atomic: a crash mid-write can leave a partially written file.",
+          "evidence": "dist/lib.js: overwriteInPlace (documented trade-off in comments)",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Refuses to write through a symlink: an existing symlink at the target path fails with an error instead of writing to its target.",
+          "evidence": "dist/pinned-directory.js: createFileInDirectory (O_EXCL), overwriteFileInDirectory (lstat/isFile check)",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "medium",
+          "trigger": "conditional on state"
+        }
+      ]
+    }
+  }
+}

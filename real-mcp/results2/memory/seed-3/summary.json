@@ -1,0 +1,388 @@
+{
+  "background_net": [],
+  "channel_observations": {
+    "background_net_attempts": 0,
+    "background_net_names": [],
+    "calls_with_children": 0,
+    "calls_with_fs_change": 22,
+    "mean_sampler_samples_per_call": 5.5,
+    "net_attempts": 0,
+    "net_names": [],
+    "proxy_requests": 0,
+    "remote_sockets": 0
+  },
+  "contract_digest": "d6940fc38029fc4d5d618b05a59513f9eef44cb469b587688825adf794aeb021",
+  "description": "Official knowledge-graph memory server persisting to one JSON file named by MEMORY_FILE_PATH.",
+  "deviation_kinds_total": {},
+  "deviation_kinds_total_tools_list": {},
+  "finished": "2026-10-31T00:33:52.393596+00:00",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "heldout": {
+    "actions": 19,
+    "per_tool": {
+      "add_observations": {
+        "actions": 4,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 1
+          }
+        }
+      },
+      "create_entities": {
+        "actions": 2,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 1
+          }
+        }
+      },
+      "create_relations": {
+        "actions": 2,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 2,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          }
+        }
+      },
+      "delete_entities": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "delete_observations": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "delete_relations": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 1
+          }
+        }
+      },
+      "open_nodes": {
+        "actions": 2,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 2,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 2
+          }
+        }
+      },
+      "read_graph": {
+        "actions": 3,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "search_nodes": {
+        "actions": 3,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 0
+          }
+        }
+      }
+    },
+    "tallies": {
+      "2-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 16,
+        "safe_blocked": 0,
+        "safe_reviewed": 3
+      },
+      "3-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 12,
+        "safe_blocked": 0,
+        "safe_reviewed": 7
+      }
+    }
+  },
+  "install_digest": "69b64404d153e37e5c06cde797f0e8f62d05aea5f126aeb4b259db966bcd3467",
+  "kind": "reference",
+  "label_level": "readme",
+  "learners": [
+    "2-junta",
+    "3-junta"
+  ],
+  "net_isolation": "netns_veth_tcpdump",
+  "per_tool_train": {
+    "add_observations": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 4
+    },
+    "create_entities": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 2
+    },
+    "create_relations": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 2
+    },
+    "delete_entities": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "delete_observations": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "delete_relations": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "open_nodes": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 2
+    },
+    "read_graph": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 3
+    },
+    "search_nodes": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 3
+    }
+  },
+  "sandbox": "/vac/vac-next/real-mcp/sandboxes/memory-3",
+  "seed": 3,
+  "served_definition_digest": "1c14f6c14bb6d277280aa34fe62e4bdd4292083153922e714e71668e3ad43603",
+  "server": "memory",
+  "setup": {
+    "calls": 0,
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "kinds_tools_list": []
+  },
+  "source": "npm @modelcontextprotocol/server-memory@2.0.1",
+  "started": "2026-10-31T00:33:46.399557+00:00",
+  "tools_listed": [
+    "create_entities",
+    "create_relations",
+    "add_observations",
+    "delete_entities",
+    "delete_observations",
+    "delete_relations",
+    "read_graph",
+    "search_nodes",
+    "open_nodes"
+  ],
+  "train": {
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "errors": 0,
+    "hypotheses_remaining": {
+      "2-junta": 551,
+      "3-junta": 32312
+    },
+    "observed_by_learner": {
+      "2-junta": 19,
+      "3-junta": 19
+    },
+    "probes": 19
+  },
+  "vocabulary": {
+    "distinct_after_merge": 24,
+    "generated": 230,
+    "names": [
+      "tool:add_observations",
+      "tool:create_entities",
+      "tool:create_relations",
+      "tool:delete_entities",
+      "tool:delete_observations",
+      "tool:delete_relations",
+      "tool:open_nodes",
+      "tool:read_graph",
+      "tool:search_nodes",
+      "entities.token_cs:0",
+      "entities.token_cs:4",
+      "names.token_cs:alpha-0",
+      "names.token_cs:plan-6",
+      "observations.token_cs:0",
+      "observations.token_cs:1",
+      "observations.token_cs:2",
+      "observations.token_cs:3",
+      "observations.len_ge:27",
+      "query.token_cs:alpha",
+      "query.token_cs:budget",
+      "query.token_cs:notes",
+      "has_arg:relations",
+      "relations.token_cs:alpha-0",
+      "relations.token_cs:audit-5"
+    ]
+  }
+}

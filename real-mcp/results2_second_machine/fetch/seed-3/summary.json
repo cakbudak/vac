@@ -1,0 +1,142 @@
+{
+  "background_net": [],
+  "channel_observations": {
+    "background_net_attempts": 0,
+    "background_net_names": [],
+    "calls_with_children": 0,
+    "calls_with_fs_change": 0,
+    "mean_sampler_samples_per_call": 512.2,
+    "net_attempts": 84,
+    "net_names": [
+      "example.com",
+      "example.edu",
+      "example.net",
+      "example.org",
+      "www.iana.org"
+    ],
+    "proxy_requests": 0,
+    "remote_sockets": 24
+  },
+  "contract_digest": "dae296f037ab0c52b0a85a4dd18bf4da9d86fa580736eb6dc68dd071722ff258",
+  "description": "Official fetch server: the only declared effect is a network request to the given URL.",
+  "deviation_kinds_total": {},
+  "deviation_kinds_total_tools_list": {},
+  "finished": "2026-10-30T18:01:28.895382+00:00",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "bd2237ed271d104c0d9d86d54dac9b67b6c6bca06248ded49130709482984031",
+  "heldout": {
+    "actions": 6,
+    "per_tool": {
+      "fetch": {
+        "actions": 6,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 3
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 6
+          }
+        }
+      }
+    },
+    "tallies": {
+      "2-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 3,
+        "safe_blocked": 0,
+        "safe_reviewed": 3
+      },
+      "3-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 0,
+        "safe_blocked": 0,
+        "safe_reviewed": 6
+      }
+    }
+  },
+  "install_digest": "e13da5492f745377ce4099231b251572f4b2e0306e10e9ae715c8ea54e5416ba",
+  "kind": "reference",
+  "label_level": "readme",
+  "learners": [
+    "2-junta",
+    "3-junta"
+  ],
+  "net_isolation": "netns_veth_tcpdump",
+  "per_tool_train": {
+    "fetch": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 6
+    }
+  },
+  "sandbox": "/vac/vac-next/real-mcp/sandboxes/fetch-3",
+  "seed": 3,
+  "served_definition_digest": "3e3aad767ae58134a6ada5b681eb65c8f1fd0e901761ff51876b07131af0d0c1",
+  "server": "fetch",
+  "setup": {
+    "calls": 0,
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "kinds_tools_list": []
+  },
+  "source": "PyPI mcp-server-fetch==2026.10.28",
+  "started": "2026-10-30T18:00:12.812501+00:00",
+  "tools_listed": [
+    "fetch"
+  ],
+  "train": {
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "errors": 0,
+    "hypotheses_remaining": {
+      "2-junta": 124,
+      "3-junta": 3272
+    },
+    "observed_by_learner": {
+      "2-junta": 6,
+      "3-junta": 6
+    },
+    "probes": 6
+  },
+  "vocabulary": {
+    "distinct_after_merge": 12,
+    "generated": 69,
+    "names": [
+      "has_arg:max_length",
+      "max_length.token_cs:2500",
+      "max_length.token_cs:4000",
+      "has_arg:raw",
+      "url.token_cs:budget",
+      "url.token_cs:com",
+      "url.token_cs:domains",
+      "url.token_cs:net",
+      "url.len_ge:26",
+      "url.len_ge:29",
+      "url.len_ge:30",
+      "url.depth_ge:4"
+    ]
+  }
+}

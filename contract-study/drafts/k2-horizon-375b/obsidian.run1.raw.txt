@@ -1,0 +1,153 @@
+
+```yaml
+server: obsidian
+scope:
+  roots:
+    - "{vault}"
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  obsidian_list_vaults:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns configured vault ids only; read-only per description and annotations, no file, subprocess, or network effects documented."
+  obsidian_read_note:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Reads a bounded page of a note and returns an etag/cursor; read-only per description and annotations."
+  obsidian_create_note:
+    read_only: false
+    fs:
+      may_create:
+        - "{vault}/{path}"
+        - "{vault}/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{path}"
+        - "{vault}/.obsidian-mcp/transactions/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Atomically creates the note at {path} and optionally missing parent directories; README documents journaling of mutations under .obsidian-mcp/transactions."
+  obsidian_edit_note:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/{path}"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{path}"
+        - "{vault}/.obsidian-mcp/transactions/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Appends, prepends, or replaces content of {path} byte-for-byte and never deletes notes; journaled per README."
+  obsidian_delete_note:
+    read_only: false
+    fs:
+      may_delete:
+        - "{vault}/{path}"
+      may_modify:
+        - "{vault}/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{path}"
+        - "{vault}/.obsidian-mcp/trash/**"
+        - "{vault}/.obsidian-mcp/transactions/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Moves the note to .obsidian-mcp/trash or permanently deletes it; backlink_action mark_broken rewrites backlinks in arbitrary notes; journaled per README."
+  obsidian_move_note:
+    read_only: false
+    fs:
+      may_create:
+        - "{vault}/{destination}"
+      may_delete:
+        - "{vault}/{source}"
+      may_modify:
+        - "{vault}/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{source}"
+        - "{vault}/{destination}"
+        - "{vault}/.obsidian-mcp/transactions/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Renames {source} to {destination} and transactionally updates unambiguous backlinks in other notes; parent-directory creation for the destination is not documented; journaled per README."
+  obsidian_create_directory:
+    read_only: false
+    fs:
+      may_create:
+        - "{vault}/{path}"
+        - "{vault}/**"
+    expect_effect:
+      fs_any_of:
+        - "{vault}/{path}"
+        - "{vault}/.obsidian-mcp/transactions/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Transactionally creates the directory at {path}, recursively when requested; journaled per README."
+  obsidian_search_vault:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Searches filenames, content, or tags with bounded cursor pagination; read-only per description and annotations."
+  obsidian_add_tags:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Adds tags to the notes listed in paths (up to 500); the static contract cannot enumerate array items, so the whole vault is declared; journaled per README."
+  obsidian_remove_tags:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Removes exact, nested, or wildcard-selected tags from the notes listed in paths; whole-vault modify declared because array items cannot be enumerated; journaled per README."
+  obsidian_rename_tag:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Renames a tag across the whole vault, so any note containing it may be modified; journaled per README."
+  obsidian_manage_tags:
+    read_only: false
+    fs:
+      may_modify:
+        - "{vault}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Unified add/remove tag workflow over the notes listed in paths; whole-vault modify declared because array items cannot be enumerated; journaled per README."
+readme_declared:
+  fs:
+    may_create:
+      - "{vault}/.obsidian-mcp/transactions/**"
+      - "{vault}/.obsidian-mcp/trash/**"
+    may_modify:
+      - "{vault}/.obsidian-mcp/transactions/**"
+      - "{vault}/.obsidian-mcp/trash/**"
+    may_delete:
+      - "{vault}/.obsidian-mcp/transactions/**"
+      - "{vault}/.obsidian-mcp/trash/**"
+  network: false
+```

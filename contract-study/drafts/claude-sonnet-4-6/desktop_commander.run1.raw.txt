@@ -1,0 +1,292 @@
+```yaml
+server: desktop_commander
+
+scope:
+  roots:
+    - "{work}/**"
+  outside_scope_is_deviation: true
+
+defaults:
+  subprocess: false
+  network: false
+
+tools:
+  get_config:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns configuration JSON; read_only_hint=true, no file changes documented."
+
+  set_config_value:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify:
+        - "{home}/**"
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{home}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Writes config to disk; README names no explicit config file path so home/** is used as best approximation; doc_sufficient=false because config file location is not documented."
+
+  read_file:
+    read_only: true
+    subprocess: false
+    network: true
+    network_hosts:
+      - "{host:path}"
+    doc_sufficient: true
+    notes: "read_only_hint=true; fetches URLs when isUrl=true (open_world_hint=true); no file changes."
+
+  read_multiple_files:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true, open_world_hint=false; reads only local files within allowed directories."
+
+  write_file:
+    read_only: false
+    fs:
+      may_create:
+        - "{work}/**"
+      may_modify:
+        - "{work}/**"
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{work}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Creates or modifies files within allowed directories; rewrite or append modes documented."
+
+  write_pdf:
+    read_only: false
+    fs:
+      may_create:
+        - "{work}/**"
+      may_modify:
+        - "{work}/**"
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{work}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Creates new PDF at path or outputPath, modifies existing PDF to outputPath; within allowed directories."
+
+  create_directory:
+    read_only: false
+    fs:
+      may_create:
+        - "{work}/**"
+      may_modify: []
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{work}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Creates directory (and parents) within allowed directories; read_only_hint=false."
+
+  list_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; returns directory listing, no file changes."
+
+  move_file:
+    read_only: false
+    fs:
+      may_create:
+        - "{work}/**"
+      may_modify:
+        - "{work}/**"
+      may_delete:
+        - "{work}/**"
+    expect_effect:
+      fs_any_of:
+        - "{work}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Moves/renames files; source deleted, destination created; both must be within allowed directories."
+
+  start_search:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; starts background search, returns session ID; no file writes documented."
+
+  get_more_search_results:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; reads buffered search results by session ID; no file changes."
+
+  stop_search:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify: []
+      may_delete: []
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=false per annotation but only stops a background search process; no file changes documented."
+
+  list_searches:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; lists active search sessions; no file changes."
+
+  get_file_info:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; returns metadata only; no file changes."
+
+  edit_block:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify:
+        - "{work}/**"
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+        - "{work}/**"
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Performs surgical find/replace or range update on existing files within allowed directories."
+
+  start_process:
+    read_only: false
+    fs:
+      may_create:
+        - "{root}/**"
+      may_modify:
+        - "{root}/**"
+      may_delete:
+        - "{root}/**"
+    expect_effect:
+      subprocess: true
+    subprocess: true
+    network: true
+    scope:
+      - "{root}/**"
+    doc_sufficient: false
+    notes: "Spawns arbitrary shell commands (open_world_hint=true); may read/write/delete anywhere and make network calls; scope/fs patterns are wider than {work} because shell is unrestricted—doc_sufficient=false."
+
+  read_process_output:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; reads buffered output from running process; no direct file changes by this tool."
+
+  interact_with_process:
+    read_only: false
+    fs:
+      may_create:
+        - "{root}/**"
+      may_modify:
+        - "{root}/**"
+      may_delete:
+        - "{root}/**"
+    subprocess: true
+    network: true
+    scope:
+      - "{root}/**"
+    doc_sufficient: false
+    notes: "Sends input to a running process (open_world_hint=true); downstream effects are unbounded; doc_sufficient=false for same reason as start_process."
+
+  force_terminate:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify: []
+      may_delete: []
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Sends termination signal to a process session; no file changes documented by this tool itself."
+
+  list_sessions:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; lists active terminal sessions; no file changes."
+
+  list_processes:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; returns system process list; no file changes."
+
+  kill_process:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify: []
+      may_delete: []
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Terminates a process by PID; no file changes documented for this tool itself."
+
+  get_usage_stats:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; returns in-memory usage statistics; no file changes documented."
+
+  get_recent_tool_calls:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "read_only_hint=true; reads from tool-history.jsonl; no writes triggered by this call."
+
+  give_feedback_to_desktop_commander:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify: []
+      may_delete: []
+    subprocess: true
+    network: true
+    network_hosts:
+      - "*.desktopcommander.app"
+      - "*"
+    doc_sufficient: false
+    notes: "Opens feedback form in browser (open_world_hint=true); spawns browser process; network host not specified in docs so doc_sufficient=false."
+
+readme_declared:
+  fs:
+    may_create:
+      - "{home}/**/tool-history.jsonl"
+    may_modify:
+      - "{home}/**/tool-history.jsonl"
+    may_delete: []
+  network: true
+  network_hosts:
+    - "*.desktopcommander.app"
+```

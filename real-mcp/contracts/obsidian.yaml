@@ -1,0 +1,62 @@
+# Declared effect contract for obsidian-mcp 2.0.1 (StevenStavrakis)
+# Derived ONLY from contracts/obsidian.tools.json (descriptions + annotations) and the package
+# README, before any probe.  The server was started on one vault, {vault}, whose id is 'notes'.
+#
+# Documentation levels.  The tool descriptions declare note-level effects ("move to MCP trash",
+# "transactionally", "update unambiguous backlinks") without naming where trash, journals or
+# locks live.  The README names them: .obsidian-mcp/trash, .obsidian-mcp/transactions (and
+# reserves .obsidian-mcp from tool access).  {vault}/{path} patterns use the call's vault-relative
+# path arguments.
+server: obsidian
+scope:
+  roots: ["{vault}"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  obsidian_list_vaults:  {read_only: true, doc_sufficient: true}
+  obsidian_read_note:    {read_only: true, doc_sufficient: true}
+  obsidian_search_vault: {read_only: true, doc_sufficient: true}
+  obsidian_create_note:
+    read_only: false
+    fs: {may_create: ["{vault}/{path}", "{vault}/*", "{vault}/*/*"]}
+    expect_effect: {fs_any_of: ["{vault}/{path}"]}
+    doc_sufficient: true
+    notes: "'parent directories are optional' -> may create directories on the way"
+  obsidian_edit_note:
+    read_only: false
+    fs: {may_modify: ["{vault}/{path}"]}
+    expect_effect: {fs_any_of: ["{vault}/{path}"]}
+    doc_sufficient: true
+  obsidian_delete_note:
+    read_only: false
+    fs: {may_delete: ["{vault}/{path}"], may_modify: ["{vault}/**/*.md"]}
+    expect_effect: {fs_any_of: ["{vault}/{path}"]}
+    doc_sufficient: false
+    notes: "'move a note to MCP trash': the trash location is in the README only; 'backlinks are preserved unless mark_broken' -> other notes may change on request"
+  obsidian_move_note:
+    read_only: false
+    fs: {may_delete: ["{vault}/{source}"], may_create: ["{vault}/{destination}", "{vault}/*", "{vault}/*/*"], may_modify: ["{vault}/**/*.md"]}
+    expect_effect: {fs_any_of: ["{vault}/{destination}"]}
+    doc_sufficient: false
+    notes: "'update unambiguous backlinks in the same transaction': which other notes change depends on vault state, not on the arguments"
+  obsidian_create_directory:
+    read_only: false
+    fs: {may_create: ["{vault}/{path}", "{vault}/*", "{vault}/*/*"]}
+    expect_effect: {fs_any_of: ["{vault}/{path}"]}
+    doc_sufficient: true
+  obsidian_add_tags:
+    read_only: false
+    fs: {may_modify: ["{vault}/**/*.md"]}
+    doc_sufficient: true
+    notes: "the listed notes; the pattern is wider than the list because the grader cannot expand list arguments"
+  obsidian_remove_tags: {read_only: false, fs: {may_modify: ["{vault}/**/*.md"]}, doc_sufficient: true}
+  obsidian_rename_tag:  {read_only: false, fs: {may_modify: ["{vault}/**/*.md"]}, doc_sufficient: true}
+  obsidian_manage_tags: {read_only: false, fs: {may_modify: ["{vault}/**/*.md"]}, doc_sufficient: true}
+readme_declared:
+  fs:
+    may_create: ["{vault}/.obsidian-mcp", "{vault}/.obsidian-mcp/**"]
+    may_modify: ["{vault}/.obsidian-mcp/**"]
+    may_delete: ["{vault}/.obsidian-mcp/**"]
+  network: false

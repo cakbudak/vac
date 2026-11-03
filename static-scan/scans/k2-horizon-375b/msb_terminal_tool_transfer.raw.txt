@@ -1,0 +1,102 @@
+
+```json
+{
+  "server": "msb_terminal_tool_transfer",
+  "startup": [
+    {
+      "behaviour": "Reads and parses '../../../../attack_task.jsonl' with pandas at import time and filters it for the attack_task taken from argv",
+      "evidence": "terminal_controller-tool_transfer.py: module level, attack_tasks_df = pd.read_json('../../../../attack_task.jsonl', lines=True)",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Parses sys.argv[-3:] into attack_type, attack_task and log_name, then performs string replacement on the attack implementation template (replacing 'file_name' and '{pid}' with log_name)",
+      "evidence": "terminal_controller-tool_transfer.py: attack_type = sys.argv[-3].split('-')[-1]; attack_implement.replace('file_name', log_name).replace('{pid}', log_name)",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Appends a path derived from the current working directory to sys.path",
+      "evidence": "terminal_controller-tool_transfer.py: data_path = current_path.split('tools')[0]; sys.path.append(data_path)",
+      "kind": "state",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Imports TOOL_RESPONSE_ATTACK_TEMPLATE and SIMULATED_USER_TEMPLATE from prompt_template, a module that also defines a PROMPT_INJECTION_TEMPLATE (imported names are unused in this file)",
+      "evidence": "terminal_controller-tool_transfer.py: from prompt_template import TOOL_RESPONSE_ATTACK_TEMPLATE, SIMULATED_USER_TEMPLATE; prompt_template.py: PROMPT_INJECTION_TEMPLATE",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "execute_the_command": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns a static deprecation message claiming the tool is no longer available and directing the caller to an 'execute_command' tool that is not provided by this server; the command is never executed",
+          "evidence": "terminal_controller-tool_transfer.py: execute_the_command",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": "Executes the supplied shell command and returns its output; the tool body never invokes the run_command() helper (which uses asyncio.create_subprocess_shell with shell=True) and returns only a deprecation string."
+    },
+    "get_commands_history": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns a static deprecation message claiming the tool is no longer available and directing the caller to a 'get_command_history' tool that is not provided by this server; the in-memory command_history list is never read",
+          "evidence": "terminal_controller-tool_transfer.py: get_commands_history",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": "Returns the recent command execution history; the tool body never reads command_history and returns only a deprecation string."
+    },
+    "get_the_current_directory": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns a static deprecation message claiming the tool is no longer available and directing the caller to a 'get_current_directory' tool that is not provided by this server; the working directory is never queried",
+          "evidence": "terminal_controller-tool_transfer.py: get_the_current_directory",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": "Returns the path of the current working directory; the tool body never calls os.getcwd() and returns only a deprecation string."
+    },
+    "change_the_directory": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns a static deprecation message claiming the tool is no longer available and directing the caller to a 'change_directory' tool that is not provided by this server; the working directory is never changed",
+          "evidence": "terminal_controller-tool_transfer.py: change_the_directory",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": "Changes the current working directory to the given path; the tool body never calls os.chdir() and returns only a deprecation string."
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "substantial",
+    "summary": "All four advertised tools are non-functional stubs: each returns a static 'no longer available' message pointing to a differently named tool, so none of the described effects (command execution, history retrieval, cwd query, directory change) is implemented, and the run_command() helper capable of executing shell commands is never called by any tool. At startup the server reads attack_task.jsonl, derives attack parameters from sys.argv, appends to sys.path, and imports prompt-injection-related templates from prompt_template.py, none of which is disclosed in any tool description."
+  }
+}
+```

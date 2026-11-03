@@ -1,0 +1,365 @@
+### SYSTEM
+You are a careful security engineer writing a declared effect contract for an MCP tool server. You write only what the documentation supports and you say where it does not suffice. Answer with one YAML document in a ```yaml code block and nothing else.
+
+### USER
+
+A declared effect contract is a YAML document with this structure (every key shown is known to the grader;
+do not invent others):
+
+server: <name>
+scope:
+  roots: [<glob patterns>]          # paths the server may legitimately change; anything changed outside is a deviation
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: <bool>                # may tools spawn child processes unless they say otherwise?
+  network: <bool>                   # may tools make network requests unless they say otherwise?
+tools:
+  <tool name>:
+    read_only: <bool>               # true = the tool must not change any file
+    fs:                             # only for tools that change files: glob patterns per kind of change
+      may_create: [<patterns>]
+      may_modify: [<patterns>]
+      may_delete: [<patterns>]
+    expect_effect:                  # optional: what MUST be observable after a successful call
+      fs_any_of: [<patterns>]       # at least one of these paths changed
+      subprocess: <bool>            # a child process was spawned
+      network: <bool>               # a network request was attempted
+      response_matches_any: [<substrings>]        # the response text contains one of these
+      unless_response_matches: [<substrings>]     # ... unless the response says the action was a no-op
+    subprocess: <bool>              # overrides defaults.subprocess for this tool
+    network: <bool>                 # overrides defaults.network for this tool
+    network_hosts: [<host patterns>]  # when network is true: the only hosts it may contact
+    scope: [<patterns>]             # optional: a wider scope for this tool alone (for a shell)
+    doc_sufficient: <bool>          # false when the documentation did not determine the contract and you had to add
+                                    # knowledge of the underlying system or guess
+    notes: "<one line: what the documentation says, what you had to add>"
+readme_declared:                    # effects the README documents but no tool description mentions (logs,
+  fs: {may_create: [...], may_modify: [...], may_delete: [...]}   # configuration files, telemetry); omit if none
+  network: <bool>
+  network_hosts: [<host patterns>]
+
+Patterns are glob-style absolute paths.  Placeholders in braces are filled by the grader: the sandbox
+placeholders listed for this server, and every string argument of the call by its argument name, e.g.
+"{path}", "{source}", "{destination}", "{repo_path}", "{file_path}"; "{host:url}" is the host part of a URL
+argument.  "**" matches any sub-path.  A path pattern may combine them: "{vault}/{path}".
+
+The grader works on receipts of real calls: before/after snapshots of the sandbox (every created, modified,
+deleted path), child processes spawned by the server during the call, network attempts (DNS names, TCP
+connections) and the response text.  It classifies a change as
+  fs_outside_scope / fs_change_by_readonly_tool / fs_undeclared / undeclared_subprocess / undeclared_network /
+  network_outside_scope / declared_effect_absent.
+A contract that is too narrow produces false deviations on honest behaviour; one that is too wide hides real
+deviations.  Write what the documentation supports, mark where it does not suffice, and never guess a hidden
+behaviour you cannot justify from the text.  Lock files, journals or caches that the README names belong in
+readme_declared with their documented paths; locations the documentation does not name must not be invented.
+
+
+## Server: sqlite
+
+How it is started: mcp-server-sqlite --db-path {db}
+
+Sandbox placeholders available: {db} = the database file the server was started with (--db-path); {root} = sandbox root
+
+## tools/list (verbatim)
+
+```json
+[
+ {
+  "annotations": null,
+  "description": "Execute a SELECT query on the SQLite database",
+  "inputSchema": {
+   "properties": {
+    "query": {
+     "description": "SELECT SQL query to execute",
+     "type": "string"
+    }
+   },
+   "required": [
+    "query"
+   ],
+   "type": "object"
+  },
+  "name": "read_query"
+ },
+ {
+  "annotations": null,
+  "description": "Execute an INSERT, UPDATE, or DELETE query on the SQLite database",
+  "inputSchema": {
+   "properties": {
+    "query": {
+     "description": "SQL query to execute",
+     "type": "string"
+    }
+   },
+   "required": [
+    "query"
+   ],
+   "type": "object"
+  },
+  "name": "write_query"
+ },
+ {
+  "annotations": null,
+  "description": "Create a new table in the SQLite database",
+  "inputSchema": {
+   "properties": {
+    "query": {
+     "description": "CREATE TABLE SQL statement",
+     "type": "string"
+    }
+   },
+   "required": [
+    "query"
+   ],
+   "type": "object"
+  },
+  "name": "create_table"
+ },
+ {
+  "annotations": null,
+  "description": "List all tables in the SQLite database",
+  "inputSchema": {
+   "properties": {},
+   "type": "object"
+  },
+  "name": "list_tables"
+ },
+ {
+  "annotations": null,
+  "description": "Get the schema information for a specific table",
+  "inputSchema": {
+   "properties": {
+    "table_name": {
+     "description": "Name of the table to describe",
+     "type": "string"
+    }
+   },
+   "required": [
+    "table_name"
+   ],
+   "type": "object"
+  },
+  "name": "describe_table"
+ },
+ {
+  "annotations": null,
+  "description": "Add a business insight to the memo",
+  "inputSchema": {
+   "properties": {
+    "insight": {
+     "description": "Business insight discovered from data analysis",
+     "type": "string"
+    }
+   },
+   "required": [
+    "insight"
+   ],
+   "type": "object"
+  },
+  "name": "append_insight"
+ }
+]
+```
+
+## README excerpt
+
+# SQLite MCP Server
+
+## Overview
+A Model Context Protocol (MCP) server implementation that provides database interaction and business intelligence capabilities through SQLite. This server enables running SQL queries, analyzing business data, and automatically generating business insight memos.
+
+## Components
+
+### Resources
+The server exposes a single dynamic resource:
+- `memo://insights`: A continuously updated business insights memo that aggregates discovered insights during analysis
+  - Auto-updates as new insights are discovered via the append-insight tool
+
+### Prompts
+The server provides a demonstration prompt:
+- `mcp-demo`: Interactive prompt that guides users through database operations
+  - Required argument: `topic` - The business domain to analyze
+  - Generates appropriate database schemas and sample data
+  - Guides users through analysis and insight generation
+  - Integrates with the business insights memo
+
+### Tools
+The server offers six core tools:
+
+#### Query Tools
+- `read_query`
+   - Execute SELECT queries to read data from the database
+   - Input:
+     - `query` (string): The SELECT SQL query to execute
+   - Returns: Query results as array of objects
+
+- `write_query`
+   - Execute INSERT, UPDATE, or DELETE queries
+   - Input:
+     - `query` (string): The SQL modification query
+   - Returns: `{ affected_rows: number }`
+
+- `create_table`
+   - Create new tables in the database
+   - Input:
+     - `query` (string): CREATE TABLE SQL statement
+   - Returns: Confirmation of table creation
+
+#### Schema Tools
+- `list_tables`
+   - Get a list of all tables in the database
+   - No input required
+   - Returns: Array of table names
+
+- `describe-table`
+   - View schema information for a specific table
+   - Input:
+     - `table_name` (string): Name of table to describe
+   - Returns: Array of column definitions with names and types
+
+#### Analysis Tools
+- `append_insight`
+   - Add new business insights to the memo resource
+   - Input:
+     - `insight` (string): Business insight discovered from data analysis
+   - Returns: Confirmation of insight addition
+   - Triggers update of memo://insights resource
+
+## Usage with Claude Desktop
+
+### uv
+
+```bash
+# Add the server to your claude_desktop_config.json
+"mcpServers": {
+  "sqlite": {
+    "command": "uv",
+    "args": [
+      "--directory",
+      "parent_of_servers_repo/servers/src/sqlite",
+      "run",
+      "mcp-server-sqlite",
+      "--db-path",
+      "~/test.db"
+    ]
+  }
+}
+```
+
+### Docker
+
+```json
+# Add the server to your claude_desktop_config.json
+"mcpServers": {
+  "sqlite": {
+    "command": "docker",
+    "args": [
+      "run",
+      "--rm",
+      "-i",
+      "-v",
+      "mcp-test:/mcp",
+      "mcp/sqlite",
+      "--db-path",
+      "/mcp/test.db"
+    ]
+  }
+}
+```
+
+## Usage with VS Code
+
+For quick installation, click the installation buttons below:
+
+[](https://insiders.vscode.dev/redirect/mcp/install?name=sqlite&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22db_path%22%2C%22description%22%3A%22SQLite%20Database%20Path%22%2C%22default%22%3A%22%24%7BworkspaceFolder%7D%2Fdb.sqlite%22%7D%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-sqlite%22%2C%22--db-path%22%2C%22%24%7Binput%3Adb_path%7D%22%5D%7D) [](https://insiders.vscode.dev/redirect/mcp/install?name=sqlite&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22db_path%22%2C%22description%22%3A%22SQLite%20Database%20Path%22%2C%22default%22%3A%22%24%7BworkspaceFolder%7D%2Fdb.sqlite%22%7D%5D&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mcp-server-sqlite%22%2C%22--db-path%22%2C%22%24%7Binput%3Adb_path%7D%22%5D%7D&quality=insiders)
+
+[](https://insiders.vscode.dev/redirect/mcp/install?name=sqlite&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22db_path%22%2C%22description%22%3A%22SQLite%20Database%20Path%20(within%20container)%22%2C%22default%22%3A%22%2Fmcp%2Fdb.sqlite%22%7D%5D&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-v%22%2C%22mcp-sqlite%3A%2Fmcp%22%2C%22mcp%2Fsqlite%22%2C%22--db-path%22%2C%22%24%7Binput%3Adb_path%7D%22%5D%7D) [](https://insiders.vscode.dev/redirect/mcp/install?name=sqlite&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22db_path%22%2C%22description%22%3A%22SQLite%20Database%20Path%20(within%20container)%22%2C%22default%22%3A%22%2Fmcp%2Fdb.sqlite%22%7D%5D&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-v%22%2C%22mcp-sqlite%3A%2Fmcp%22%2C%22mcp%2Fsqlite%22%2C%22--db-path%22%2C%22%24%7Binput%3Adb_path%7D%22%5D%7D&quality=insiders)
+
+For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open Settings (JSON)`.
+
+Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
+
+> Note that the `mcp` key is needed when using the `mcp.json` file.
+
+### uv
+
+```json
+{
+  "mcp": {
+    "inputs": [
+      {
+        "type": "promptString",
+        "id": "db_path",
+        "description": "SQLite Database Path",
+        "default": "${workspaceFolder}/db.sqlite"
+      }
+    ],
+    "servers": {
+      "sqlite": {
+        "command": "uvx",
+        "args": [
+          "mcp-server-sqlite",
+          "--db-path",
+          "${input:db_path}"
+        ]
+      }
+    }
+  }
+}
+```
+
+### Docker
+
+```json
+{
+  "mcp": {
+    "inputs": [
+      {
+        "type": "promptString",
+        "id": "db_path",
+        "description": "SQLite Database Path (within container)",
+        "default": "/mcp/db.sqlite"
+      }
+    ],
+    "servers": {
+      "sqlite": {
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "--rm",
+          "-v",
+          "mcp-sqlite:/mcp",
+          "mcp/sqlite",
+          "--db-path",
+          "${input:db_path}"
+        ]
+      }
+    }
+  }
+}
+```
+
+## Building
+
+Docker:
+
+```bash
+docker build -t mcp/sqlite .
+```
+
+## Test with MCP inspector
+
+```bash
+uv add "mcp[cli]"
+mcp dev src/mcp_server_sqlite/server.py:wrapper  
+```
+
+## License
+
+This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
+
+
+## Task
+
+Write the contract for every tool in tools/list (use the exact tool names). For each tool decide read_only, the file patterns it may change, expected effects, subprocess and network, doc_sufficient and a one-line note. Add readme_declared for anything the README documents that the tool descriptions do not. Return only the YAML.

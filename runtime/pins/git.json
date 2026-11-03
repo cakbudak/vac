@@ -1,0 +1,8 @@
+{
+  "server": "git",
+  "source": "PyPI mcp-server-git==2026.10.28",
+  "installation": "12effbc0c813be7c8d503876f6d01c7a2fb5810552d3f4c7842b05c9068718e9",
+  "served_definition": "bcc22eb620945b70e329c65b4779143f3ac37ab34aecaaefa64cb0e11cf28381",
+  "contract": "1b9c74423595eba57f54d040a96c696a148944ab40b75103f032f719109f8806",
+  "pinned_from": "real-mcp/results2/git/seed-1/summary.json"
+}

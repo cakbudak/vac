@@ -1,0 +1,89 @@
+```yaml
+server: git
+scope:
+  roots: ["{repo_path}/**"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  git_status:
+    read_only: true
+    doc_sufficient: true
+    notes: "Read‑only tool; docs say it only shows status"
+  git_diff_unstaged:
+    read_only: true
+    doc_sufficient: true
+    notes: "Read‑only tool; docs say it only shows unstaged diff"
+  git_diff_staged:
+    read_only: true
+    doc_sufficient: true
+    notes: "Read‑only tool; docs say it only shows staged diff"
+  git_diff:
+    read_only: true
+    doc_sufficient: true
+    notes: "Read‑only tool; docs say it only shows diff between commits/branches"
+  git_log:
+    read_only: true
+    doc_sufficient: true
+    notes: "Read‑only tool; docs say it only returns commit logs"
+  git_show:
+    read_only: true
+    doc_sufficient: true
+    notes: "Read‑only tool; docs say it only shows object contents"
+  git_branch:
+    read_only: true
+    doc_sufficient: true
+    notes: "Read‑only tool; docs say it only lists branches"
+  git_commit:
+    read_only: false
+    subprocess: true
+    fs:
+      may_modify: ["{repo_path}/.git/**"]
+      may_create: ["{repo_path}/.git/**"]
+      may_delete: []
+    doc_sufficient: false
+    notes: "Docs say it records changes; assumed it updates .git objects, refs, and logs"
+  git_add:
+    read_only: false
+    subprocess: true
+    fs:
+      may_modify: ["{repo_path}/.git/index"]
+      may_create: []
+      may_delete: []
+    doc_sufficient: false
+    notes: "Adds files to staging area; assumed only the index file is modified"
+  git_reset:
+    read_only: false
+    subprocess: true
+    fs:
+      may_modify: ["{repo_path}/.git/index"]
+      may_create: []
+      may_delete: []
+    doc_sufficient: false
+    notes: "Unstages all changes; assumed only the index file is modified"
+  git_create_branch:
+    read_only: false
+    subprocess: true
+    fs:
+      may_create: ["{repo_path}/.git/refs/heads/{branch_name}"]
+      may_modify: ["{repo_path}/.git/HEAD"]
+      may_delete: []
+    doc_sufficient: false
+    notes: "Creates a new branch; assumed it creates a ref file and may update HEAD"
+  git_checkout:
+    read_only: false
+    subprocess: true
+    fs:
+      may_modify: ["{repo_path}/.git/HEAD", "{repo_path}/.git/index", "{repo_path}/**"]
+      may_create: []
+      may_delete: []
+    doc_sufficient: false
+    notes: "Switches branches; assumed it updates HEAD, index, and working‑tree files"
+readme_declared:
+  fs:
+    may_create:
+      - "{root}/Library/Logs/Claude/mcp*.log"
+      - "{repo_path}/coverage.json"
+  network: false
+```

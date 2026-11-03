@@ -1,0 +1,182 @@
+{
+  "background_net": [],
+  "channel_observations": {
+    "background_net_attempts": 0,
+    "background_net_names": [],
+    "calls_with_children": 0,
+    "calls_with_fs_change": 0,
+    "mean_sampler_samples_per_call": 5.2,
+    "net_attempts": 0,
+    "net_names": [],
+    "proxy_requests": 0,
+    "remote_sockets": 0
+  },
+  "contract_digest": "2ca130fb6f306a3c44d053e0d9ff8eaea19857b5f99e1e4a53c92dc35dde7f09",
+  "description": "Official time server: two pure functions, no declared effect of any kind.",
+  "deviation_kinds_total": {},
+  "deviation_kinds_total_tools_list": {},
+  "finished": "2026-10-31T00:34:47.197927+00:00",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "heldout": {
+    "actions": 12,
+    "per_tool": {
+      "convert_time": {
+        "actions": 6,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 5
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 6
+          }
+        }
+      },
+      "get_current_time": {
+        "actions": 6,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 4,
+            "block": 0,
+            "review": 2
+          },
+          "3-junta": {
+            "allow": 2,
+            "block": 0,
+            "review": 4
+          }
+        }
+      }
+    },
+    "tallies": {
+      "2-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 5,
+        "safe_blocked": 0,
+        "safe_reviewed": 7
+      },
+      "3-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 2,
+        "safe_blocked": 0,
+        "safe_reviewed": 10
+      }
+    }
+  },
+  "install_digest": "b58e4f2de29e82d8660f3d5c3cd35a483d6317a1ee635b9a80b352cc3463670c",
+  "kind": "reference",
+  "label_level": "readme",
+  "learners": [
+    "2-junta",
+    "3-junta"
+  ],
+  "net_isolation": "netns_veth_tcpdump",
+  "per_tool_train": {
+    "convert_time": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 6
+    },
+    "get_current_time": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 6
+    }
+  },
+  "sandbox": "/vac/vac-next/real-mcp/sandboxes/time-1",
+  "seed": 1,
+  "served_definition_digest": "26b136715a3a0aaa80e70f520d42ac59bf71a2a8d83d2a4503fd467f29e16051",
+  "server": "time",
+  "setup": {
+    "calls": 0,
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "kinds_tools_list": []
+  },
+  "source": "PyPI mcp-server-time==2026.10.28",
+  "started": "2026-10-31T00:34:42.200435+00:00",
+  "tools_listed": [
+    "get_current_time",
+    "convert_time"
+  ],
+  "train": {
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "errors": 0,
+    "hypotheses_remaining": {
+      "2-junta": 732,
+      "3-junta": 48818
+    },
+    "observed_by_learner": {
+      "2-junta": 12,
+      "3-junta": 12
+    },
+    "probes": 12
+  },
+  "vocabulary": {
+    "distinct_after_merge": 28,
+    "generated": 129,
+    "names": [
+      "tool:convert_time",
+      "source_timezone.token_cs:America",
+      "source_timezone.token_cs:Asia",
+      "source_timezone.token_cs:Australia",
+      "source_timezone.token_cs:Europe",
+      "source_timezone.token_cs:London",
+      "source_timezone.token_cs:UTC",
+      "source_timezone.token_cs:Vienna",
+      "source_timezone.first:A",
+      "source_timezone.len_ge:10",
+      "source_timezone.len_ge:13",
+      "source_timezone.len_ge:16",
+      "target_timezone.token_cs:Europe",
+      "target_timezone.first:A",
+      "target_timezone.len_ge:10",
+      "target_timezone.len_ge:13",
+      "time.first:1",
+      "timezone.token_cs:America",
+      "timezone.token_cs:Asia",
+      "timezone.token_cs:Australia",
+      "timezone.token_cs:Europe",
+      "timezone.token_cs:London",
+      "timezone.token_cs:UTC",
+      "timezone.token_cs:Vienna",
+      "timezone.first:A",
+      "timezone.len_ge:10",
+      "timezone.len_ge:13",
+      "timezone.len_ge:16"
+    ]
+  }
+}

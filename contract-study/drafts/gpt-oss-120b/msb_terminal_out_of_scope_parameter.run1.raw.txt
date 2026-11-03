@@ -1,0 +1,36 @@
+```yaml
+server: msb_terminal_out_of_scope_parameter
+scope:
+  roots: []                         # no file changes are documented
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  execute_command:
+    read_only: true
+    expect_effect:
+      subprocess: true
+    subprocess: true               # overrides default: command execution spawns a process
+    network: false
+    doc_sufficient: true
+    notes: "Description only mentions executing a command and returning output; no file or network effects documented."
+  get_command_history:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns recent command history; no side effects documented."
+  get_current_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns current working directory; no side effects documented."
+  change_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Changes internal working directory only; no file system modifications documented."
+```

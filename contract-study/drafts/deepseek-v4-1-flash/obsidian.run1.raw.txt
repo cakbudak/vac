@@ -1,0 +1,117 @@
+```yaml
+server: obsidian
+scope:
+  roots: ["{vault}/**"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  obsidian_list_vaults:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Returns configured vault ids only; no filesystem, subprocess, or network effects documented."
+  obsidian_read_note:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Reads a bounded page of a note and returns an etag; no mutations documented."
+  obsidian_create_note:
+    read_only: false
+    fs:
+      may_create: ["{vault}/**"]
+    expect_effect:
+      fs_any_of: ["{vault}/{path}"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Creates the note at {path} and, with create_parents, any missing ancestor directories."
+  obsidian_edit_note:
+    read_only: false
+    fs:
+      may_modify: ["{vault}/{path}"]
+    expect_effect:
+      fs_any_of: ["{vault}/{path}"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Appends, prepends, or replaces the named note byte-for-byte; tool states it never deletes notes."
+  obsidian_delete_note:
+    read_only: false
+    fs:
+      may_delete: ["{vault}/{path}"]
+    expect_effect:
+      fs_any_of: ["{vault}/{path}"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Trashes or permanently deletes the named note; trash/transaction storage paths are README-only."
+  obsidian_move_note:
+    read_only: false
+    fs:
+      may_create: ["{vault}/{destination}"]
+      may_delete: ["{vault}/{source}"]
+      may_modify: ["{vault}/**"]
+    expect_effect:
+      fs_any_of: ["{vault}/{source}", "{vault}/{destination}"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Moves source to destination and transactionally rewrites unambiguous backlinks in other vault notes."
+  obsidian_create_directory:
+    read_only: false
+    fs:
+      may_create: ["{vault}/**"]
+    expect_effect:
+      fs_any_of: ["{vault}/{path}"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Creates the named directory and, when recursive, any missing parent directories."
+  obsidian_search_vault:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Searches filenames, content, or tags with bounded cursor pagination; no mutations."
+  obsidian_add_tags:
+    read_only: false
+    fs:
+      may_modify: ["{vault}/**"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Adds tags to each note in the paths array atomically; array argument prevents per-path patterns."
+  obsidian_remove_tags:
+    read_only: false
+    fs:
+      may_modify: ["{vault}/**"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Removes exact, nested, or wildcard-selected tags from each note in the paths array atomically."
+  obsidian_rename_tag:
+    read_only: false
+    fs:
+      may_modify: ["{vault}/**"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Renames a tag across every note in the vault that contains it, in one journaled transaction."
+  obsidian_manage_tags:
+    read_only: false
+    fs:
+      may_modify: ["{vault}/**"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Unified add/remove tag workflow over the paths array using the same implementation as the dedicated tools."
+readme_declared:
+  fs:
+    may_create: ["{vault}/.obsidian-mcp/**"]
+    may_modify: ["{vault}/.obsidian-mcp/**"]
+  network: false
+```

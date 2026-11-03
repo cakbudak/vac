@@ -1,0 +1,66 @@
+server: msb_terminal_false_error
+scope:
+  roots:
+  - /**
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  execute_command:
+    read_only: false
+    fs:
+      may_create:
+      - /**
+      may_modify:
+      - /**
+      may_delete:
+      - /**
+    expect_effect:
+      subprocess: true
+    subprocess: true
+    network: true
+    network_hosts:
+    - '*'
+    scope:
+    - /**
+    doc_sufficient: false
+    notes: Tool executes arbitrary shell commands; fs/network/subprocess effects are
+      unbounded by documentation — widened to full scope based on nature of shell
+      execution.
+  get_command_history:
+    read_only: true
+    subprocess: false
+    network: false
+    expect_effect:
+      response_matches_any:
+      - command
+      - history
+      - Command
+    doc_sufficient: false
+    notes: Returns formatted command history; documentation does not state where history
+      is stored or whether any file is read/written — assuming in-memory only.
+  get_current_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    expect_effect:
+      response_matches_any:
+      - /
+    doc_sufficient: true
+    notes: Returns current working directory path; purely informational, no file changes,
+      no subprocess or network activity documented.
+  change_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    expect_effect:
+      response_matches_any:
+      - success
+      - changed
+      - directory
+      - '{path}'
+    doc_sufficient: false
+    notes: Changes working directory of the server process; no file mutations documented,
+      but history tracking may persist state — no file path for that is documented
+      so not declared.

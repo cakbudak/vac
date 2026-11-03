@@ -1,0 +1,649 @@
+### SYSTEM
+You are a careful security engineer writing a declared effect contract for an MCP tool server. You write only what the documentation supports and you say where it does not suffice. Answer with one YAML document in a ```yaml code block and nothing else.
+
+### USER
+
+A declared effect contract is a YAML document with this structure (every key shown is known to the grader;
+do not invent others):
+
+server: <name>
+scope:
+  roots: [<glob patterns>]          # paths the server may legitimately change; anything changed outside is a deviation
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: <bool>                # may tools spawn child processes unless they say otherwise?
+  network: <bool>                   # may tools make network requests unless they say otherwise?
+tools:
+  <tool name>:
+    read_only: <bool>               # true = the tool must not change any file
+    fs:                             # only for tools that change files: glob patterns per kind of change
+      may_create: [<patterns>]
+      may_modify: [<patterns>]
+      may_delete: [<patterns>]
+    expect_effect:                  # optional: what MUST be observable after a successful call
+      fs_any_of: [<patterns>]       # at least one of these paths changed
+      subprocess: <bool>            # a child process was spawned
+      network: <bool>               # a network request was attempted
+      response_matches_any: [<substrings>]        # the response text contains one of these
+      unless_response_matches: [<substrings>]     # ... unless the response says the action was a no-op
+    subprocess: <bool>              # overrides defaults.subprocess for this tool
+    network: <bool>                 # overrides defaults.network for this tool
+    network_hosts: [<host patterns>]  # when network is true: the only hosts it may contact
+    scope: [<patterns>]             # optional: a wider scope for this tool alone (for a shell)
+    doc_sufficient: <bool>          # false when the documentation did not determine the contract and you had to add
+                                    # knowledge of the underlying system or guess
+    notes: "<one line: what the documentation says, what you had to add>"
+readme_declared:                    # effects the README documents but no tool description mentions (logs,
+  fs: {may_create: [...], may_modify: [...], may_delete: [...]}   # configuration files, telemetry); omit if none
+  network: <bool>
+  network_hosts: [<host patterns>]
+
+Patterns are glob-style absolute paths.  Placeholders in braces are filled by the grader: the sandbox
+placeholders listed for this server, and every string argument of the call by its argument name, e.g.
+"{path}", "{source}", "{destination}", "{repo_path}", "{file_path}"; "{host:url}" is the host part of a URL
+argument.  "**" matches any sub-path.  A path pattern may combine them: "{vault}/{path}".
+
+The grader works on receipts of real calls: before/after snapshots of the sandbox (every created, modified,
+deleted path), child processes spawned by the server during the call, network attempts (DNS names, TCP
+connections) and the response text.  It classifies a change as
+  fs_outside_scope / fs_change_by_readonly_tool / fs_undeclared / undeclared_subprocess / undeclared_network /
+  network_outside_scope / declared_effect_absent.
+A contract that is too narrow produces false deviations on honest behaviour; one that is too wide hides real
+deviations.  Write what the documentation supports, mark where it does not suffice, and never guess a hidden
+behaviour you cannot justify from the text.  Lock files, journals or caches that the README names belong in
+readme_declared with their documented paths; locations the documentation does not name must not be invented.
+
+
+## Server: everything
+
+How it is started: node server-everything/dist/index.js stdio
+
+Sandbox placeholders available: {root} = sandbox root (the server was started without any path)
+
+## tools/list (verbatim)
+
+```json
+[
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Echoes back the input string",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "message": {
+     "description": "Message to echo",
+     "type": "string"
+    }
+   },
+   "required": [
+    "message"
+   ],
+   "type": "object"
+  },
+  "name": "echo"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Demonstrates how annotations can be used to provide metadata about content.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "includeImage": {
+     "default": false,
+     "description": "Whether to include an example image",
+     "type": "boolean"
+    },
+    "messageType": {
+     "description": "Type of message to demonstrate different annotation patterns",
+     "enum": [
+      "error",
+      "success",
+      "debug"
+     ],
+     "type": "string"
+    }
+   },
+   "required": [
+    "messageType"
+   ],
+   "type": "object"
+  },
+  "name": "get-annotated-message"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Returns all environment variables, helpful for debugging MCP server configuration. Values of credential-like names (a KEY, TOKEN, SECRET, PASSWORD, PASSWD, CREDENTIAL, AUTH or COOKIE name segment) are masked as \"<redacted>\" unless GET_ENV_INCLUDE_SECRETS is set to 1 or true in the server's environment.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {},
+   "type": "object"
+  },
+  "name": "get-env"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Returns its region argument and the Mcp-Param-Region HTTP header it arrived in. Demonstrates x-mcp-header (a 2026-07-28 Streamable HTTP client mirrors the argument into the header) and JSON Schema 2020-12 input and output schemas.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "region": {
+     "description": "A region name, e.g. eu-west. Mirrored into the Mcp-Param-Region HTTP header.",
+     "type": "string",
+     "x-mcp-header": "Region"
+    },
+    "repeat": {
+     "default": 1,
+     "description": "How many times to repeat the region in the result (1-3)",
+     "maximum": 3,
+     "minimum": 1,
+     "type": "integer"
+    }
+   },
+   "required": [
+    "region"
+   ],
+   "type": "object"
+  },
+  "name": "get-header-params"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Returns up to ten resource links that reference different types of resources",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "count": {
+     "default": 3,
+     "description": "Number of resource links to return (1-10)",
+     "maximum": 10,
+     "minimum": 1,
+     "type": "number"
+    }
+   },
+   "type": "object"
+  },
+  "name": "get-resource-links"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Returns a resource reference that can be used by MCP clients",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "resourceId": {
+     "default": 1,
+     "description": "ID of the text resource to fetch",
+     "type": "number"
+    },
+    "resourceType": {
+     "default": "Text",
+     "enum": [
+      "Text",
+      "Blob"
+     ],
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "name": "get-resource-reference"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Returns structured content along with an output schema for client data validation",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "location": {
+     "description": "Choose city",
+     "enum": [
+      "New York",
+      "Chicago",
+      "Los Angeles"
+     ],
+     "type": "string"
+    }
+   },
+   "required": [
+    "location"
+   ],
+   "type": "object"
+  },
+  "name": "get-structured-content"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Returns the sum of two numbers",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "a": {
+     "description": "First number",
+     "type": "number"
+    },
+    "b": {
+     "description": "Second number",
+     "type": "number"
+    }
+   },
+   "required": [
+    "a",
+    "b"
+   ],
+   "type": "object"
+  },
+  "name": "get-sum"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Returns a tiny MCP logo image.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {},
+   "type": "object"
+  },
+  "name": "get-tiny-image"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": true,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Compresses a single file using gzip compression. Depending upon the selected output type, returns either the compressed data as a gzipped resource or a resource link, allowing it to be downloaded in a subsequent request: during the current session for a 2025-era client, or for ten minutes at a minted URI on protocol version 2026-07-28.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "data": {
+     "default": "https://raw.githubusercontent.com/modelcontextprotocol/servers/refs/heads/main/README.md",
+     "description": "URL or data URI of the file content to compress",
+     "format": "uri",
+     "type": "string"
+    },
+    "name": {
+     "default": "README.md.gz",
+     "description": "Name of the output file (at most 255 characters)",
+     "maxLength": 255,
+     "type": "string"
+    },
+    "outputType": {
+     "default": "resourceLink",
+     "description": "How the resulting gzipped file should be returned. 'resourceLink' returns a link to a resource that can be read later, 'resource' returns a full resource object.",
+     "enum": [
+      "resourceLink",
+      "resource"
+     ],
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "name": "gzip-file-as-resource"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Sends a notifications/<list>/list_changed for the tool, prompt or resource list. On protocol version 2026-07-28 it is delivered on each subscriptions/listen stream that asked for that list; a 2025-era client receives it unsolicited.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "list": {
+     "description": "Which list to announce as changed",
+     "enum": [
+      "tools",
+      "prompts",
+      "resources"
+     ],
+     "type": "string"
+    }
+   },
+   "required": [
+    "list"
+   ],
+   "type": "object"
+  },
+  "name": "trigger-list-changed"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Sends one log message at each logging level during the call. On protocol version 2026-07-28 only the messages at or above the level the request names in _meta (io.modelcontextprotocol/logLevel) are sent, and none if it names no level; a 2025-era client gets those at or above the level it set with logging/setLevel. Deprecated: logging is deprecated as of protocol version 2026-07-28.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {},
+   "type": "object"
+  },
+  "name": "trigger-log-messages"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Demonstrates a long running operation with progress updates.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "duration": {
+     "default": 10,
+     "description": "Duration of the operation in seconds",
+     "type": "number"
+    },
+    "steps": {
+     "default": 5,
+     "description": "Number of steps in the operation",
+     "type": "number"
+    }
+   },
+   "type": "object"
+  },
+  "name": "trigger-long-running-operation"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Sends a notifications/resources/updated for a resource URI. On protocol version 2026-07-28 it is delivered on each subscriptions/listen stream whose resourceSubscriptions name the URI; a 2025-era client receives it once it has called resources/subscribe for the URI.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "uri": {
+     "description": "The URI of the resource to announce as updated, e.g. demo://resource/dynamic/text/1",
+     "type": "string"
+    }
+   },
+   "required": [
+    "uri"
+   ],
+   "type": "object"
+  },
+  "name": "trigger-resource-update"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Toggles simulated, random-leveled logging on or off. Deprecated: 2025-era clients only, since protocol version 2026-07-28 removes logging/setLevel; use trigger-log-messages with a per-request log level instead.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {},
+   "type": "object"
+  },
+  "name": "toggle-simulated-logging"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Toggles simulated resource subscription updates on or off. Deprecated: 2025-era clients only, since protocol version 2026-07-28 removes resources/subscribe; use trigger-resource-update with a subscriptions/listen stream instead.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {},
+   "type": "object"
+  },
+  "name": "toggle-subscriber-updates"
+ }
+]
+```
+
+## README excerpt
+
+# Everything MCP Server
+
+**[Architecture](docs/architecture.md)
+| [Project Structure](docs/structure.md)
+| [Startup Process](docs/startup.md)
+| [Server Features](docs/features.md)
+| [Extension Points](docs/extension.md)
+| [How It Works](docs/how-it-works.md)**
+
+This MCP server attempts to exercise all the features of the MCP protocol. It is not intended to be a useful server, but rather a test server for builders of MCP clients. It implements prompts, tools, resources, sampling, and more to showcase MCP capabilities.
+
+## Tools, Resources, Prompts, and Other Features
+
+A complete list of the registered MCP primitives and other protocol features demonstrated can be found in the [Server Features](docs/features.md) document.
+
+The `get-env` tool returns the server's environment variables, but masks the value of any credential-like name (a `KEY`, `TOKEN`, `SECRET`, `PASSWORD`, `PASSWD`, `CREDENTIAL`, `AUTH` or `COOKIE` segment, such as `OPENAI_API_KEY`) as `"<redacted>"`. To see every value unmasked while debugging, start the server with `GET_ENV_INCLUDE_SECRETS=1` (or `true`). Leave it unset otherwise: with it set, every credential in the server's environment reaches the model's context.
+
+## Protocol versions
+
+The server serves both protocol eras, over stdio and Streamable HTTP, from one process:
+
+- **2026-07-28** clients connect with `server/discover`, send their protocol version, identity and capabilities with each request, and have no session. The server demonstrates the revision's new features for them: multi-round-trip requests (`input_required`) with `requestState`, `subscriptions/listen` change notifications, per-request log levels, cache hints (`ttlMs` / `cacheScope`), the tasks extension (`io.modelcontextprotocol/tasks`) under the `extensions` capability, and `x-mcp-header` with JSON Schema 2020-12 tool schemas.
+- **2025-era** clients connect with the `initialize` handshake, as before. Elicitation, sampling and roots are served to them from the same multi-round-trip handlers through the SDK's legacy shim.
+
+Roots, sampling and logging are deprecated as of 2026-07-28 and stay available, labelled deprecated. [Server Features](docs/features.md) marks which era each feature belongs to.
+
+## Configuring `gzip-file-as-resource`
+
+The `gzip-file-as-resource` tool fetches the URL it is given, so these environment variables limit what it will fetch:
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `GZIP_MAX_FETCH_SIZE` | 10 MiB | The largest response, in bytes, it reads |
+| `GZIP_MAX_FETCH_TIME_MILLIS` | 30000 | How long a fetch may take, redirects included |
+| `GZIP_ALLOWED_DOMAINS` | empty (any name) | Comma-separated host names; a host must be one of them or a subdomain of one. Checked on the caller's URL and on every redirect hop |
+| `GZIP_ALLOW_PRIVATE_IPS` | off | Set to `1` or `true` to allow loopback, private (RFC 1918), CGNAT, link-local (cloud metadata) and other non-public addresses |
+
+By default the tool refuses a URL whose host resolves to a non-public address, and follows at most five redirects, checking each hop the same way. `GZIP_ALLOWED_DOMAINS` filters names, not addresses: a listed name that resolves to a private address is still refused unless `GZIP_ALLOW_PRIVATE_IPS` is set. The address is checked before the request and resolved again when it is made, so a DNS answer that changes in between (DNS rebinding) is not caught. `data:` URLs are not fetched, so neither check applies to them.
+
+## Requirements
+
+Node.js 24 or later, when the server runs through `npx` or from source.
+
+## Usage with Claude Desktop (uses [stdio Transport](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#stdio))
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "everything": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    }
+  }
+}
+```
+
+On Windows, use `cmd /c` to launch `npx`:
+
+```json
+{
+  "mcpServers": {
+    "everything": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-everything"]
+    }
+  }
+}
+```
+
+## Usage with VS Code
+
+For quick installation, use one of the one-click install buttons below...
+
+[](https://insiders.vscode.dev/redirect/mcp/install?name=everything&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-everything%22%5D%7D) [](https://insiders.vscode.dev/redirect/mcp/install?name=everything&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-everything%22%5D%7D&quality=insiders)
+
+[](https://insiders.vscode.dev/redirect/mcp/install?name=everything&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22mcp%2Feverything%22%5D%7D) [](https://insiders.vscode.dev/redirect/mcp/install?name=everything&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22mcp%2Feverything%22%5D%7D&quality=insiders)
+
+For manual installation, you can configure the MCP server using one of these methods:
+
+**Method 1: User Configuration (Recommended)**
+Add the configuration to your user-level MCP configuration file. Open the Command Palette (`Ctrl + Shift + P`) and run `MCP: Open User Configuration`. This will open your user `mcp.json` file where you can add the server configuration.
+
+**Method 2: Workspace Configuration**
+Alternatively, you can add the configuration to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
+
+> For more details about MCP configuration in VS Code, see the [official VS Code MCP documentation](https://code.visualstudio.com/docs/copilot/customization/mcp-servers).
+
+#### NPX
+
+```json
+{
+  "servers": {
+    "everything": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    }
+  }
+}
+```
+
+On Windows, use:
+
+```json
+{
+  "servers": {
+    "everything": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-everything"]
+    }
+  }
+}
+```
+
+## Run from source with [Streamable HTTP Transport](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http)
+
+```shell
+cd src/everything
+npm install
+npm run start:streamableHttp
+```
+
+The endpoint is `http://localhost:3001/mcp` (`PORT` overrides the port). It serves 2026-07-28 clients statelessly and 2025-era clients with sessions, from the same URL.
+
+Both HTTP transports (Streamable HTTP and HTTP+SSE) accept browser requests only from a localhost origin: an `Origin` header whose host is `localhost`, `127.0.0.1` or `[::1]`, on any port, such as the MCP Inspector's. A request carrying any other `Origin` is refused with `403 Forbidden`. Clients that send no `Origin` header, which is every non-browser client, are unaffected.
+
+## Running from source with [HTTP+SSE Transport](https://modelcontextprotocol.io/specification/2024-11-05/basic/transports#http-with-sse) (deprecated as of [2025-03-26](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports))
+
+```shell
+cd src/everything
+npm install
+npm run start:sse
+```
+
+The HTTP+SSE transport serves 2025-era clients only, and the server prints a deprecation warning when it starts. Prefer Streamable HTTP.
+
+## Running as an installed package
+
+### Install
+
+```shell
+npm install -g @modelcontextprotocol/server-everything@latest
+```
+
+### Run the default (stdio) server
+
+```shell
+npx @modelcontextprotocol/server-everything
+```
+
+### Or specify stdio explicitly
+
+```shell
+npx @modelcontextprotocol/server-everything stdio
+```
+
+### Run the streamable HTTP server
+
+```shell
+npx @modelcontextprotocol/server-everything streamableHttp
+```
+
+### Run the SSE server (deprecated, 2025-era clients only)
+
+```shell
+npx @modelcontextprotocol/server-everything sse
+```
+
+## License
+
+This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
+
+
+## Task
+
+Write the contract for every tool in tools/list (use the exact tool names). For each tool decide read_only, the file patterns it may change, expected effects, subprocess and network, doc_sufficient and a one-line note. Add readme_declared for anything the README documents that the tool descriptions do not. Return only the YAML.

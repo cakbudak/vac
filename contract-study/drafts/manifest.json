@@ -1,0 +1,153 @@
+{
+  "created": "2026-10-30T18:02:32.563999+00:00",
+  "models": {
+    "claude-sonnet-4-6": {
+      "endpoint": "https://api.xkiro.com/v1",
+      "extra": {},
+      "model": "anthropic/claude-sonnet-4.6",
+      "temperature": 0
+    },
+    "claude-sonnet-5-5": {
+      "endpoint": "https://api.concentrate.ai/v1",
+      "extra": {},
+      "model": "claude-sonnet-5-5",
+      "temperature": 0
+    },
+    "deepseek-v4-1-flash": {
+      "endpoint": "https://dialagram.me/router/v1",
+      "extra": {},
+      "model": "deepseek-v4.1-flash",
+      "temperature": 0
+    },
+    "gemini-3-5-flash": {
+      "endpoint": "https://api.concentrate.ai/v1",
+      "extra": {},
+      "model": "gemini-3.5-flash",
+      "temperature": 0
+    },
+    "glm-5-3": {
+      "endpoint": "https://discovery-api.intern-ai.org.cn/v1",
+      "extra": {},
+      "model": "glm-5.3",
+      "temperature": 0
+    },
+    "gpt-5-4-mini": {
+      "endpoint": "https://api.concentrate.ai/v1",
+      "extra": {},
+      "model": "gpt-5.4-mini",
+      "temperature": 0
+    },
+    "gpt-oss-120b": {
+      "endpoint": "https://api.groq.com/openai/v1",
+      "extra": {
+        "reasoning_effort": "medium"
+      },
+      "model": "openai/gpt-oss-120b",
+      "temperature": 0
+    },
+    "k2-horizon-375b": {
+      "endpoint": "https://api.ifm.ai/v1",
+      "extra": {},
+      "model": "IFM/K2-Horizon-375B-A23B",
+      "temperature": 0
+    },
+    "kimi-k2-6": {
+      "endpoint": "https://discovery-api.intern-ai.org.cn/v1",
+      "extra": {},
+      "model": "kimi-k2.6",
+      "temperature": 0
+    },
+    "qwen3-8-27b": {
+      "endpoint": "https://discovery-api.intern-ai.org.cn/v1",
+      "extra": {},
+      "model": "qwen3.8-27b",
+      "temperature": 0
+    },
+    "spark-x2-5": {
+      "endpoint": "https://api.xhtoken.ai/v1",
+      "extra": {},
+      "model": "spark-x2.5",
+      "temperature": 0
+    }
+  },
+  "prompts": {
+    "desktop_commander": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "0d987c1cae60435e2b2250bf6fed7febd06b8696d1941d4e1706f1872393963b",
+      "user_chars": 76596,
+      "user_sha256": "2c551bf76ebd03d1841e14d5d6399d05b7966da47bb6a178052c0104023600ef"
+    },
+    "everything": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "c26a6dd065b60735250e288a2689a9779310aec0454f8d858c693e00960c8c60",
+      "user_chars": 23413,
+      "user_sha256": "bd297c79d8a1274309f99a7f25eb0bf0eb583bedcc20d96a41b57649df61ca57"
+    },
+    "fetch": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "9547355f58d2853c64a5fb8bae140ecd1c3927ff090973fe6659f9d013bcb8d4",
+      "user_chars": 18904,
+      "user_sha256": "5fc219a62cd562189f5b6c8f5beddc0f76e02e5922ed2745d502fd073dc74b4c"
+    },
+    "filesystem": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "45cb95684dd0c40da98358b7ce4f792f789213850e163eef9d3d5ecfc73346df",
+      "user_chars": 29963,
+      "user_sha256": "e4eebf45d30f44af5b6ed36fed3e4d6f6e63bb2732a6f944ab5223ccae84ffa9"
+    },
+    "git": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "7be86f7cfb2d2ffc2d903b1fb7396c6ae1d5340cb1f4f4a6f3141b267f08c61f",
+      "user_chars": 24652,
+      "user_sha256": "ba4ce9249edbbded09c414aba06a058adcd40ce0b1dbbb09fedf9cd7aa0de41d"
+    },
+    "memory": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "d1efe71536965c679f31bcb66932b24aa6c36299a816b8df224125056c07f28b",
+      "user_chars": 24532,
+      "user_sha256": "dee282bfe8879b63c47c251e357691cb66e81be990790cf486c93be3f76b2df5"
+    },
+    "msb_terminal_false_error": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "3295f9733651aa00e5c384b5a2551c1fe79b7ad7777a981ac13c021e945e9ad4",
+      "user_chars": 6660,
+      "user_sha256": "215a1a642ce194f0ee8a79fc256da8edddb03d1c177fc31c328a218eea26b788"
+    },
+    "msb_terminal_normal": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "9467029285846cca89d7e8bd6b525b069a9fdb32c2fdb3cfc66f176498ffecc7",
+      "user_chars": 5899,
+      "user_sha256": "942a4c4c211002135bf565c27e8cce2eb1de1fa79bedd679a72362f540b7c7ba"
+    },
+    "msb_terminal_out_of_scope_parameter": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "3295f9733651aa00e5c384b5a2551c1fe79b7ad7777a981ac13c021e945e9ad4",
+      "user_chars": 6671,
+      "user_sha256": "a1f43fb269182a5032c87902f5a814bdea5cd10dbecd631af181561a1503fc17"
+    },
+    "msb_terminal_tool_transfer": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "421c92bd9aface2c4ee1d262e8698b4aae04c8f68a706c20937fb8152bd3edca",
+      "user_chars": 5932,
+      "user_sha256": "72df5ff867099a044587d498f48fbb2e570f4ec2bd3c4e2abc816080c2e7c56d"
+    },
+    "obsidian": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "90ae9e35b157baa0ada9067ffcd4271c499bec2be8742c305ebcd181a075ada3",
+      "user_chars": 36178,
+      "user_sha256": "58c22a0d845cb81553f806b5e13d7c8bde7e2e87dc804de63d739c2048e00e16"
+    },
+    "sqlite": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "0c600760d45c5406c8574513ef0d620dbbdc7f9e81b08466b739c14835b01e2b",
+      "user_chars": 12270,
+      "user_sha256": "f2b078f842e555043d2541ff6c49c39a2800605d2d6684c5155333d809f8df50"
+    },
+    "time": {
+      "system_sha256": "129e417186ac301c6925d501c53d9ceba0de5503875b730dbfa04708e4fdf9ad",
+      "tools_json_sha256": "6bd10f233c51a341cf5baa395ac738725c9e88a41640a48afa99e2d8bab28994",
+      "user_chars": 15972,
+      "user_sha256": "954344014a5b857ffbb21956f8376d21373e2a4b21222f07e229fa18a28e8a97"
+    }
+  }
+}

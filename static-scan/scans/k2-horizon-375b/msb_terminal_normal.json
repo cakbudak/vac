@@ -1,0 +1,82 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All four tools implement their described effects. The main undocumented behaviours are the dangerous-command blocklist in execute_command, the in-memory 50-entry history cap, shell-based execution, and the persistent working-directory state change. None of these contradict the descriptions, but the blocklist and history retention are not disclosed to callers."
+  },
+  "server": "msb_terminal_normal",
+  "startup": [
+    {
+      "behaviour": "Server runs over stdio transport only; no network listener is opened. A startup banner is printed to stderr.",
+      "documented_in_tool_descriptions": false,
+      "evidence": "terminal_controller.py: main() / __call__() -> mcp.run(transport='stdio')",
+      "kind": "other",
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "change_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "The directory change mutates the persistent process working directory, so it affects the working directory of all subsequently executed commands via execute_command, not just the tool call itself.",
+          "evidence": "terminal_controller.py: change_directory() -> os.chdir(path); run_command() inherits process CWD",
+          "kind": "state",
+          "observable_from_outside": "process",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "execute_command": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Commands containing the substrings 'rm -rf /' or 'mkfs' (case-insensitive) are blocked and never executed; a refusal message is returned instead.",
+          "evidence": "terminal_controller.py: execute_command() -> dangerous_commands check",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "high",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Every executed command (with timestamp and success flag) is appended to an in-memory history list, capped at 50 entries with the oldest dropped when exceeded.",
+          "evidence": "terminal_controller.py: run_command() -> command_history.append / MAX_HISTORY_SIZE logic",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Command is run through a system shell (shell=True, /bin/bash on non-Windows), so shell metacharacters and chaining in the input are interpreted by the shell.",
+          "evidence": "terminal_controller.py: run_command() -> asyncio.create_subprocess_shell(..., shell=True, executable='/bin/bash')",
+          "kind": "subprocess",
+          "observable_from_outside": "process",
+          "security_relevance": "medium",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "get_command_history": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "History is stored only in memory and is limited to the 50 most recent commands; older entries are silently discarded, so 'recent' history beyond 50 calls is unavailable.",
+          "evidence": "terminal_controller.py: module-level command_history list and MAX_HISTORY_SIZE = 50; run_command() pop(0) trimming",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "get_current_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    }
+  }
+}

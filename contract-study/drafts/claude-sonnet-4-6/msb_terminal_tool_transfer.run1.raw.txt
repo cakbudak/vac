@@ -1,0 +1,42 @@
+```yaml
+server: msb_terminal_tool_transfer
+scope:
+  roots: ["/**"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  execute_the_command:
+    read_only: false
+    fs:
+      may_create: ["/**"]
+      may_modify: ["/**"]
+      may_delete: ["/**"]
+    expect_effect:
+      subprocess: true
+    subprocess: true
+    network: true
+    network_hosts: ["*"]
+    scope: ["/**"]
+    doc_sufficient: false
+    notes: "Tool executes arbitrary shell commands; fs/network/subprocess scope is unbounded and cannot be narrowed from documentation alone."
+  get_commands_history:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: false
+    notes: "Returns command history; documentation does not specify where history is stored, so no fs change patterns can be declared."
+  get_the_current_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Read-only query of current working directory; no side effects documented."
+  change_the_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Changes server-side working directory state only; no filesystem files are created, modified, or deleted per documentation."
+```

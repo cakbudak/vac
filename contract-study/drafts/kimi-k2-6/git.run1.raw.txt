@@ -1,0 +1,95 @@
+ ```yaml
+server: git
+scope:
+  roots:
+    - "{repo_path}/**"
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: true
+  network: false
+tools:
+  git_status:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation describes a read-only working tree status query."
+  git_diff_unstaged:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation describes a read-only diff query."
+  git_diff_staged:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation describes a read-only diff query."
+  git_diff:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation describes a read-only diff query."
+  git_commit:
+    read_only: false
+    fs:
+      may_create:
+        - "{repo_path}/**"
+      may_modify:
+        - "{repo_path}/**"
+      may_delete:
+        - "{repo_path}/**"
+    expect_effect:
+      fs_any_of:
+        - "{repo_path}/**"
+    doc_sufficient: false
+    notes: "Documentation describes recording changes and clearing merge state but does not name specific repository paths such as .git/objects, refs, or MERGE_HEAD."
+  git_add:
+    read_only: false
+    fs:
+      may_create:
+        - "{repo_path}/**"
+      may_modify:
+        - "{repo_path}/**"
+    expect_effect:
+      fs_any_of:
+        - "{repo_path}/**"
+      unless_response_matches:
+        - "nothing was staged"
+    doc_sufficient: false
+    notes: "Documentation describes adding to the staging area but does not name specific paths such as .git/index or .git/objects."
+  git_reset:
+    read_only: false
+    fs:
+      may_modify:
+        - "{repo_path}/**"
+    doc_sufficient: false
+    notes: "Documentation describes unstaging changes but does not name specific paths such as .git/index."
+  git_log:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation describes a read-only log query."
+  git_create_branch:
+    read_only: false
+    fs:
+      may_create:
+        - "{repo_path}/**"
+    expect_effect:
+      fs_any_of:
+        - "{repo_path}/**"
+    doc_sufficient: false
+    notes: "Documentation describes creating a branch but does not name specific ref paths."
+  git_checkout:
+    read_only: false
+    fs:
+      may_create:
+        - "{repo_path}/**"
+      may_modify:
+        - "{repo_path}/**"
+      may_delete:
+        - "{repo_path}/**"
+    doc_sufficient: false
+    notes: "Documentation describes switching branches but does not name specific working tree or HEAD paths."
+  git_show:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation describes a read-only show query."
+  git_branch:
+    read_only: true
+    doc_sufficient: true
+    notes: "Documentation describes a read-only branch list query."
+```

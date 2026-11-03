@@ -1,0 +1,293 @@
+
+```json
+{
+  "server": "git",
+  "startup": [
+    {
+      "behaviour": "A --repository/-r CLI option confines every tool call to that repository: each repo_path is validated against it, and the opened repo's working tree, git dir and common dir are checked to lie inside it (following .git files, commondir and core.worktree).",
+      "evidence": "__init__.py: main(); server.py: serve(), validate_repo_path(), validate_opened_repo()",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "high"
+    },
+    {
+      "behaviour": "--repository is resolved to the enclosing working-tree root (search_parent_directories); a nonexistent path exits with status 1, and a path that is not a Git repository logs an error and the server exits without serving.",
+      "evidence": "server.py: serve()",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Logging is configured to stderr at WARN, or INFO/DEBUG with one/two -v flags.",
+      "evidence": "__init__.py: main()",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "The version reported in serverInfo is read from the installed distribution metadata (importlib.metadata.version) at import time.",
+      "evidence": "server.py: SERVER_VERSION",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "The server speaks MCP over stdio (run_stdio_async), serving both the 2025-11-25 initialize handshake and the 2026-07-28 sessionless era.",
+      "evidence": "server.py: serve()",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Unknown tool names are rejected with JSON-RPC -32602 before argument validation; anticipated tool errors (ValueError, KeyError, IndexError, OSError, GitError, ODBError) are returned as ToolError isError results, while anything else crashes the call.",
+      "evidence": "server.py: reject_unknown_tools(), reported_to_model(), ANTICIPATED_ERRORS",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "All tool executions are serialized with a global threading lock (_GIT_LOCK), so concurrent tool calls run one at a time.",
+      "evidence": "server.py: reports_failures(), _GIT_LOCK",
+      "kind": "state",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "subscriptions/listen is not served (subscriptions=False, listChanged false).",
+      "evidence": "server.py: create_server()",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "git_status": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Runs `git status` with a per-command `-c core.quotepath=false` override (via GitPython) so non-ASCII paths print unescaped; the option is not written to the repository config.",
+          "evidence": "server.py: _git_text()",
+          "kind": "config",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_diff_unstaged": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Runs `git diff` with a per-command `-c core.quotepath=false` override (via GitPython) so non-ASCII paths print unescaped; the option is not written to the repository config.",
+          "evidence": "server.py: _git_text()",
+          "kind": "config",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_diff_staged": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Runs `git diff --cached` with a per-command `-c core.quotepath=false` override (via GitPython) so non-ASCII paths print unescaped; the option is not written to the repository config.",
+          "evidence": "server.py: _git_text()",
+          "kind": "config",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_diff": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Runs `git diff` with a per-command `-c core.quotepath=false` override (via GitPython) so non-ASCII paths print unescaped; the option is not written to the repository config.",
+          "evidence": "server.py: _git_text()",
+          "kind": "config",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Rejects a target starting with '-' (flag-injection guard) and validates the target resolves via rev_parse before running the diff.",
+          "evidence": "server.py: git_diff()",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_commit": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Refuses to commit when nothing is staged (no MERGE_HEAD, valid HEAD, and an empty index diff), raising 'No changes staged for commit'.",
+          "evidence": "server.py: git_commit(), _has_staged_changes()",
+          "kind": "state",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "If a merge is in progress (MERGE_HEAD exists), creates a merge commit with HEAD plus every MERGE_HEAD commit as parents and deletes MERGE_HEAD, MERGE_MSG, MERGE_MODE and AUTO_MERGE, concluding the merge.",
+          "evidence": "server.py: git_commit()",
+          "kind": "file_write",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "If MERGE_AUTOSTASH exists, reapplies the stash via `git stash apply` (or `git stash store` on conflict) and removes MERGE_AUTOSTASH, modifying the working tree.",
+          "evidence": "server.py: _apply_merge_autostash()",
+          "kind": "subprocess",
+          "trigger": "conditional on state",
+          "observable_from_outside": "file",
+          "security_relevance": "medium"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_add": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Rejects any file path that resolves outside the repository working tree (path-traversal guard) before staging.",
+          "evidence": "server.py: git_add()",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "When the index is unchanged (git add exits 0 even when staging nothing), reports 'No changes were staged' instead of a success message.",
+          "evidence": "server.py: git_add()",
+          "kind": "state",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_reset": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "git_log": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Rejects start_timestamp/end_timestamp starting with '-' (flag-injection guard).",
+          "evidence": "server.py: git_log()",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_create_branch": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Rejects branch_name or base_branch starting with '-' (flag-injection guard).",
+          "evidence": "server.py: git_create_branch()",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Refuses to create a branch whose name already exists under refs/heads/.",
+          "evidence": "server.py: git_create_branch()",
+          "kind": "state",
+          "trigger": "conditional on state",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_checkout": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Accepts any git revision (SHA, tag, remote-tracking ref), not only branch names; when the result is a detached HEAD it reports 'HEAD is now detached at <sha>' instead of a branch switch.",
+          "evidence": "server.py: git_checkout()",
+          "kind": "state",
+          "trigger": "conditional on input",
+          "observable_from_outside": "file",
+          "security_relevance": "medium"
+        },
+        {
+          "behaviour": "Rejects branch_name starting with '-' (flag-injection guard) and validates it via rev_parse.",
+          "evidence": "server.py: git_checkout()",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_show": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "For a commit revision, also generates and returns the full patch diff (via GitPython diff with create_patch), not just the commit header and message.",
+          "evidence": "server.py: git_show()",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Rejects a revision starting with '-' (flag-injection guard).",
+          "evidence": "server.py: git_show()",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "git_branch": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Rejects contains/not_contains starting with '-' (flag-injection guard); an unrecognised branch_type raises ValueError.",
+          "evidence": "server.py: git_branch()",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "Every described effect is implemented and the descriptions are accurate on the common path. The undocumented behaviours are mostly deliberate guards (flag-injection and path-traversal rejection) plus conditional extras: git_commit concludes in-progress merges and reapplies autostashes, git_checkout can detach HEAD when given a non-branch revision, and at start-up all tools are confined to the --repository path."
+  }
+}
+```

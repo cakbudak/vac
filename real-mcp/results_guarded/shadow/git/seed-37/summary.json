@@ -1,0 +1,17 @@
+{
+  "background_net": [],
+  "calls": 48,
+  "contract_digest": "1b9c74423595eba57f54d040a96c696a148944ab40b75103f032f719109f8806",
+  "controller_digest": "c6d8a3cf7539415200bb9834c2c9fc8045e25d7663b070d9f3655b31f55a5186",
+  "finished": "2026-11-03T09:23:35.612892+00:00",
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "install_digest": "12effbc0c813be7c8d503876f6d01c7a2fb5810552d3f4c7842b05c9068718e9",
+  "mode": "shadow",
+  "net_isolation": "netns_veth_tcpdump",
+  "read_only_calls": 22,
+  "rewrites_by_readonly_tools": 2,
+  "seed": 37,
+  "served_definition_digest": "bcc22eb620945b70e329c65b4779143f3ac37ab34aecaaefa64cb0e11cf28381",
+  "server": "git",
+  "started": "2026-11-03T09:23:27.105661+00:00"
+}

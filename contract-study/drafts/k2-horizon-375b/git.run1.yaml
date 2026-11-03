@@ -1,0 +1,113 @@
+server: git
+scope:
+  roots:
+  - '{repo_path}/**'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: true
+  network: false
+tools:
+  git_status:
+    read_only: true
+    doc_sufficient: true
+    notes: 'README: shows working tree status; read-only; runs git as a subprocess
+      (implied by ''failed command'' error handling)'
+  git_diff_unstaged:
+    read_only: true
+    doc_sufficient: true
+    notes: 'README: shows unstaged changes; read-only; runs git as a subprocess'
+  git_diff_staged:
+    read_only: true
+    doc_sufficient: true
+    notes: 'README: shows staged changes; read-only; runs git as a subprocess'
+  git_diff:
+    read_only: true
+    doc_sufficient: true
+    notes: 'README: shows differences between branches/commits; read-only; runs git
+      as a subprocess'
+  git_commit:
+    read_only: false
+    fs:
+      may_create:
+      - '{repo_path}/.git/objects/**'
+      - '{repo_path}/.git/COMMIT_EDITMSG'
+      may_modify:
+      - '{repo_path}/.git/refs/**'
+      - '{repo_path}/.git/packed-refs'
+      may_delete:
+      - '{repo_path}/.git/MERGE_HEAD'
+      - '{repo_path}/.git/MERGE_MSG'
+    expect_effect:
+      fs_any_of:
+      - '{repo_path}/.git/objects/**'
+      - '{repo_path}/.git/refs/**'
+      - '{repo_path}/.git/packed-refs'
+    doc_sufficient: false
+    notes: 'README: records changes, updates ref, clears MERGE_HEAD on merge; COMMIT_EDITMSG/MERGE_MSG
+      added from git internals, not named in README'
+  git_add:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify:
+      - '{repo_path}/.git/index'
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+      - '{repo_path}/.git/index'
+      unless_response_matches:
+      - nothing was staged
+    doc_sufficient: true
+    notes: 'README: stages files into the index; may reply ''nothing was staged''
+      when the index is unchanged'
+  git_reset:
+    read_only: false
+    fs:
+      may_create: []
+      may_modify:
+      - '{repo_path}/.git/index'
+      may_delete: []
+    doc_sufficient: true
+    notes: 'README: unstages all staged changes by rewriting .git/index; no-op when
+      already clean, so no expect_effect declared'
+  git_log:
+    read_only: true
+    doc_sufficient: true
+    notes: 'README: shows commit logs; read-only; runs git as a subprocess'
+  git_create_branch:
+    read_only: false
+    fs:
+      may_create:
+      - '{repo_path}/.git/refs/heads/**'
+      may_modify:
+      - '{repo_path}/.git/packed-refs'
+      may_delete: []
+    expect_effect:
+      fs_any_of:
+      - '{repo_path}/.git/refs/heads/**'
+      - '{repo_path}/.git/packed-refs'
+    doc_sufficient: true
+    notes: 'README: creates a new branch; writes a ref under .git/refs/heads (or updates
+      packed-refs)'
+  git_checkout:
+    read_only: false
+    fs:
+      may_create:
+      - '{repo_path}/**'
+      may_modify:
+      - '{repo_path}/**'
+      may_delete:
+      - '{repo_path}/**'
+    doc_sufficient: true
+    notes: 'README: switches branches; may rewrite any working-tree file plus .git/HEAD
+      and .git/index; no expect_effect because checking out the current branch is
+      a no-op (not documented)'
+  git_show:
+    read_only: true
+    doc_sufficient: true
+    notes: 'README: shows commit/file/directory contents; read-only; runs git as a
+      subprocess'
+  git_branch:
+    read_only: true
+    doc_sufficient: true
+    notes: 'README: lists branches; read-only; runs git as a subprocess'

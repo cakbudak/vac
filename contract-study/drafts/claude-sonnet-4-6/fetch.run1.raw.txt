@@ -1,0 +1,24 @@
+```yaml
+server: fetch
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  fetch:
+    read_only: true
+    expect_effect:
+      network: true
+      response_matches_any:
+        - ""
+      unless_response_matches:
+        - "Error executing tool fetch:"
+    subprocess: true
+    network: true
+    network_hosts:
+      - "{host:url}"
+    doc_sufficient: true
+    notes: "Tool fetches arbitrary URLs (openWorldHint=true); may spawn Node.js subprocess for HTML extraction via readabilipy/Readability.js; no filesystem changes; network to the requested host (and any redirect hops, plus robots.txt hosts on same domains)."
+```

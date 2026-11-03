@@ -1,0 +1,17 @@
+server: filesystem
+scope:
+  roots:
+  - '{work}'
+  - '{work}/**'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Deprecated read tool; documentation says it reads a file within allowed
+      directories and does not write.

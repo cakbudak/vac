@@ -1,0 +1,135 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "Both tools correctly implement what their descriptions state (get current time and convert time between timezones). The undocumented behaviours are mostly input validation details (empty-string checks, DST-gap detection, case-sensitive IANA validation) and richer structured output than the brief descriptions imply, none of which poses a security concern."
+  },
+  "server": "mcp-server-time",
+  "startup": [
+    {
+      "behaviour": "Calls tzlocal.get_localzone_name() to detect the host's local timezone, which may read OS timezone configuration files or registry entries",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: get_local_tz / serve -> get_localzone_name()",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "If --local-timezone is supplied, validates it against the IANA database (calls load_zoneinfo) and calls sys.exit() with an error message if invalid, terminating the process before the transport opens",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: serve() lines ~206-213",
+      "kind": "other",
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Calls zoneinfo.available_timezones() (cached) to build the set of known IANA timezone keys from the host's tz database; result cached with @cache",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: known_timezones() with @cache, called from load_zoneinfo",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Reads installed package version from distribution metadata via importlib.metadata.version('mcp-server-time')",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: SERVER_VERSION = version('mcp-server-time')",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Installs a middleware function that intercepts every tools/call request to validate the tool name, raising JSON-RPC INVALID_PARAMS (-32602) for unknown tool names",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: reject_unknown_tools() / middleware closure",
+      "kind": "state",
+      "observable_from_outside": "network",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "convert_time": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Raises a ToolError with message 'Missing required argument: source_timezone' or 'Missing required argument: target_timezone' if either timezone argument is an empty string",
+          "evidence": "server.py: require() calls in convert_time handler",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Validates both timezone names case-sensitively against the host's IANA database; raises ToolError 'Invalid timezone: ...' for non-matching names",
+          "evidence": "server.py: get_zoneinfo -> load_zoneinfo -> known_timezones() check, called for both source_tz and target_tz",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Raises ToolError 'Invalid time format. Expected HH:MM [24-hour format]' if the time string does not match HH:MM exactly",
+          "evidence": "server.py: TimeServer.convert_time, datetime.strptime(time_str, '%H:%M') ValueError handler",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Detects DST gap times (clock-forward skips): raises ToolError if the specified wall-clock time does not exist in the source timezone on the current date",
+          "evidence": "server.py: TimeServer.convert_time, round-trip check via timestamp() / fromtimestamp()",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Uses today's date in the source timezone (datetime.now(source_timezone)) to anchor the conversion; the conversion date is never accepted as input",
+          "evidence": "server.py: TimeServer.convert_time, now = datetime.now(source_timezone)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Returns structured result with source and target TimeResult objects (timezone, ISO datetime, day-of-week, DST flag) plus a formatted time_difference string (e.g. '+5.5h')",
+          "evidence": "server.py: TimeConversionResult model returned from convert_time",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "get_current_time": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Raises a ToolError (isError result) with message 'Missing required argument: timezone' if the timezone argument is an empty string, before attempting timezone lookup",
+          "evidence": "server.py: require('timezone', timezone) in get_current_time handler",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Validates timezone against the host's IANA database using available_timezones(); raises ToolError 'Invalid timezone: ...' if the name is not an exact match (case-sensitive), even if zoneinfo itself would accept it on a case-insensitive filesystem",
+          "evidence": "server.py: get_zoneinfo -> load_zoneinfo -> known_timezones() check",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Returns structured result including timezone name, full ISO-8601 datetime (seconds precision), day-of-week string, and DST boolean \u2014 richer than 'current time' implies",
+          "evidence": "server.py: TimeResult model; get_current_time returns TimeResult with datetime, day_of_week, is_dst fields",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    }
+  }
+}

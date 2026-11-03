@@ -1,0 +1,54 @@
+```yaml
+server: sqlite
+scope:
+  roots: ["{db}"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_query:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Executes SELECT query, read‑only, no file changes."
+  write_query:
+    read_only: false
+    fs:
+      may_modify: ["{db}"]
+    expect_effect:
+      fs_any_of: ["{db}"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Executes INSERT/UPDATE/DELETE, may modify the database file."
+  create_table:
+    read_only: false
+    fs:
+      may_modify: ["{db}"]
+    expect_effect:
+      fs_any_of: ["{db}"]
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Executes CREATE TABLE, may modify the database file."
+  list_tables:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Lists all tables, read‑only."
+  describe_table:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Describes a table’s schema, read‑only."
+  append_insight:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: "Adds an insight to the memo://insights resource, no file changes."
+```

@@ -1,0 +1,54 @@
+server: sqlite
+scope:
+  roots:
+  - '{db}'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_query:
+    read_only: true
+    doc_sufficient: true
+    notes: 'Docs: executes SELECT queries to read data; no file, subprocess, or network
+      effects documented.'
+  write_query:
+    read_only: false
+    fs:
+      may_modify:
+      - '{db}'
+    expect_effect:
+      fs_any_of:
+      - '{db}'
+      unless_response_matches:
+      - 'affected_rows": 0'
+      - affected_rows":0
+    doc_sufficient: true
+    notes: 'Docs: executes INSERT/UPDATE/DELETE on the database; the database file
+      {db} is modified (no-op when affected_rows is 0).'
+  create_table:
+    read_only: false
+    fs:
+      may_modify:
+      - '{db}'
+    expect_effect:
+      fs_any_of:
+      - '{db}'
+    doc_sufficient: true
+    notes: 'Docs: executes a CREATE TABLE statement; the database file {db} is modified
+      on success.'
+  list_tables:
+    read_only: true
+    doc_sufficient: true
+    notes: 'Docs: lists all tables in the database; read-only, no file changes.'
+  describe_table:
+    read_only: true
+    doc_sufficient: true
+    notes: 'Docs: returns schema/column definitions for a table; read-only, no file
+      changes.'
+  append_insight:
+    read_only: false
+    doc_sufficient: false
+    notes: 'Docs: adds an insight and triggers an update of the memo://insights resource,
+      but no file path for memo storage is documented, so its fs effects cannot be
+      determined from the text.'

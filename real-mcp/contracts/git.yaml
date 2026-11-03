@@ -1,0 +1,52 @@
+# Declared effect contract for mcp-server-git 2026.10.28  (contract v2)
+# Derived ONLY from contracts/git.tools.json (one-line descriptions + annotations) before
+# any probe.  The descriptions are one line each; where git's documented behaviour had to
+# be added to make a contract at all, doc_sufficient is false and the addition is noted.
+#
+# v2 (31 October 2026, see CONTRACT_CHANGES.md): agent traffic showed that the server reports a
+# no-op ("No changes were staged: the given paths had nothing new to stage") and argument errors
+# ("Error executing tool git_add: ...") in the result text without the isError flag; such a text
+# excuses the declared effect of the writing tools.  Nothing else changed.
+server: git
+scope:
+  roots: ["{repo_path}"]          # the repository the server was started on
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: true                # a git server is expected to run git (the description does not say so; recorded)
+  network: false
+tools:
+  git_status:        {read_only: true, doc_sufficient: true, notes: "read_only_hint=true, idempotent"}
+  git_diff_unstaged: {read_only: true, doc_sufficient: true}
+  git_diff_staged:   {read_only: true, doc_sufficient: true}
+  git_diff:          {read_only: true, doc_sufficient: true}
+  git_log:           {read_only: true, doc_sufficient: true}
+  git_show:          {read_only: true, doc_sufficient: true}
+  git_branch:        {read_only: true, doc_sufficient: true}
+  git_add:
+    read_only: false
+    fs: {may_modify: ["{repo_path}/.git/index"], may_create: ["{repo_path}/.git/objects/**", "{repo_path}/.git/index"]}
+    expect_effect: {fs_any_of: ["{repo_path}/.git/index"], unless_response_matches: ["No changes were staged", "nothing new to stage", "Error executing tool"]}
+    doc_sufficient: false
+    notes: "'Adds file contents to the staging area' names no files; that the staging area is .git/index plus object blobs is git knowledge, not the tool's documentation"
+  git_commit:
+    read_only: false
+    fs: {may_modify: ["{repo_path}/.git/**"], may_create: ["{repo_path}/.git/**"], may_delete: ["{repo_path}/.git/**"]}
+    expect_effect: {fs_any_of: ["{repo_path}/.git/refs/**", "{repo_path}/.git/logs/**", "{repo_path}/.git/HEAD"], unless_response_matches: ["nothing to commit", "no changes", "nothing added", "Error executing tool"]}
+    doc_sufficient: false
+    notes: "'Records changes to the repository': which files under .git change is git knowledge; the working tree must not change"
+  git_reset:
+    read_only: false
+    fs: {may_modify: ["{repo_path}/.git/index"], may_create: ["{repo_path}/.git/ORIG_HEAD"]}
+    doc_sufficient: false
+    notes: "'Unstages all staged changes' = index only; destructive_hint=true in the annotations although unstaging loses no content"
+  git_create_branch:
+    read_only: false
+    fs: {may_create: ["{repo_path}/.git/refs/heads/{branch_name}", "{repo_path}/.git/logs/refs/heads/{branch_name}", "{repo_path}/.git/logs/refs/heads/**"], may_modify: ["{repo_path}/.git/packed-refs"]}
+    expect_effect: {fs_any_of: ["{repo_path}/.git/refs/heads/{branch_name}", "{repo_path}/.git/packed-refs"], unless_response_matches: ["already exists", "Error executing tool"]}
+    doc_sufficient: false
+  git_checkout:
+    read_only: false
+    fs: {may_modify: ["{repo_path}/**"], may_create: ["{repo_path}/**"], may_delete: ["{repo_path}/**"]}
+    expect_effect: {fs_any_of: ["{repo_path}/.git/HEAD", "{repo_path}/.git/logs/HEAD"], unless_response_matches: ["Already on", "Error executing tool"]}
+    doc_sufficient: false
+    notes: "'Switches branches' legitimately rewrites the working tree; the contract cannot be narrower than the whole repository. Checking out the current branch changes only the reflog (logs/HEAD), so that counts as the declared effect too"

@@ -1,0 +1,127 @@
+server: filesystem
+scope:
+  roots:
+  - '{work}/**'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Deprecated alias of read_text_file; pure read of file content
+  read_text_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Pure read of file content as text, restricted to allowed directories
+  read_media_file:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Pure read of file returned as base64 with MIME type
+  read_multiple_files:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Pure read of multiple files in one call; failed reads do not abort
+  write_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{path}'
+      may_modify:
+      - '{path}'
+    expect_effect:
+      fs_any_of:
+      - '{path}'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Creates new file or overwrites existing file at path in place
+  edit_file:
+    read_only: false
+    fs:
+      may_modify:
+      - '{path}'
+    expect_effect:
+      fs_any_of:
+      - '{path}'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Applies line-based edits in place; dryRun returns a diff without modifying
+      the file
+  create_directory:
+    read_only: false
+    fs:
+      may_create:
+      - '{path}'
+    expect_effect:
+      fs_any_of:
+      - '{path}'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Creates directory at path and any needed parent directories; silent no-op
+      if it already exists
+  list_directory:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Pure read listing directory entries with FILE/DIR prefixes
+  list_directory_with_sizes:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Pure read listing directory entries with sizes, sorted by name or size
+  directory_tree:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Pure read returning recursive JSON tree of directory contents
+  move_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{destination}'
+      may_delete:
+      - '{source}'
+    expect_effect:
+      fs_any_of:
+      - '{destination}'
+      - '{source}'
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Renames/moves source to destination; across mounts copies then removes
+      source; fails if destination exists
+  search_files:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Pure read; recursive glob search returning full paths of matches
+  get_file_info:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Pure read of file/directory metadata including size, times, permissions,
+      hard-link count
+  list_allowed_directories:
+    read_only: true
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Pure read returning the current allowed-directory list (symlink targets
+      listed twice)

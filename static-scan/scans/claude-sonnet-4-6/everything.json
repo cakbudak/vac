@@ -1,0 +1,283 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "Most tool descriptions accurately reflect their implementations. The main undocumented behaviours are: the gzip tool's DNS resolution, redirect-following, domain allowlist enforcement, data-URI bypass, and session/minted resource registration; the long-running-operation tool's progress notifications and blocking sleep; the get-env tool's full-unmasking when GET_ENV_INCLUDE_SECRETS is set; the toggle-simulated-logging tool's immediate first message; and several startup-time behaviours including roots syncing, the process-wide task store, and environment-variable-driven configuration."
+  },
+  "server": "everything",
+  "startup": [
+    {
+      "behaviour": "Generates a random 32-byte AES key for the process-wide requestState codec (roundStateCodec) using crypto.getRandomValues",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server/index.js: createServer/roundStateCodec, line: export const roundStateCodec = createRequestStateCodec({ key: crypto.getRandomValues(new Uint8Array(32)) })",
+      "kind": "state",
+      "observable_from_outside": "none",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Reads environment variables GZIP_MAX_FETCH_SIZE, GZIP_MAX_FETCH_TIME_MILLIS, GZIP_ALLOWED_DOMAINS, GZIP_ALLOW_PRIVATE_IPS at module load time to configure the gzip tool",
+      "documented_in_tool_descriptions": false,
+      "evidence": "tools/gzip-file-as-resource.js: module top-level, lines reading process.env.*",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Reads environment variable GET_ENV_INCLUDE_SECRETS at module load time (used in maskEnv)",
+      "documented_in_tool_descriptions": false,
+      "evidence": "tools/get-env.js: includeSecrets function reads process.env[INCLUDE_SECRETS_VAR]",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "On 2025-era connection, after initialize, calls roots/list on the client and sends the result as a log message; re-requests on notifications/roots/list_changed",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server/index.js: server.server.oninitialized -> setTimeout(() => syncRoots(server), 350); server/roots.js: syncRoots sends logging message",
+      "kind": "network",
+      "observable_from_outside": "network",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "On 2025-era connection, registers resources/subscribe and resources/unsubscribe handlers that maintain a per-instance subscribed URI set",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server/index.js: setSubscriptionHandlers(server, context.subscribed); resources/subscriptions.js",
+      "kind": "state",
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Maintains a process-wide task store (Map) capped at MAX_TASKS=100 entries; sweeps expired tasks on every task-related operation",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server/tasks.js: const tasks = new Map(); sweep(); MAX_TASKS = 100",
+      "kind": "state",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "echo": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-annotated-message": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-env": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Reads process.env at call time, not just credential-masked values; if GET_ENV_INCLUDE_SECRETS is set to a truthy value ('1','true','yes','on') all values including secrets are returned unmasked",
+          "evidence": "tools/get-env.js: maskEnv(process.env) -> includeSecrets check, returns {...env} when truthy",
+          "kind": "config",
+          "observable_from_outside": "none",
+          "security_relevance": "high",
+          "trigger": "conditional on configuration"
+        }
+      ]
+    },
+    "get-header-params": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Reads the HTTP request header 'mcp-param-region' from ctx.http?.req?.headers; returns null for stdio or 2025-era clients",
+          "evidence": "tools/get-header-params.js: registerGetHeaderParamsTool: const regionHeader = ctx.http?.req?.headers.get('mcp-param-region') ?? null",
+          "kind": "network",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Clamps repeat to 1 when undefined (default) rather than rejecting; returns structuredContent alongside text content",
+          "evidence": "tools/get-header-params.js: Array.from({ length: repeat ?? 1 }, ...) and return { content, structuredContent }",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "get-resource-links": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Even resourceIds produce text resources and odd resourceIds produce blob resources; logic is internal and not stated in description",
+          "evidence": "tools/get-resource-links.js: const isText = resourceId % 2 === 0",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "get-resource-reference": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-structured-content": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns hardcoded static weather data for each city (not from any live source); also returns structuredContent alongside the content array",
+          "evidence": "tools/get-structured-content.js: hardcoded switch/case weather objects; return { content, structuredContent: weather }",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "get-sum": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-tiny-image": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "gzip-file-as-resource": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Performs DNS resolution (node:dns/promises lookup) on every request URL and each redirect hop to block private/loopback/link-local addresses, unless GZIP_ALLOW_PRIVATE_IPS=1",
+          "evidence": "tools/gzip-file-as-resource.js: assertPermittedTarget -> raceAbort(lookup(host, {all:true}), signal)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "medium",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Enforces an allowlist of domains via GZIP_ALLOWED_DOMAINS env var; refuses hosts not matching the list when the var is set",
+          "evidence": "tools/gzip-file-as-resource.js: assertPermittedTarget: GZIP_ALLOWED_DOMAINS check",
+          "kind": "config",
+          "observable_from_outside": "none",
+          "security_relevance": "medium",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Follows up to 5 redirects manually, checking each hop against the same IP and domain rules before following",
+          "evidence": "tools/gzip-file-as-resource.js: fetchPermitted: for loop up to MAX_REDIRECTS=5",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "medium",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Enforces a maximum fetch size (default 10 MB, overridable via GZIP_MAX_FETCH_SIZE) and a timeout (default 30 s, overridable via GZIP_MAX_FETCH_TIME_MILLIS)",
+          "evidence": "tools/gzip-file-as-resource.js: GZIP_MAX_FETCH_SIZE, GZIP_MAX_FETCH_TIME_MILLIS, fetchSafely",
+          "kind": "config",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "For 'resourceLink' outputType on a 2025-era client, registers the compressed resource on the per-session server instance (registerSessionResource) making it readable for the session lifetime; on 2026-07-28 mints a URI in the process-wide minted store expiring after 10 minutes (mintBlobResource)",
+          "evidence": "tools/gzip-file-as-resource.js: registerSessionResource / mintBlobResource branch on context.era",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "data URIs are accepted and bypass IP/domain checks (carries its own bytes)",
+          "evidence": "tools/gzip-file-as-resource.js: assertPermittedTarget: if (url.protocol === 'data:') return;",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "medium",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "toggle-simulated-logging": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When enabling, immediately sends one log message before the 5-second interval starts (void send() called before setInterval)",
+          "evidence": "server/logging.js: beginSimulatedLogging: void send(); const interval = setInterval(...)",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "The timer is stopped and the stop function cleared when the server connection closes, via context.onCleanup",
+          "evidence": "tools/toggle-simulated-logging.js: context.onCleanup(() => { stop?.(); stop = undefined; })",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "toggle-subscriber-updates": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "The update timer is stopped and cleaned up when the server connection closes, via context.onCleanup",
+          "evidence": "tools/toggle-subscriber-updates.js: context.onCleanup(() => { stop?.(); stop = undefined; })",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Only sends resource-updated notifications for URIs the client has subscribed to via resources/subscribe (checked against context.subscribed set)",
+          "evidence": "tools/toggle-subscriber-updates.js: beginSimulatedResourceUpdates(server, context.subscribed)",
+          "kind": "state",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "trigger-list-changed": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "trigger-log-messages": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "trigger-long-running-operation": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Sends notifications/progress notifications to the client at each step if a progressToken is present in _meta; uses server.server.notification() directly",
+          "evidence": "tools/trigger-long-running-operation.js: server.server.notification({ method: 'notifications/progress', ... }) when progressToken !== undefined",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Sleeps (setTimeout) for stepDuration seconds between each step, blocking the handler for the full duration",
+          "evidence": "tools/trigger-long-running-operation.js: await new Promise((resolve) => setTimeout(resolve, stepDuration * 1000))",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "trigger-resource-update": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    }
+  }
+}

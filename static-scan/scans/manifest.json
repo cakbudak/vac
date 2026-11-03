@@ -1,0 +1,190 @@
+{
+  "created": "2026-10-30T18:33:12.696489+00:00",
+  "prompts": {
+    "desktop_commander": {
+      "chars": 421195,
+      "files": [
+        "node_modules/@wonderwhy-er/desktop-commander/dist/index.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/bootstrap.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/server.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/config-manager.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/config.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/utils/capture.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/utils/toolHistory.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/utils/usageTracker.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/utils/process-detection.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/utils/system-info.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/track-installation.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/handlers/filesystem-handlers.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/tools/filesystem.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/tools/edit.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/tools/improved-process-tools.js",
+        "node_modules/@wonderwhy-er/desktop-commander/dist/terminal-manager.js"
+      ],
+      "user_sha256": "aeeb8eb001838c6a5c290908650a13e523496709cfefaffa682f933f3c07438c"
+    },
+    "everything": {
+      "chars": 164505,
+      "files": [
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/echo.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/get-annotated-message.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/get-env.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/get-header-params.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/get-resource-links.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/get-resource-reference.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/get-roots-list.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/get-structured-content.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/get-sum.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/get-tiny-image.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/gzip-file-as-resource.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/index.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/simulate-research-query.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/toggle-simulated-logging.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/toggle-subscriber-updates.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-elicitation-request-async.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-elicitation-request.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-list-changed.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-log-messages.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-long-running-operation.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-multi-step-elicitation.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-resource-update.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-sampling-request-async.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-sampling-request.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/tools/trigger-url-elicitation.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/server/context.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/server/index.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/server/logging.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/server/roots.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/server/tasks.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/index.js",
+        "node_modules/@modelcontextprotocol/server-everything/dist/transports/stdio.js"
+      ],
+      "user_sha256": "f1eced817a64d60cfe08d92d080a3c48ecec5b4b50ae851cd02379bdd9db53b3"
+    },
+    "fetch": {
+      "chars": 37385,
+      "files": [
+        "pyenv/lib/python3.13/site-packages/mcp_server_fetch/__init__.py",
+        "pyenv/lib/python3.13/site-packages/mcp_server_fetch/__main__.py",
+        "pyenv/lib/python3.13/site-packages/mcp_server_fetch/server.py"
+      ],
+      "user_sha256": "75baf9e4157dbe33404dd788aa78231586af3de2be780e1c6350db08eb5a609a"
+    },
+    "filesystem": {
+      "chars": 124426,
+      "files": [
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/index.js",
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/lib.js",
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/path-utils.js",
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/path-validation.js",
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/pinned-directory.js",
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/roots-utils.js",
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/server.js",
+        "node_modules/@modelcontextprotocol/server-filesystem/dist/version.js"
+      ],
+      "user_sha256": "1500e34ef17d741e6217eb1a4206adc46f5a48edb797c84a172b20362533acc2"
+    },
+    "git": {
+      "chars": 43901,
+      "files": [
+        "pyenv/lib/python3.13/site-packages/mcp_server_git/__init__.py",
+        "pyenv/lib/python3.13/site-packages/mcp_server_git/__main__.py",
+        "pyenv/lib/python3.13/site-packages/mcp_server_git/server.py"
+      ],
+      "user_sha256": "d37f8d93c1a7d5e86bce69db65b184096f751793abc54355c02883f68a8b4802"
+    },
+    "memory": {
+      "chars": 54924,
+      "files": [
+        "node_modules/@modelcontextprotocol/server-memory/dist/index.js",
+        "node_modules/@modelcontextprotocol/server-memory/dist/version.js"
+      ],
+      "user_sha256": "706de84ab5bd1d3502a8da59029b8d8ebf7eeee0224a9f3c807b8777996aa0ad"
+    },
+    "msb_terminal_false_error": {
+      "chars": 14830,
+      "files": [
+        "msb/data/tools/attack_tools/it_development_management/Terminal_Controller/terminal_controller-out_of_scope_parameter.py",
+        "msb/data/prompt_template.py",
+        "msb/data/attack_task.jsonl"
+      ],
+      "user_sha256": "d3912636728b50d76f38b634a06b63c7cba3c10e68cb4f4e06b7ea7f35702fc4"
+    },
+    "msb_terminal_normal": {
+      "chars": 9823,
+      "files": [
+        "msb/data/tools/attack_tools/it_development_management/Terminal_Controller/terminal_controller.py"
+      ],
+      "user_sha256": "c98898fca663967da3441ca1dcf6ab15e4bdb5a06823b12a6c8f41454f8b07cb"
+    },
+    "msb_terminal_out_of_scope_parameter": {
+      "chars": 14852,
+      "files": [
+        "msb/data/tools/attack_tools/it_development_management/Terminal_Controller/terminal_controller-out_of_scope_parameter.py",
+        "msb/data/prompt_template.py",
+        "msb/data/attack_task.jsonl"
+      ],
+      "user_sha256": "3c1c20541bcad322de2cbe66904693ec67928a0040480ed2c7ecec50dad748f9"
+    },
+    "msb_terminal_tool_transfer": {
+      "chars": 11875,
+      "files": [
+        "msb/data/tools/attack_tools/it_development_management/Terminal_Controller/terminal_controller-tool_transfer.py",
+        "msb/data/prompt_template.py",
+        "msb/data/attack_task.jsonl"
+      ],
+      "user_sha256": "cf22d2895aecb5274a1854606d152fa6a1df99585d9e6ec17bf4581195e03828"
+    },
+    "obsidian": {
+      "chars": 165572,
+      "files": [
+        "node_modules/obsidian-mcp/dist/main.js",
+        "node_modules/obsidian-mcp/dist/cli.js",
+        "node_modules/obsidian-mcp/dist/utils/diagnostics.js",
+        "node_modules/obsidian-mcp/dist/utils/errors.js",
+        "node_modules/obsidian-mcp/dist/utils/hash.js",
+        "node_modules/obsidian-mcp/dist/utils/links.js",
+        "node_modules/obsidian-mcp/dist/utils/logger.js",
+        "node_modules/obsidian-mcp/dist/utils/schemas.js",
+        "node_modules/obsidian-mcp/dist/utils/search.js",
+        "node_modules/obsidian-mcp/dist/utils/tags.js",
+        "node_modules/obsidian-mcp/dist/utils/tool-factory.js",
+        "node_modules/obsidian-mcp/dist/utils/transaction.js",
+        "node_modules/obsidian-mcp/dist/utils/validation.js",
+        "node_modules/obsidian-mcp/dist/utils/vault.js",
+        "node_modules/obsidian-mcp/dist/tools/add-tags/index.js",
+        "node_modules/obsidian-mcp/dist/tools/create-directory/index.js",
+        "node_modules/obsidian-mcp/dist/tools/create-note/index.js",
+        "node_modules/obsidian-mcp/dist/tools/delete-note/index.js",
+        "node_modules/obsidian-mcp/dist/tools/edit-note/index.js",
+        "node_modules/obsidian-mcp/dist/tools/index.js",
+        "node_modules/obsidian-mcp/dist/tools/list-vaults/index.js",
+        "node_modules/obsidian-mcp/dist/tools/manage-tags/index.js",
+        "node_modules/obsidian-mcp/dist/tools/move-note/index.js",
+        "node_modules/obsidian-mcp/dist/tools/read-note/index.js",
+        "node_modules/obsidian-mcp/dist/tools/remove-tags/index.js",
+        "node_modules/obsidian-mcp/dist/tools/rename-tag/index.js",
+        "node_modules/obsidian-mcp/dist/tools/search-vault/index.js",
+        "node_modules/obsidian-mcp/dist/tools/shared/tag-mutation.js"
+      ],
+      "user_sha256": "af20b3bc6b537412be8449cde1246ef04bece3487904a9e337a39471022a459a"
+    },
+    "sqlite": {
+      "chars": 23025,
+      "files": [
+        "pyenv-sqlite/lib/python3.13/site-packages/mcp_server_sqlite/__init__.py",
+        "pyenv-sqlite/lib/python3.13/site-packages/mcp_server_sqlite/server.py"
+      ],
+      "user_sha256": "6a78ac21271d79a8fa991110c20ca70b099b3c7eeff9bf140a3e59201feda188"
+    },
+    "time": {
+      "chars": 15234,
+      "files": [
+        "pyenv/lib/python3.13/site-packages/mcp_server_time/__init__.py",
+        "pyenv/lib/python3.13/site-packages/mcp_server_time/__main__.py",
+        "pyenv/lib/python3.13/site-packages/mcp_server_time/server.py"
+      ],
+      "user_sha256": "3aa8a0fc157096b5f79e570ee7afa863144d5ff81c94a9e839955e92e7620b81"
+    }
+  }
+}

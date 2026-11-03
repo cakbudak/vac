@@ -1,0 +1,29 @@
+# Declared effect contract for mcp-server-sqlite 2025.4.25
+# Derived ONLY from contracts/sqlite.tools.json (one-line descriptions, no annotations) and
+# the --db-path argument the server was started with, before any probe.
+server: sqlite
+scope:
+  roots: ["{db}", "{db}-journal", "{db}-wal", "{db}-shm"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_query:     {read_only: true, doc_sufficient: true, notes: "'Execute a SELECT query'"}
+  list_tables:    {read_only: true, doc_sufficient: true}
+  describe_table: {read_only: true, doc_sufficient: true}
+  write_query:
+    read_only: false
+    fs: {may_modify: ["{db}"], may_create: ["{db}", "{db}-journal"], may_delete: ["{db}-journal"]}
+    expect_effect: {fs_any_of: ["{db}"], unless_response_matches: ["affected_rows': 0", "\"affected_rows\": 0"]}
+    doc_sufficient: true
+  create_table:
+    read_only: false
+    fs: {may_modify: ["{db}"], may_create: ["{db}", "{db}-journal"], may_delete: ["{db}-journal"]}
+    expect_effect: {fs_any_of: ["{db}"], unless_response_matches: ["already exists"]}
+    doc_sufficient: true
+    notes: "CREATE TABLE IF NOT EXISTS on an existing table changes nothing on disk"
+  append_insight:
+    read_only: true          # no file is named; the memo is not the database
+    doc_sufficient: false
+    notes: "'Add a business insight to the memo': the memo's location is undocumented; the effect is observable, if at all, only through the server's own memo resource, not in any channel of this harness"

@@ -1,0 +1,109 @@
+server: filesystem
+scope:
+  roots:
+  - '{work}'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  read_file:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads the complete contents of {path} within the allowed directories; deprecated
+      alias of read_text_file, supports head/tail line limits.
+  read_text_file:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads the complete contents of {path} as text within the allowed directories;
+      supports head/tail but not both together; errors if the file cannot be read
+      or is outside allowed directories.
+  read_media_file:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads {path} within the allowed directories and returns it as a base64
+      content block with MIME type; streams the file.
+  read_multiple_files:
+    read_only: true
+    doc_sufficient: true
+    notes: Reads every path in {paths} within the allowed directories in one call;
+      a failed individual read does not stop the rest.
+  write_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/{path}'
+      may_modify:
+      - '{work}/{path}'
+    expect_effect:
+      fs_any_of:
+      - '{work}/{path}'
+    doc_sufficient: true
+    notes: Creates or fully overwrites {path} in place (same inode, not crash-atomic);
+      the README documents that a hard link is a real name, so overwriting a file
+      that also has a name outside {work} changes content at that outside name too.
+  edit_file:
+    read_only: false
+    fs:
+      may_modify:
+      - '{work}/{path}'
+    doc_sufficient: true
+    notes: Applies line-based edits to {path} within the allowed directories and returns
+      a git-style diff; dryRun=true previews without changing anything, and an edit
+      whose oldText does not match changes nothing.
+  create_directory:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/{path}'
+      - '{work}/**'
+    doc_sufficient: true
+    notes: Creates {path} plus any missing parent directories within the allowed directories;
+      succeeds silently if the directory already exists, so no filesystem change is
+      guaranteed.
+  list_directory:
+    read_only: true
+    doc_sufficient: true
+    notes: Lists files and directories in {path} within the allowed directories with
+      [FILE]/[DIR] prefixes.
+  list_directory_with_sizes:
+    read_only: true
+    doc_sufficient: true
+    notes: Lists files and directories in {path} within the allowed directories with
+      sizes and summary statistics, sorted by name or size.
+  directory_tree:
+    read_only: true
+    doc_sufficient: true
+    notes: Recursive JSON tree of {path} within the allowed directories, skipping
+      {excludePatterns} and visiting at most 100,000 entries.
+  move_file:
+    read_only: false
+    fs:
+      may_create:
+      - '{work}/{destination}'
+      may_delete:
+      - '{work}/{source}'
+    expect_effect:
+      fs_any_of:
+      - '{work}/{destination}'
+    doc_sufficient: true
+    notes: Moves/renames {source} to {destination}, both within the allowed directories,
+      deleting the source; fails if destination exists; a cross-filesystem file move
+      copies to a new destination with permissions and mtime then removes the source,
+      removing the partial destination on failure.
+  search_files:
+    read_only: true
+    doc_sufficient: true
+    notes: Recursively searches {path} within the allowed directories for glob {pattern},
+      skipping {excludePatterns}, visiting at most 100,000 entries.
+  get_file_info:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns metadata (size, times, permissions, type, hardLinks count) for
+      {path} within the allowed directories; the hardLinks count signals other names
+      that a write would also change.
+  list_allowed_directories:
+    read_only: true
+    doc_sufficient: true
+    notes: Returns the server's allowed directories (command-line args, or 2025-era
+      client roots); takes no arguments and changes nothing.

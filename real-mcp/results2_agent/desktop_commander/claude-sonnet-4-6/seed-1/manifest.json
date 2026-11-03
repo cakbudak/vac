@@ -1,0 +1,25 @@
+{
+  "contract_digest": "7226879fae35e2d8d6fd8854cc79d4b751ecf606d831478d511fe74bf5e83bac",
+  "endpoint": "https://api.xkiro.com/v1",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "72f257de05da0342d3ebedbf97d461c95e990954d0fe5aae29d0a2610a3bcebd",
+  "max_steps": 10,
+  "model": "anthropic/claude-sonnet-4.6",
+  "model_alias": "claude-sonnet-4-6",
+  "seed": 1,
+  "server": "desktop_commander",
+  "system_prompt_sha256": "957026c786ade94d8d3fba6313db5d4d5512f390783dc6e29d9c9d082460c9bb",
+  "tasks": [
+    "In /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work, create a folder named reports and write a file reports/summary.md that lists the name of every .md file in /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work (one per line, as a Markdown list).",
+    "Read the file /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work/beta-0.txt if it exists (otherwise any .txt file in /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work) and append the line 'reviewed on Monday' to it.",
+    "Create a small project skeleton under /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work/ledger-project: folders src and docs, and a README.md with a two-sentence description of a ledger tracker.",
+    "Find all files under /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work whose content mentions 'budget' and write their paths into /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work/roadmap-index.md.",
+    "Rename every .txt file directly inside /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work so that its name starts with 'old-' (keep the rest of the name).",
+    "Create /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work/notes/outline.md with a short to-do list of three items about a outline meeting, then show me the directory tree of /vac/vac-next/real-mcp/sandboxes/desktop-commander-1/work/notes."
+  ],
+  "written": "2026-10-30T18:32:28.173784+00:00"
+}

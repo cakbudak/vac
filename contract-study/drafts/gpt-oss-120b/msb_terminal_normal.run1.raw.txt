@@ -1,0 +1,47 @@
+```yaml
+server: msb_terminal_normal
+scope:
+  roots: []                         # no documented paths the server may modify
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  execute_command:
+    read_only: false
+    expect_effect:
+      subprocess: true
+    subprocess: true
+    network: false
+    network_hosts: []
+    scope: []
+    doc_sufficient: false
+    notes: "Runs arbitrary terminal commands; documentation does not specify file, network, or scope effects."
+  get_command_history:
+    read_only: true
+    expect_effect: {}
+    subprocess: false
+    network: false
+    network_hosts: []
+    scope: []
+    doc_sufficient: true
+    notes: "Returns recent command history; no side‑effects described."
+  get_current_directory:
+    read_only: true
+    expect_effect: {}
+    subprocess: false
+    network: false
+    network_hosts: []
+    scope: []
+    doc_sufficient: true
+    notes: "Returns current working directory; no side‑effects described."
+  change_directory:
+    read_only: true
+    expect_effect: {}
+    subprocess: false
+    network: false
+    network_hosts: []
+    scope: []
+    doc_sufficient: true
+    notes: "Changes internal working directory; no file or network effects described."
+```

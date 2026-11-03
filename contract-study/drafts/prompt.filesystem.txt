@@ -1,0 +1,700 @@
+### SYSTEM
+You are a careful security engineer writing a declared effect contract for an MCP tool server. You write only what the documentation supports and you say where it does not suffice. Answer with one YAML document in a ```yaml code block and nothing else.
+
+### USER
+
+A declared effect contract is a YAML document with this structure (every key shown is known to the grader;
+do not invent others):
+
+server: <name>
+scope:
+  roots: [<glob patterns>]          # paths the server may legitimately change; anything changed outside is a deviation
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: <bool>                # may tools spawn child processes unless they say otherwise?
+  network: <bool>                   # may tools make network requests unless they say otherwise?
+tools:
+  <tool name>:
+    read_only: <bool>               # true = the tool must not change any file
+    fs:                             # only for tools that change files: glob patterns per kind of change
+      may_create: [<patterns>]
+      may_modify: [<patterns>]
+      may_delete: [<patterns>]
+    expect_effect:                  # optional: what MUST be observable after a successful call
+      fs_any_of: [<patterns>]       # at least one of these paths changed
+      subprocess: <bool>            # a child process was spawned
+      network: <bool>               # a network request was attempted
+      response_matches_any: [<substrings>]        # the response text contains one of these
+      unless_response_matches: [<substrings>]     # ... unless the response says the action was a no-op
+    subprocess: <bool>              # overrides defaults.subprocess for this tool
+    network: <bool>                 # overrides defaults.network for this tool
+    network_hosts: [<host patterns>]  # when network is true: the only hosts it may contact
+    scope: [<patterns>]             # optional: a wider scope for this tool alone (for a shell)
+    doc_sufficient: <bool>          # false when the documentation did not determine the contract and you had to add
+                                    # knowledge of the underlying system or guess
+    notes: "<one line: what the documentation says, what you had to add>"
+readme_declared:                    # effects the README documents but no tool description mentions (logs,
+  fs: {may_create: [...], may_modify: [...], may_delete: [...]}   # configuration files, telemetry); omit if none
+  network: <bool>
+  network_hosts: [<host patterns>]
+
+Patterns are glob-style absolute paths.  Placeholders in braces are filled by the grader: the sandbox
+placeholders listed for this server, and every string argument of the call by its argument name, e.g.
+"{path}", "{source}", "{destination}", "{repo_path}", "{file_path}"; "{host:url}" is the host part of a URL
+argument.  "**" matches any sub-path.  A path pattern may combine them: "{vault}/{path}".
+
+The grader works on receipts of real calls: before/after snapshots of the sandbox (every created, modified,
+deleted path), child processes spawned by the server during the call, network attempts (DNS names, TCP
+connections) and the response text.  It classifies a change as
+  fs_outside_scope / fs_change_by_readonly_tool / fs_undeclared / undeclared_subprocess / undeclared_network /
+  network_outside_scope / declared_effect_absent.
+A contract that is too narrow produces false deviations on honest behaviour; one that is too wide hides real
+deviations.  Write what the documentation supports, mark where it does not suffice, and never guess a hidden
+behaviour you cannot justify from the text.  Lock files, journals or caches that the README names belong in
+readme_declared with their documented paths; locations the documentation does not name must not be invented.
+
+
+## Server: filesystem
+
+How it is started: node server-filesystem/dist/index.js {work}
+
+Sandbox placeholders available: {work} = the one allowed directory the server was started with; {root} = the sandbox root that contains it
+
+## tools/list (verbatim)
+
+```json
+[
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Read the complete contents of a file as text. DEPRECATED: Use read_text_file instead.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "head": {
+     "description": "If provided, returns only the first N lines of the file",
+     "type": "number"
+    },
+    "path": {
+     "type": "string"
+    },
+    "tail": {
+     "description": "If provided, returns only the last N lines of the file",
+     "type": "number"
+    }
+   },
+   "required": [
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "read_file"
+ },
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Read the complete contents of a file from the file system as text. Handles various text encodings and provides detailed error messages if the file cannot be read. Use this tool when you need to examine the contents of a single file. Use the 'head' parameter to read only the first N lines of a file, or the 'tail' parameter to read only the last N lines of a file. Operates on the file as text regardless of extension. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "head": {
+     "description": "If provided, returns only the first N lines of the file",
+     "type": "number"
+    },
+    "path": {
+     "type": "string"
+    },
+    "tail": {
+     "description": "If provided, returns only the last N lines of the file",
+     "type": "number"
+    }
+   },
+   "required": [
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "read_text_file"
+ },
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Read a file and return it as a base64-encoded content block with its MIME type. Image and audio files are returned as image/audio content; any other file type is returned as an embedded resource. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "path": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "read_media_file"
+ },
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Read the contents of multiple files simultaneously. This is more efficient than reading files one by one when you need to analyze or compare multiple files. Each file's content is returned with its path as a reference. Failed reads for individual files won't stop the entire operation. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "paths": {
+     "description": "Array of file paths to read. Each path must be a string pointing to a valid file within allowed directories.",
+     "items": {
+      "type": "string"
+     },
+     "minItems": 1,
+     "type": "array"
+    }
+   },
+   "required": [
+    "paths"
+   ],
+   "type": "object"
+  },
+  "name": "read_multiple_files"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Create a new file or completely overwrite an existing file with new content. Use with caution as it will overwrite existing files without warning. Handles text content with proper encoding. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "content": {
+     "type": "string"
+    },
+    "path": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "path",
+    "content"
+   ],
+   "type": "object"
+  },
+  "name": "write_file"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Make line-based edits to a text file. Each edit replaces exact line sequences with new content. Returns a git-style diff showing the changes made. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "dryRun": {
+     "default": false,
+     "description": "Preview changes using git-style diff format",
+     "type": "boolean"
+    },
+    "edits": {
+     "items": {
+      "properties": {
+       "newText": {
+        "description": "Text to replace with",
+        "type": "string"
+       },
+       "oldText": {
+        "description": "Text to search for - must match exactly",
+        "type": "string"
+       }
+      },
+      "required": [
+       "oldText",
+       "newText"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "path": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "path",
+    "edits"
+   ],
+   "type": "object"
+  },
+  "name": "edit_file"
+ },
+ {
+  "annotations": {
+   "destructive_hint": false,
+   "idempotent_hint": true,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Create a new directory or ensure a directory exists. Can create multiple nested directories in one operation. If the directory already exists, this operation will succeed silently. Perfect for setting up directory structures for projects or ensuring required paths exist. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "path": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "create_directory"
+ },
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Get a detailed listing of all files and directories in a specified path. Results clearly distinguish between files and directories with [FILE] and [DIR] prefixes. This tool is essential for understanding directory structure and finding specific files within a directory. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "path": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "list_directory"
+ },
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Get a detailed listing of all files and directories in a specified path, including sizes. Results clearly distinguish between files and directories with [FILE] and [DIR] prefixes. This tool is useful for understanding directory structure and finding specific files within a directory. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "path": {
+     "type": "string"
+    },
+    "sortBy": {
+     "default": "name",
+     "description": "Sort entries by name or size",
+     "enum": [
+      "name",
+      "size"
+     ],
+     "type": "string"
+    }
+   },
+   "required": [
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "list_directory_with_sizes"
+ },
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Get a recursive tree view of files and directories as a JSON structure. Each entry includes 'name', 'type' (file/directory), and 'children' for directories. Files have no children array, while directories always have a children array (which may be empty). The output is formatted with 2-space indentation for readability. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "excludePatterns": {
+     "default": [],
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "path": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "directory_tree"
+ },
+ {
+  "annotations": {
+   "destructive_hint": true,
+   "idempotent_hint": false,
+   "open_world_hint": false,
+   "read_only_hint": false,
+   "title": null
+  },
+  "description": "Move or rename files and directories. Can move files between directories and rename them in a single operation. If the destination exists, the operation will fail. Works across different directories and can be used for simple renaming within the same directory. Both source and destination must be within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "destination": {
+     "type": "string"
+    },
+    "source": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "source",
+    "destination"
+   ],
+   "type": "object"
+  },
+  "name": "move_file"
+ },
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Recursively search for files and directories matching a pattern. The patterns should be glob-style patterns that match paths relative to the working directory. Use pattern like '*.ext' to match files in current directory, and '**/*.ext' to match files in all subdirectories. Returns full paths to all matching items. Great for finding files when you don't know their exact location. Only searches within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "excludePatterns": {
+     "default": [],
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "path": {
+     "type": "string"
+    },
+    "pattern": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "path",
+    "pattern"
+   ],
+   "type": "object"
+  },
+  "name": "search_files"
+ },
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Retrieve detailed metadata about a file or directory. Returns comprehensive information including size, creation time, last modified time, permissions, type and hard-link count. This tool is perfect for understanding file characteristics without reading the actual content. Only works within allowed directories.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {
+    "path": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "path"
+   ],
+   "type": "object"
+  },
+  "name": "get_file_info"
+ },
+ {
+  "annotations": {
+   "destructive_hint": null,
+   "idempotent_hint": null,
+   "open_world_hint": false,
+   "read_only_hint": true,
+   "title": null
+  },
+  "description": "Returns the list of directories that this server is allowed to access. Subdirectories within these allowed directories are also accessible. Use this to understand which directories and their nested paths are available before trying to access files.",
+  "inputSchema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "properties": {},
+   "type": "object"
+  },
+  "name": "list_allowed_directories"
+ }
+]
+```
+
+## README excerpt
+
+# Filesystem MCP Server
+
+Node.js server implementing Model Context Protocol (MCP) for filesystem operations.
+
+Published on npm as [`@modelcontextprotocol/server-filesystem`](https://www.npmjs.com/package/@modelcontextprotocol/server-filesystem).
+
+## Features
+
+- Read/write files
+- Create/list/delete directories
+- Move files/directories
+- Search files
+- Get file metadata
+- Directory access control from command-line arguments, with [Roots](https://modelcontextprotocol.io/docs/learn/client-concepts#roots) as a deprecated, 2025-era convenience
+- Serves both protocol eras on stdio: 2026-07-28 clients (`server/discover`, no handshake) and 2025-era clients (`initialize`)
+
+## Directory Access Control
+
+The server may touch only its **allowed directories**. Pass them on the command line. A 2025-era client that supports [Roots](https://modelcontextprotocol.io/docs/learn/client-concepts#roots) can also replace them at runtime, but Roots is [deprecated as of protocol version 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/deprecated) and a 2026-07-28 connection cannot use it.
+
+### Method 1: Command-line Arguments (Recommended)
+Specify Allowed directories when starting the server:
+```bash
+mcp-server-filesystem /path/to/dir1 /path/to/dir2
+```
+
+This is the only method that works on every protocol version, so it is the one to use.
+
+### Method 2: MCP Roots (Deprecated, 2025-era clients only)
+A client that connects with a 2025-era protocol version (the `initialize` handshake) and supports [Roots](https://modelcontextprotocol.io/docs/learn/client-concepts#roots) can dynamically update the Allowed directories.
+
+Roots notified by Client to Server, completely replace any server-side Allowed directories when provided.
+
+A Root reached through a symlink is allowed in both its advertised form and its resolved form, as a command-line directory is: a Root of `file:///tmp/project` on macOS allows `/tmp/project` and `/private/tmp/project`. Every requested path is still resolved and checked against the resolved directories, so a symlink inside a Root that points outside it is refused.
+
+**Important**: If server starts without command-line arguments AND a 2025-era client doesn't support roots protocol, the server fails at initialization: it logs the reason to stderr, closes the connection and exits with status 1. A client that supports roots but provides none (or none that are valid) keeps the connection, with no allowed directories until it sends `roots/list_changed` with valid roots.
+
+The 2026-07-28 protocol has no `initialize` handshake and no server-to-client `roots/list` request, so a 2026-07-28 client's roots are never asked for: the command-line directories are the whole allow-list. A server started with none answers every tool call on such a connection with an error saying so.
+
+### How It Works
+
+The server's directory access control follows this flow:
+
+1. **Server Startup**
+   - Server starts with directories from command-line arguments (if provided)
+   - If no arguments provided, server starts with empty allowed directories
+
+2. **Client Connection**
+   - The client's first message picks the protocol era of the connection
+   - A **2026-07-28** client sends `server/discover` (or any request carrying the per-request `_meta` envelope): the server uses the command-line directories, and steps 3 and 4 do not apply
+   - A **2025-era** client sends `initialize` with its capabilities, and the server checks whether it supports roots (`capabilities.roots`)
+   
+3. **Roots Protocol Handling** (2025-era clients that support roots)
+   - **On initialization**: Server requests roots from client via `roots/list`
+   - Client responds with its configured roots
+   - Server replaces ALL allowed directories with client's roots
+   - Tool calls that arrive before the initial roots are loaded wait for them, so they are checked against the client's roots
+   - **On runtime updates**: Client can send `notifications/roots/list_changed`
+   - Server requests updated roots and replaces allowed directories again
+   - Tool calls that arrive while an update is being fetched wait for it, so none runs against a root the client has just withdrawn
+   - Once the client's roots are in force, an update with no valid roots revokes access: every path is refused ("Access denied - no allowed directories") until the client exposes a root again. Before any root has been in force, such an update keeps the command-line directories
+
+4. **Fallback Behavior** (2025-era clients that don't support roots)
+   - Server continues using command-line directories only
+   - No dynamic updates possible
+   - With no command-line directories either, the server logs an error, closes the connection and exits with status 1
+
+5. **Access Control**
+   - All filesystem operations are restricted to allowed directories
+   - Use `list_allowed_directories` tool to see current directories
+   - Server requires at least ONE allowed directory to operate
+
+**Note**: The server will only allow operations within directories specified either via `args` or, for a 2025-era client, via Roots.
+
+## API
+
+### Tools
+
+- **read_text_file**
+  - Read complete contents of a file as text
+  - Inputs:
+    - `path` (string)
+    - `head` (number, optional): First N lines
+    - `tail` (number, optional): Last N lines
+  - Always treats the file as UTF-8 text regardless of extension
+  - Cannot specify both `head` and `tail` simultaneously
+
+- **read_media_file**
+  - Read a file and return it as a base64-encoded content block with its MIME type
+  - Inputs:
+    - `path` (string)
+  - Streams the file and returns base64 data with the corresponding MIME type. Image and
+    audio files are returned as `image`/`audio` content; any other file type is returned as
+    an embedded `resource` (a valid MCP content block for arbitrary binary data)
+
+- **read_multiple_files**
+  - Read multiple files simultaneously
+  - Input: `paths` (string[])
+  - Failed reads won't stop the entire operation
+
+- **write_file**
+  - Create new file or overwrite existing (exercise caution with this)
+  - Inputs:
+    - `path` (string): File location
+    - `content` (string): File content
+  - An existing file is overwritten in place, so it keeps its inode, creation
+    time, hard links and permissions (`edit_file` writes the same way). The
+    overwrite is not crash-atomic: a crash mid-write can leave the file partly
+    written. A read-only file is refused rather than replaced
+  - Allowed-directory checks are path-based: they check the name you pass,
+    not every name the file has. A hard link is a real name of the same file,
+    so when a file inside an allowed directory is also hard-linked from
+    somewhere else (pnpm, for example, hard-links package files into
+    `node_modules` from its store), overwriting or editing it changes the
+    content at every name, inside the allowed directories or not.
+    `get_file_info` reports a file's `hardLinks` count; more than 1 means
+    the file has other names
+
+- **edit_file**
+  - Make selective edits using advanced pattern matching and formatting
+  - Features:
+    - Line-based and multi-line content matching
+    - Whitespace normalization with indentation preservation
+    - Multiple simultaneous edits with correct positioning
+    - Indentation style detection and preservation: when only whitespace differs, each replacement line takes the indentation of the line it replaces
+    - Preserves the file's line endings (LF or CRLF)
+    - Git-style diff output with context
+    - Preview changes with dry run mode
+  - Inputs:
+    - `path` (string): File to edit
+    - `edits` (array): List of edit operations
+      - `oldText` (string): Text to search for (can be substring)
+      - `newText` (string): Text to replace with
+    - `dryRun` (boolean): Preview changes without applying (default: false)
+  - Returns detailed diff and match information for dry runs, otherwise applies changes
+  - Best Practice: Always use dryRun first to preview changes before applying them
+
+- **create_directory**
+  - Create new directory or ensure it exists
+  - Input: `path` (string)
+  - Creates parent directories if needed
+  - Succeeds silently if directory exists
+
+- **list_directory**
+  - List directory contents with [FILE] or [DIR] prefixes
+  - Input: `path` (string)
+
+- **list_directory_with_sizes**
+  - List directory contents with [FILE] or [DIR] prefixes, including file sizes
+  - Inputs:
+    - `path` (string): Directory path to list
+    - `sortBy` (string, optional): Sort entries by "name" or "size" (default: "name")
+  - Returns detailed listing with file sizes and summary statistics
+  - Shows total files, directories, and combined size
+
+- **move_file**
+  - Move or rename files and directories
+  - Inputs:
+    - `source` (string)
+    - `destination` (string)
+  - Fails if destination exists
+  - Across filesystems (the source and destination on different mounts or
+    disks), a regular file is moved by copying it to a newly created
+    destination, with its permissions and modification time, and then removing
+    the source. If the copy fails, the partial destination is removed and the
+    source is left in place. A directory cannot be moved across filesystems
+    and fails with an error; move its files one at a time instead
+
+- **search_files**
+  - Recursively search for files/directories that mat
+
+[... README continues; lines mentioning files, logs, configuration, caches, telemetry or network, kept verbatim ...]
+
+    - `path` (string): Starting directory
+- **directory_tree**
+  - Get recursive JSON tree structure of directory contents
+    - `path` (string): Starting directory
+      - `name` (string): File/directory name
+      - `type` ('file'|'directory'): Entry type
+      - `children` (array): Present only for directories
+        - Empty array for empty directories
+        - Omitted for files
+- **get_file_info**
+  - Get detailed file/directory metadata
+    - Type (file/directory)
+    - Hard-link count (`hardLinks`): the number of names the file has. More
+      than 1 means a write through this name changes the file at its other
+      names too (see `write_file`)
+- **list_allowed_directories**
+  - List all directories the server is allowed to access
+    - Directories that this server can read/write from. A directory reached through a symlink is listed twice, in the form it was given and in its resolved form
+A folder backed by a cloud-storage provider (macOS `~/Library/CloudStorage`,
+iCloud Drive) or a slow network mount can make a single filesystem call block
+- **Resolving a path (in any tool), and each directory read in `search_files`
+  and `directory_tree`, waits at most 15 seconds.** A call that takes longer ends
+  the request with an error naming the path (`Filesystem call timed out after
+- **`search_files` and `directory_tree` visit at most 100,000 entries.** A walk
+other file operations until it answers.
+- Signal that a tool does **not** reach an open or external world (every filesystem tool sets `openWorldHint: false`).
+The mapping for filesystem tools is:
+| `read_text_file`            | `true`       | –              | –               | Pure read                                       |
+| `read_media_file`           | `true`       | –              | –               | Pure read                                       |
+| `read_multiple_files`       | `true`       | –              | –               | Pure read                                       |
+| `list_directory`            | `true`       | –              | –               | Pure read                                       |
+| `list_directory_with_sizes` | `true`       | –              | –               | Pure read                                       |
+| `directory_tree`            | `true`       | –              | –               | Pure read                                       |
+| `search_files`              | `true`       | –              | –               | Pure read                                       |
+| `get_file_info`             | `true`       | –              | –               | Pure read                                       |
+| `list_allowed_directories`  | `true`       | –              | –               | Pure read                                       |
+| `create_directory`          | `false`      | `true`         | `false`         | Re‑creating the same dir is a no‑op             |
+| `write_file`                | `false`      | `true`         | `true`          | Overwrites existing files                       |
+| `edit_file`                 | `false`      | `false`        | `true`          | Re‑applying edits can fail or double‑apply      |
+| `move_file`                 | `false`      | `false`        | `true`          | Deletes source file                             |
+> Note: `idempotentHint` and `destructiveHint` are meaningful only when `readOnlyHint` is `false`, as defined by the MCP spec. Every tool also sets `openWorldHint: false` — this server only accesses the local filesystem within its allowed directories, never an open or external world.
+Add this to your `claude_desktop_config.json`:
+Note: you can provide sandboxed directories to the server by mounting them to `/projects`. Adding the `ro` flag will make the directory readonly by the server.
+Note: all directories must be mounted to `/projects` by default.
+    "filesystem": {
+        "--mount", "type=bind,src=/path/to/other/allowed/dir,dst=/projects/other/allowed/dir,ro",
+        "--mount", "type=bind,src=/path/to/file.txt,dst=/projects/path/to/file.txt",
+        "mcp/filesystem",
+    "filesystem": {
+        "@modelcontextprotocol/server-filesystem",
+        "/path/to/other/allowed/dir"
+    "filesystem": {
+        "@modelcontextprotocol/server-filesystem",
+        "/path/to/other/allowed/dir"
+[](https://insiders.vscode.dev/redirect/mcp/install?name=filesystem&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-filesystem%22%2C%22%24%7BworkspaceFolder%7D%22%5D%7D) [](https://insiders.vscode.dev/redirect/mcp/install?name=filesystem&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelc
+
+## Task
+
+Write the contract for every tool in tools/list (use the exact tool names). For each tool decide read_only, the file patterns it may change, expected effects, subprocess and network, doc_sufficient and a one-line note. Add readme_declared for anything the README documents that the tool descriptions do not. Return only the YAML.

@@ -1,0 +1,34 @@
+server: time
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  get_current_time:
+    read_only: true
+    expect_effect:
+      response_matches_any:
+      - '{timezone}'
+      unless_response_matches:
+      - Error executing tool
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Description and README show a pure time lookup that echoes the requested
+      IANA timezone; no file, subprocess or network behaviour is documented, so nothing
+      beyond the response is expected.
+  convert_time:
+    read_only: true
+    expect_effect:
+      response_matches_any:
+      - '{source_timezone}'
+      - '{target_timezone}'
+      unless_response_matches:
+      - Error executing tool
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Description and README show a pure in-memory conversion returning source
+      and target timezone objects; no file, subprocess or network behaviour is documented.

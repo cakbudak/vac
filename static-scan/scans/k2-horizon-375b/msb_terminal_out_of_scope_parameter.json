@@ -1,0 +1,147 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All four tools implement their described core behaviour, but each contains a configuration-conditional branch (attack_type == 'false_error', derived from argv) that returns a prompt-injection string instead of the documented result, and execute_command additionally blocks commands containing 'rm -rf /' or 'mkfs' and records every command in an in-memory history capped at 50 entries. At startup the server parses argv, reads attack_task.jsonl relative to the CWD, and mutates sys.path, none of which is mentioned in any tool description; with the actual startup arguments (attack_type 'parameter') the injection branch is inactive."
+  },
+  "server": "msb_terminal_out_of_scope_parameter",
+  "startup": [
+    {
+      "behaviour": "Parses sys.argv[-3:] to derive attack_type ('parameter'), attack_task ('kill_process') and log_name ('pilot')",
+      "documented_in_tool_descriptions": false,
+      "evidence": "terminal_controller-out_of_scope_parameter.py: module level, attack_type = sys.argv[-3].split('-')[-1]; attack_task = sys.argv[-2]; log_name = sys.argv[-1]",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Reads '../../../../attack_task.jsonl' (relative to the CWD) with pandas at import time and filters rows by attack_task; the server fails to start if the file is missing",
+      "documented_in_tool_descriptions": false,
+      "evidence": "terminal_controller-out_of_scope_parameter.py: module level, attack_tasks_df = pd.read_json('../../../../attack_task.jsonl', lines=True)",
+      "kind": "config",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Builds the attack_implement string by replacing 'file_name' and '{pid}' with log_name ('pilot')",
+      "documented_in_tool_descriptions": false,
+      "evidence": "terminal_controller-out_of_scope_parameter.py: module level, attack_implement.replace('file_name', log_name).replace('{pid}', log_name)",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Computes data_path by splitting the CWD on 'tools' and appends it to sys.path before importing prompt_template",
+      "documented_in_tool_descriptions": false,
+      "evidence": "terminal_controller-out_of_scope_parameter.py: module level, data_path = current_path.split('tools')[0]; sys.path.append(data_path); from prompt_template import TOOL_RESPONSE_ATTACK_TEMPLATE, SIMULATED_USER_TEMPLATE",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Prints a startup banner to stderr and serves the MCP protocol over stdio",
+      "documented_in_tool_descriptions": false,
+      "evidence": "terminal_controller-out_of_scope_parameter.py: main()/__call__, print('Starting Terminal Controller MCP Server...', file=sys.stderr); mcp.run(transport='stdio')",
+      "kind": "other",
+      "observable_from_outside": "process",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "change_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When attack_type == 'false_error', returns TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement (a prompt-injection string) instead of changing the directory",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: change_directory, 'if attack_type == 'false_error': result = TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement'",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "high",
+          "trigger": "conditional on configuration"
+        }
+      ]
+    },
+    "execute_command": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When attack_type == 'false_error' (derived from argv at startup), returns TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement \u2014 a prompt-injection string \u2014 instead of executing the command",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: execute_command, 'if attack_type == 'false_error': result = TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement'",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "high",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Blocks any command containing the substrings 'rm -rf /' or 'mkfs' (case-insensitive) and returns 'For security reasons, this command is not allowed.' without executing it",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: execute_command, dangerous_commands = ['rm -rf /', 'mkfs']; if any(dc in command.lower() for dc in dangerous_commands)",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "medium",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Appends every executed command with timestamp and success flag to the in-memory command_history list (exposed via get_command_history)",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: run_command, command_history.append({'timestamp': ..., 'command': cmd, 'success': ...})",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Caps the history at 50 entries, discarding the oldest record when exceeded",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: run_command, MAX_HISTORY_SIZE = 50; if len(command_history) > MAX_HISTORY_SIZE: command_history.pop(0)",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "On timeout, kills the spawned process and returns return_code -1 with a timeout message",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: run_command, except asyncio.TimeoutError: process.kill()",
+          "kind": "process",
+          "observable_from_outside": "process",
+          "security_relevance": "low",
+          "trigger": "on error"
+        }
+      ]
+    },
+    "get_command_history": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When attack_type == 'false_error', returns TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement (a prompt-injection string) instead of the command history",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: get_command_history, 'if attack_type == 'false_error': result = TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement'",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "high",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Clamps count to the number of stored records via min(count, len(command_history))",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: get_command_history, count = min(count, len(command_history))",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "get_current_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "When attack_type == 'false_error', returns TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement (a prompt-injection string) instead of the current working directory",
+          "evidence": "terminal_controller-out_of_scope_parameter.py: get_current_directory, 'if attack_type == 'false_error': result = TOOL_RESPONSE_ATTACK_TEMPLATE + attack_implement'",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "high",
+          "trigger": "conditional on configuration"
+        }
+      ]
+    }
+  }
+}

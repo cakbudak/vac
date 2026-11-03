@@ -1,0 +1,156 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "substantial",
+    "summary": "The gzip-file-as-resource tool's description omits critical security and operational details: it performs network fetches with redirect following, domain allowlisting, private IP blocking, size limits, and timeout enforcement that are not documented. All other tools match their descriptions accurately."
+  },
+  "server": "everything",
+  "startup": [
+    {
+      "behaviour": "Reads GZIP_MAX_FETCH_SIZE, GZIP_MAX_FETCH_TIME_MILLIS, GZIP_ALLOWED_DOMAINS, and GZIP_ALLOW_PRIVATE_IPS environment variables at module load time to configure the gzip-file-as-resource tool's fetch behaviour",
+      "documented_in_tool_descriptions": false,
+      "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/tools/gzip-file-as-resource.js: module-level const declarations (lines ~20-40)",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Generates a random 32-byte key for the process-wide requestState codec used to sign and verify multi-round-trip elicitation state",
+      "documented_in_tool_descriptions": false,
+      "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/server/index.js: roundStateCodec = createRequestStateCodec({ key: crypto.getRandomValues(new Uint8Array(32)), ttlSeconds: 600 })",
+      "kind": "state",
+      "observable_from_outside": "none",
+      "security_relevance": "medium"
+    }
+  ],
+  "tools": {
+    "echo": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-annotated-message": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-env": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-header-params": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-resource-links": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-resource-reference": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-structured-content": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-sum": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "get-tiny-image": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "gzip-file-as-resource": {
+      "declared_effect_not_implemented": null,
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Fetches the URL provided in the 'data' argument using HTTP/HTTPS, following up to 5 redirects manually with each hop validated",
+          "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/tools/gzip-file-as-resource.js: fetchPermitted() function, MAX_REDIRECTS = 5, REDIRECT_STATUSES set",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "high",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Validates the target domain against GZIP_ALLOWED_DOMAINS environment variable (comma-separated allowlist) on every request and redirect hop",
+          "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/tools/gzip-file-as-resource.js: assertPermittedTarget() function, GZIP_ALLOWED_DOMAINS check",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "high",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Resolves the target hostname via DNS and refuses the request if any resolved address is loopback, private, link-local, or otherwise non-public (unless GZIP_ALLOW_PRIVATE_IPS is set)",
+          "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/tools/gzip-file-as-resource.js: assertPermittedTarget() function, lookup() call, isNonPublic() check, NON_PUBLIC_ADDRESSES BlockList",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "high",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Enforces a maximum fetch size (default 10MB, configurable via GZIP_MAX_FETCH_SIZE) and aborts if the response exceeds it",
+          "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/tools/gzip-file-as-resource.js: fetchSafely() function, GZIP_MAX_FETCH_SIZE constant, totalSize check in reader loop",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "medium",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Enforces a maximum fetch timeout (default 30 seconds, configurable via GZIP_MAX_FETCH_TIME_MILLIS) and aborts if exceeded",
+          "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/tools/gzip-file-as-resource.js: fetchSafely() function, GZIP_MAX_FETCH_TIME_MILLIS constant, setTimeout with AbortController",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "medium",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Refuses URLs with protocols other than http, https, or data",
+          "evidence": "node_modules/@modelcontextprotocol/server-everything/dist/tools/gzip-file-as-resource.js: assertPermittedTarget() function, protocol check",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "medium",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "toggle-simulated-logging": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "toggle-subscriber-updates": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "trigger-list-changed": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "trigger-log-messages": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "trigger-long-running-operation": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "trigger-resource-update": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    }
+  }
+}

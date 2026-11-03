@@ -1,0 +1,315 @@
+{
+  "background_net": [],
+  "channel_observations": {
+    "background_net_attempts": 0,
+    "background_net_names": [],
+    "calls_with_children": 0,
+    "calls_with_fs_change": 22,
+    "mean_sampler_samples_per_call": 5.5,
+    "net_attempts": 0,
+    "net_names": [],
+    "proxy_requests": 0,
+    "remote_sockets": 0
+  },
+  "contract_digest": "40462f07a6182b5cacbfbe2763888704a1f8e9c4edc5d51b06639011edf7c284",
+  "description": "Reference sqlite server; one database file plus an in-memory insights memo.",
+  "deviation_kinds_total": {},
+  "deviation_kinds_total_tools_list": {},
+  "finished": "2026-10-31T00:33:20.292255+00:00",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "heldout": {
+    "actions": 23,
+    "per_tool": {
+      "append_insight": {
+        "actions": 4,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 4,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 4
+          }
+        }
+      },
+      "create_table": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "describe_table": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "list_tables": {
+        "actions": 1,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 0
+          }
+        }
+      },
+      "read_query": {
+        "actions": 6,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 3,
+            "block": 0,
+            "review": 3
+          },
+          "3-junta": {
+            "allow": 1,
+            "block": 0,
+            "review": 5
+          }
+        }
+      },
+      "write_query": {
+        "actions": 10,
+        "deviations": 0,
+        "deviations_tools_list": 0,
+        "errors": 0,
+        "verdicts": {
+          "2-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 10
+          },
+          "3-junta": {
+            "allow": 0,
+            "block": 0,
+            "review": 10
+          }
+        }
+      }
+    },
+    "tallies": {
+      "2-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 10,
+        "safe_blocked": 0,
+        "safe_reviewed": 13
+      },
+      "3-junta": {
+        "dev_allowed": 0,
+        "dev_blocked": 0,
+        "dev_reviewed": 0,
+        "errors": 0,
+        "safe_allowed": 4,
+        "safe_blocked": 0,
+        "safe_reviewed": 19
+      }
+    }
+  },
+  "install_digest": "6fd28242421a9fea6bea2c1ad046dae8ce750f13116d70bacc9633cdf437a082",
+  "kind": "reference",
+  "label_level": "readme",
+  "learners": [
+    "2-junta",
+    "3-junta"
+  ],
+  "net_isolation": "netns_veth_tcpdump",
+  "per_tool_train": {
+    "append_insight": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": false,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 4
+    },
+    "create_table": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "describe_table": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "list_tables": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 1
+    },
+    "read_query": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 6
+    },
+    "write_query": {
+      "deviation_kinds": {},
+      "deviation_kinds_tools_list": {},
+      "deviations": 0,
+      "deviations_tools_list": 0,
+      "doc_sufficient": true,
+      "errors": 0,
+      "first_deviation_probe": null,
+      "flags": {},
+      "probes": 10
+    }
+  },
+  "sandbox": "/vac/vac-next/real-mcp/sandboxes/sqlite-1",
+  "seed": 1,
+  "served_definition_digest": "77fd6e7d3a615ecb2cddce6422c6712283eca1200086ee5f8845060a0c924795",
+  "server": "sqlite",
+  "setup": {
+    "calls": 0,
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "kinds_tools_list": []
+  },
+  "source": "PyPI mcp-server-sqlite==2025.4.25 (archived reference server; needs mcp<2)",
+  "started": "2026-10-31T00:33:12.758570+00:00",
+  "tools_listed": [
+    "read_query",
+    "write_query",
+    "create_table",
+    "list_tables",
+    "describe_table",
+    "append_insight"
+  ],
+  "train": {
+    "deviations": 0,
+    "deviations_tools_list": 0,
+    "errors": 0,
+    "hypotheses_remaining": {
+      "2-junta": 1572,
+      "3-junta": 153452
+    },
+    "observed_by_learner": {
+      "2-junta": 23,
+      "3-junta": 23
+    },
+    "probes": 23
+  },
+  "vocabulary": {
+    "distinct_after_merge": 41,
+    "generated": 146,
+    "names": [
+      "tool:append_insight",
+      "tool:create_table",
+      "tool:describe_table",
+      "tool:list_tables",
+      "tool:read_query",
+      "tool:write_query",
+      "insight.token_cs:alpha",
+      "insight.token_cs:budget",
+      "insight.token_cs:notes",
+      "insight.token_cs:sprint",
+      "insight.token_cs:stable",
+      "insight.token_cs:volatile",
+      "has_arg:query",
+      "query.token_cs:0",
+      "query.token_cs:1",
+      "query.token_cs:10",
+      "query.token_cs:12",
+      "query.token_cs:15",
+      "query.token_cs:18",
+      "query.token_cs:2",
+      "query.token_cs:21",
+      "query.token_cs:3",
+      "query.token_cs:4",
+      "query.token_cs:6",
+      "query.token_cs:8",
+      "query.token_cs:9",
+      "query.token_cs:DELETE",
+      "query.token_cs:FROM",
+      "query.token_cs:INSERT",
+      "query.token_cs:WHERE",
+      "query.token_cs:alpha",
+      "query.token_cs:budget",
+      "query.token_cs:notes",
+      "query.token_cs:qty",
+      "query.len_ge:43",
+      "query.len_ge:49",
+      "query.len_ge:50",
+      "query.len_ge:51",
+      "query.has_digit",
+      "query.has_char:(",
+      "query.has_char:,"
+    ]
+  }
+}

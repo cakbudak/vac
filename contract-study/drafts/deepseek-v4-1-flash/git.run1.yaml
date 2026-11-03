@@ -1,0 +1,93 @@
+server: git
+scope:
+  roots:
+  - '{repo_path}/**'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: true
+  network: false
+tools:
+  git_status:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation says shows working tree status; read-only operation
+  git_diff_unstaged:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation says shows unstaged changes; read-only operation
+  git_diff_staged:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation says shows staged changes; read-only operation
+  git_diff:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation says shows differences between branches or commits; read-only
+      operation
+  git_commit:
+    read_only: false
+    fs:
+      may_modify:
+      - '{repo_path}/.git/**'
+    expect_effect:
+      response_matches_any:
+      - commit
+    doc_sufficient: false
+    notes: Documentation says records changes; inferred .git/ modifications from git
+      behavior
+  git_add:
+    read_only: false
+    fs:
+      may_modify:
+      - '{repo_path}/.git/index'
+    expect_effect:
+      response_matches_any:
+      - staged
+    doc_sufficient: false
+    notes: Documentation says adds file contents to staging area; inferred .git/index
+      modification
+  git_reset:
+    read_only: false
+    fs:
+      may_modify:
+      - '{repo_path}/.git/index'
+    expect_effect:
+      response_matches_any:
+      - reset
+    doc_sufficient: false
+    notes: Documentation says unstages all staged changes; inferred .git/index modification
+  git_log:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation says shows commit logs; read-only operation
+  git_create_branch:
+    read_only: false
+    fs:
+      may_create:
+      - '{repo_path}/.git/refs/heads/**'
+    expect_effect:
+      response_matches_any:
+      - branch
+    doc_sufficient: false
+    notes: Documentation says creates a new branch; inferred .git/refs/heads/ creation
+  git_checkout:
+    read_only: false
+    fs:
+      may_modify:
+      - '{repo_path}/**'
+    expect_effect:
+      response_matches_any:
+      - HEAD
+      - branch
+    doc_sufficient: false
+    notes: Documentation says switches branches; inferred working tree and .git/HEAD
+      modifications
+  git_show:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation says shows contents of commit or file; read-only operation
+  git_branch:
+    read_only: true
+    doc_sufficient: true
+    notes: Documentation says lists branches; read-only operation
+readme_declared: {}

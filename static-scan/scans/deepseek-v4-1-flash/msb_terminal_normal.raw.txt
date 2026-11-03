@@ -1,0 +1,49 @@
+```json
+{
+  "server": "msb_terminal_normal",
+  "startup": [],
+  "tools": {
+    "execute_command": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Blocks execution of commands containing 'rm -rf /' or 'mkfs' and returns a rejection message",
+          "evidence": "terminal_controller.py: execute_command",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "high"
+        },
+        {
+          "behaviour": "Records command execution details (timestamp, command, success status) in a global in-memory history list",
+          "evidence": "terminal_controller.py: run_command",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "get_command_history": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "get_current_directory": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "change_directory": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "The implementation generally aligns with the tool descriptions, but execute_command includes undocumented security filtering that blocks specific dangerous commands and silently records all executed commands in an in-memory history list."
+  }
+}
+```

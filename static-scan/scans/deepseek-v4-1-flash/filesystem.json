@@ -1,0 +1,140 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "Most tools match their descriptions closely. The edit_file tool has undocumented whitespace-tolerant matching fallback, line ending preservation, and automatic reindentation. The list_directory_with_sizes tool appends an undocumented summary section. The search_files tool matches dotfiles by default, which is not mentioned in the description."
+  },
+  "server": "filesystem",
+  "startup": [
+    {
+      "behaviour": "Resolves symlinks in command-line allowed directories during startup and stores both the original and realpath forms to handle macOS /tmp -> /private/tmp symlinks",
+      "documented_in_tool_descriptions": false,
+      "evidence": "node_modules/@modelcontextprotocol/server-filesystem/dist/index.js: resolveAllowedDirectories/lines 30-50",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "medium"
+    },
+    {
+      "behaviour": "Exits process with code 1 if all specified allowed directories are inaccessible or none are provided on a modern (2026-07-28) connection",
+      "documented_in_tool_descriptions": false,
+      "evidence": "node_modules/@modelcontextprotocol/server-filesystem/dist/index.js: resolveAllowedDirectories/line 65, main/line 95",
+      "kind": "state",
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "create_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "directory_tree": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "edit_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Falls back to whitespace-tolerant line-by-line matching when exact oldText match fails, allowing edits to succeed even when indentation or trailing whitespace differs",
+          "evidence": "node_modules/@modelcontextprotocol/server-filesystem/dist/lib.js: applyFileEdits/lines 450-480",
+          "kind": "other",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "conditional on input"
+        },
+        {
+          "behaviour": "Detects and preserves the file's original line ending (CRLF vs LF) when writing back edited content",
+          "evidence": "node_modules/@modelcontextprotocol/server-filesystem/dist/lib.js: applyFileEdits/lines 420-425, 490-495",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Reindents replacement lines to match the file's indentation style (tabs vs spaces) and the indentation level of the matched lines",
+          "evidence": "node_modules/@modelcontextprotocol/server-filesystem/dist/lib.js: applyFileEdits/lines 460-475, reindentLine/lines 380-410",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "conditional on input"
+        }
+      ]
+    },
+    "get_file_info": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "list_allowed_directories": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "list_directory": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "list_directory_with_sizes": {
+      "declared_effect_not_implemented": null,
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Appends a summary section at the end showing total file count, directory count, and combined size",
+          "evidence": "node_modules/@modelcontextprotocol/server-filesystem/dist/server.js: list_directory_with_sizes handler/lines 580-590",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "move_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "read_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "read_media_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "read_multiple_files": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "read_text_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    },
+    "search_files": {
+      "declared_effect_not_implemented": null,
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Matches dotfiles (files starting with .) by default via minimatch with dot: true option",
+          "evidence": "node_modules/@modelcontextprotocol/server-filesystem/dist/lib.js: searchFilesWithValidation/line 620",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "write_file": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": []
+    }
+  }
+}

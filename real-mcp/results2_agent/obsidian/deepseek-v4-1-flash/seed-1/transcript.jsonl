@@ -1,0 +1,15 @@
+{"content": "", "step": 0, "task_id": 0, "tool_calls": [{"arguments": "{\"vault\":\"notes\",\"path\":\"projects/beta-plan.md\",\"content\":\"# Beta Plan\\n\\n- Define beta testing goals and success metrics\\n- Recruit and onboard a diverse group of beta testers\\n- Collect user feedback and iterate on the product before public launch\\n\",\"create_parents\":true}", "name": "obsidian_create_note"}]}
+{"content": "Created note projects/beta-plan.md in vault notes with a heading and three bullet points about the beta plan.", "step": 1, "task_id": 0, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 1, "tool_calls": [{"arguments": "{\"vault\":\"notes\",\"path\":\"archive/beta.md\"}", "name": "obsidian_read_note"}]}
+{"content": "", "step": 1, "task_id": 1, "tool_calls": [{"arguments": "{\"vault\":\"notes\",\"path\":\"archive/beta.md\",\"operation\":\"append\",\"content\":\"Reviewed.\\n\",\"if_match\":\"a1af592f8b2310d4b7f0a957eda702cb72d53978169258627d6e30519bda22fe\"}", "name": "obsidian_edit_note"}]}
+{"content": "Appended 'Reviewed.' to archive/beta.md in the 'notes' vault.", "step": 2, "task_id": 1, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 2, "tool_calls": [{"arguments": "{\"vault\":\"notes\",\"query\":\"forecast\",\"mode\":\"content\"}", "name": "obsidian_search_vault"}]}
+{"content": "The notes in the 'notes' vault that mention 'forecast' are `archive/beta.md` and `archive/forecast.md`.", "step": 1, "task_id": 2, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 3, "tool_calls": [{"arguments": "{\"vault\":\"notes\",\"paths\":[\"archive/forecast.md\",\"archive/ledger.md\"],\"tags\":[\"status/active\"]}", "name": "obsidian_add_tags"}]}
+{"content": "Added the tag 'status/active' to archive/forecast.md and archive/ledger.md in the 'notes' vault.", "step": 1, "task_id": 3, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 4, "tool_calls": [{"arguments": "{\"vault\":\"notes\",\"source\":\"archive/roadmap.md\",\"destination\":\"projects/roadmap-moved.md\",\"update_links\":true}", "name": "obsidian_move_note"}]}
+{"content": "Moved `archive/roadmap.md` to `projects/roadmap-moved.md` in vault `notes` and updated the backlink in `archive/ledger.md`.", "step": 1, "task_id": 4, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 5, "tool_calls": [{"arguments": "{\"vault\":\"notes\",\"path\":\"projects/outline\",\"recursive\":true}", "name": "obsidian_create_directory"}]}
+{"content": "", "step": 1, "task_id": 5, "tool_calls": [{"arguments": "{\"vault\":\"notes\",\"path\":\"projects/outline/index.md\",\"content\":\"# Project Outline Index\\n\\nThis directory contains outlines and structural notes for various projects.\\n\"}", "name": "obsidian_create_note"}]}
+{"content": "", "step": 2, "task_id": 5, "tool_calls": [{"arguments": "{}", "name": "obsidian_list_vaults"}]}
+{"content": "Created directory `projects/outline` and note `projects/outline/index.md` in vault `notes`, and listed the available vaults.", "step": 3, "task_id": 5, "tool_calls": []}

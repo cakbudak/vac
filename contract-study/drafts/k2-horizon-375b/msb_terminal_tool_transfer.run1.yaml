@@ -1,0 +1,40 @@
+server: msb_terminal_tool_transfer
+scope:
+  roots:
+  - '{root}/**'
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  execute_the_command:
+    read_only: false
+    fs:
+      may_create:
+      - '{root}/**'
+      may_modify:
+      - '{root}/**'
+      may_delete:
+      - '{root}/**'
+    expect_effect:
+      subprocess: true
+    subprocess: true
+    network: true
+    network_hosts:
+    - '*'
+    doc_sufficient: false
+    notes: Description says execute terminal command; file and network scope are not
+      documented, so arbitrary under sandbox root is assumed.
+  get_commands_history:
+    read_only: true
+    doc_sufficient: true
+    notes: Description says get recent command history; no file changes documented.
+  get_the_current_directory:
+    read_only: true
+    doc_sufficient: true
+    notes: Description says get current working directory; no file changes documented.
+  change_the_directory:
+    read_only: true
+    doc_sufficient: true
+    notes: Description says change current working directory; changes process state,
+      not files.

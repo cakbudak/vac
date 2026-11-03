@@ -1,0 +1,361 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "All nine tools implement the behaviour their descriptions advertise, and the skip/dedup logic for create_entities is accurately described. However, every mutating tool silently acquires a lock file, performs an atomic temp-file rename, fires a resource-update notification to subscribers, and serialises calls through an in-process queue\u2014none of which is mentioned in any description\u2014and the read tools include cross-endpoint relations and silently drop unmatched names in ways the descriptions do not specify."
+  },
+  "server": "memory",
+  "startup": [
+    {
+      "behaviour": "Reads MEMORY_FILE_PATH environment variable to determine the graph file path",
+      "documented_in_tool_descriptions": false,
+      "evidence": "index.js: ensureMemoryFilePath",
+      "kind": "config",
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Checks for legacy memory.json and renames it to memory.jsonl if memory.jsonl does not exist (migration)",
+      "documented_in_tool_descriptions": false,
+      "evidence": "index.js: ensureMemoryFilePath",
+      "kind": "file_write",
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Reads package.json (one or two candidates) to resolve server version at import time",
+      "documented_in_tool_descriptions": false,
+      "evidence": "version.js: resolvePackageVersion",
+      "kind": "file_write",
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Registers resources/subscribe and resources/unsubscribe request handlers and declares the 'resources.subscribe' capability",
+      "documented_in_tool_descriptions": false,
+      "evidence": "index.js: registerKnowledgeGraphSubscriptions",
+      "kind": "state",
+      "observable_from_outside": "network",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Registers a readable MCP resource at memory://knowledge-graph exposing the full graph",
+      "documented_in_tool_descriptions": false,
+      "evidence": "index.js: registerKnowledgeGraphResource",
+      "kind": "state",
+      "observable_from_outside": "network",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "add_observations": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Throws an error if the named entity does not exist; duplicate observation strings (already present on the entity) are silently skipped and not added again",
+          "evidence": "index.js: KnowledgeGraphManager.addObservations",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Acquires exclusive lock file, reads full graph from disk, writes updated graph atomically via temp-file rename",
+          "evidence": "index.js: KnowledgeGraphManager.addObservations -> withLock, loadGraphWithUnreadable, saveGraph",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Sends a notifications/resources/updated notification after each mutation",
+          "evidence": "index.js: notifyGraphUpdated called inside add_observations handler",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Result lists only the actually-added (non-duplicate) observations per entity, not the full requested list",
+          "evidence": "index.js: KnowledgeGraphManager.addObservations (newObservations filtered)",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        }
+      ]
+    },
+    "create_entities": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Acquires an exclusive lock file (<memoryFilePath>.lock) before reading or writing, with heartbeat refreshes and stale-lock breaking",
+          "evidence": "index.js: KnowledgeGraphManager.withLock, withFileLock",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Reads the entire JSONL graph file from disk before writing",
+          "evidence": "index.js: KnowledgeGraphManager.createEntities -> loadGraphWithUnreadable",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Writes the updated graph to a randomly-named temp file then atomically renames it over the graph file, preserving file permissions",
+          "evidence": "index.js: KnowledgeGraphManager.saveGraph",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Sends a notifications/resources/updated notification for memory://knowledge-graph to subscribed clients after each mutation",
+          "evidence": "index.js: notifyGraphUpdated called inside create_entities handler",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Malformed or invalid lines in the JSONL file are preserved unchanged in the rewritten file; parse errors are logged to stderr",
+          "evidence": "index.js: loadGraphWithUnreadable, saveGraph (unreadable lines appended)",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Extra fields present in existing JSONL records (unknown to the schema) are round-tripped back to the file unchanged",
+          "evidence": "index.js: keepExtraFields, saveGraph spreads extraFields",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Serialises all mutation calls within the process through a promise queue to prevent concurrent write interleaving",
+          "evidence": "index.js: KnowledgeGraphManager.mutationQueue",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "create_relations": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Throws an error if either the 'from' or 'to' entity does not exist in the graph; duplicate relations (same from/to/relationType) within the batch or already in the graph are silently skipped",
+          "evidence": "index.js: KnowledgeGraphManager.createRelations",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Acquires exclusive lock file, reads full graph from disk, writes updated graph atomically via temp-file rename",
+          "evidence": "index.js: KnowledgeGraphManager.createRelations -> withLock, loadGraphWithUnreadable, saveGraph",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Sends a notifications/resources/updated notification after each mutation",
+          "evidence": "index.js: notifyGraphUpdated called inside create_relations handler",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Serialises calls through in-process mutation queue; preserves unreadable/extra-field lines in rewrite",
+          "evidence": "index.js: mutationQueue, saveGraph",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "delete_entities": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Returns a structured result distinguishing 'deleted' from 'notFound' entity names; a partial delete (some names not found) is still treated as success=true",
+          "evidence": "index.js: KnowledgeGraphManager.deleteEntities returns {deleted, notFound}; handler builds message from those",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Acquires exclusive lock file, reads full graph from disk, writes updated graph atomically via temp-file rename",
+          "evidence": "index.js: KnowledgeGraphManager.deleteEntities -> withLock, loadGraphWithUnreadable, saveGraph",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Sends a notifications/resources/updated notification after each mutation",
+          "evidence": "index.js: notifyGraphUpdated called inside delete_entities handler",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "delete_observations": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "If a named entity does not exist it is recorded in missingEntities and reported in the response message rather than throwing; observations on present entities are still deleted",
+          "evidence": "index.js: KnowledgeGraphManager.deleteObservations (missingEntities list)",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Returns a count of actually deleted observations vs requested; partial success is reported as success=true",
+          "evidence": "index.js: delete_observations handler (deletedCount vs requested)",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Acquires exclusive lock file, reads full graph from disk, writes updated graph atomically via temp-file rename",
+          "evidence": "index.js: KnowledgeGraphManager.deleteObservations -> withLock, loadGraphWithUnreadable, saveGraph",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Sends a notifications/resources/updated notification after each mutation",
+          "evidence": "index.js: notifyGraphUpdated called inside delete_observations handler",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "delete_relations": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Relations that do not match any existing relation are silently ignored; response reports count of actually deleted relations vs requested",
+          "evidence": "index.js: KnowledgeGraphManager.deleteRelations (before - after count)",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Acquires exclusive lock file, reads full graph from disk, writes updated graph atomically via temp-file rename",
+          "evidence": "index.js: KnowledgeGraphManager.deleteRelations -> withLock, loadGraphWithUnreadable, saveGraph",
+          "kind": "file_write",
+          "observable_from_outside": "file",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Sends a notifications/resources/updated notification after each mutation",
+          "evidence": "index.js: notifyGraphUpdated called inside delete_relations handler",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "open_nodes": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Also returns relations where at least one endpoint is in the requested name set, not only relations where both endpoints are requested",
+          "evidence": "index.js: KnowledgeGraphManager.openNodes (filteredEntityNames.has(r.from) || filteredEntityNames.has(r.to))",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Names not found in the graph are silently omitted from results with no error",
+          "evidence": "index.js: KnowledgeGraphManager.openNodes (filter only, no error for missing names)",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "conditional on state"
+        },
+        {
+          "behaviour": "Reads the graph file from disk on every call",
+          "evidence": "index.js: KnowledgeGraphManager.openNodes -> loadGraph",
+          "kind": "file_write",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "read_graph": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Reads the graph file from disk on every call (no in-memory cache); malformed/invalid lines are skipped and logged to stderr",
+          "evidence": "index.js: KnowledgeGraphManager.readGraph -> loadGraph -> loadGraphWithUnreadable",
+          "kind": "file_write",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    },
+    "search_nodes": {
+      "declared_effect_not_implemented": null,
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Query is matched case-insensitively against entity name, entityType, and each observation string",
+          "evidence": "index.js: KnowledgeGraphManager.searchNodes (toLowerCase comparisons)",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Returns relations where at least one endpoint (from or to) matches a returned entity, not only relations where both endpoints match",
+          "evidence": "index.js: KnowledgeGraphManager.searchNodes (filteredEntityNames.has(r.from) || filteredEntityNames.has(r.to))",
+          "kind": "state",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Reads the graph file from disk on every call",
+          "evidence": "index.js: KnowledgeGraphManager.searchNodes -> loadGraph",
+          "kind": "file_write",
+          "observable_from_outside": "none",
+          "security_relevance": "none",
+          "trigger": "every call"
+        }
+      ]
+    }
+  }
+}

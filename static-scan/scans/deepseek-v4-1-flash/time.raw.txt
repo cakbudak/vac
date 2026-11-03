@@ -1,0 +1,64 @@
+```json
+{
+  "server": "time",
+  "startup": [
+    {
+      "behaviour": "Detects local timezone from system configuration via tzlocal.get_localzone_name()",
+      "evidence": "server.py: get_local_tz/line 58",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Validates --local-timezone CLI argument against IANA timezone database before opening transport",
+      "evidence": "server.py: serve/line 236-244",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "none",
+      "security_relevance": "none"
+    }
+  ],
+  "tools": {
+    "get_current_time": {
+      "matches_description": true,
+      "undocumented_behaviours": [],
+      "declared_effect_not_implemented": null
+    },
+    "convert_time": {
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Uses current date in source timezone when converting time (no date parameter provided)",
+          "evidence": "server.py: TimeServer.convert_time/line 118-124",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Returns time_difference between source and target timezones",
+          "evidence": "server.py: TimeServer.convert_time/line 138-142",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        },
+        {
+          "behaviour": "Returns day_of_week and is_dst for both source and target times",
+          "evidence": "server.py: TimeServer.convert_time/line 144-157",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "none"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "The get_current_time tool matches its description. The convert_time tool uses the current date (not documented) and returns additional fields (time_difference, day_of_week, is_dst) not mentioned in the brief description."
+  }
+}
+```

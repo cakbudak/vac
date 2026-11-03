@@ -1,0 +1,29 @@
+server: time
+scope:
+  roots: []
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  get_current_time:
+    read_only: true
+    expect_effect: {}
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Tool is read‑only; no filesystem, subprocess or network effects per documentation.
+  convert_time:
+    read_only: true
+    expect_effect: {}
+    subprocess: false
+    network: false
+    doc_sufficient: true
+    notes: Tool is read‑only; no filesystem, subprocess or network effects per documentation.
+readme_declared:
+  fs:
+    may_create: []
+    may_modify: []
+    may_delete: []
+  network: false
+  network_hosts: []

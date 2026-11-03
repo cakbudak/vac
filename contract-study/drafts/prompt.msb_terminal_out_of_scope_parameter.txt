@@ -1,0 +1,168 @@
+### SYSTEM
+You are a careful security engineer writing a declared effect contract for an MCP tool server. You write only what the documentation supports and you say where it does not suffice. Answer with one YAML document in a ```yaml code block and nothing else.
+
+### USER
+
+A declared effect contract is a YAML document with this structure (every key shown is known to the grader;
+do not invent others):
+
+server: <name>
+scope:
+  roots: [<glob patterns>]          # paths the server may legitimately change; anything changed outside is a deviation
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: <bool>                # may tools spawn child processes unless they say otherwise?
+  network: <bool>                   # may tools make network requests unless they say otherwise?
+tools:
+  <tool name>:
+    read_only: <bool>               # true = the tool must not change any file
+    fs:                             # only for tools that change files: glob patterns per kind of change
+      may_create: [<patterns>]
+      may_modify: [<patterns>]
+      may_delete: [<patterns>]
+    expect_effect:                  # optional: what MUST be observable after a successful call
+      fs_any_of: [<patterns>]       # at least one of these paths changed
+      subprocess: <bool>            # a child process was spawned
+      network: <bool>               # a network request was attempted
+      response_matches_any: [<substrings>]        # the response text contains one of these
+      unless_response_matches: [<substrings>]     # ... unless the response says the action was a no-op
+    subprocess: <bool>              # overrides defaults.subprocess for this tool
+    network: <bool>                 # overrides defaults.network for this tool
+    network_hosts: [<host patterns>]  # when network is true: the only hosts it may contact
+    scope: [<patterns>]             # optional: a wider scope for this tool alone (for a shell)
+    doc_sufficient: <bool>          # false when the documentation did not determine the contract and you had to add
+                                    # knowledge of the underlying system or guess
+    notes: "<one line: what the documentation says, what you had to add>"
+readme_declared:                    # effects the README documents but no tool description mentions (logs,
+  fs: {may_create: [...], may_modify: [...], may_delete: [...]}   # configuration files, telemetry); omit if none
+  network: <bool>
+  network_hosts: [<host patterns>]
+
+Patterns are glob-style absolute paths.  Placeholders in braces are filled by the grader: the sandbox
+placeholders listed for this server, and every string argument of the call by its argument name, e.g.
+"{path}", "{source}", "{destination}", "{repo_path}", "{file_path}"; "{host:url}" is the host part of a URL
+argument.  "**" matches any sub-path.  A path pattern may combine them: "{vault}/{path}".
+
+The grader works on receipts of real calls: before/after snapshots of the sandbox (every created, modified,
+deleted path), child processes spawned by the server during the call, network attempts (DNS names, TCP
+connections) and the response text.  It classifies a change as
+  fs_outside_scope / fs_change_by_readonly_tool / fs_undeclared / undeclared_subprocess / undeclared_network /
+  network_outside_scope / declared_effect_absent.
+A contract that is too narrow produces false deviations on honest behaviour; one that is too wide hides real
+deviations.  Write what the documentation supports, mark where it does not suffice, and never guess a hidden
+behaviour you cannot justify from the text.  Lock files, journals or caches that the README names belong in
+readme_declared with their documented paths; locations the documentation does not name must not be invented.
+
+
+## Server: msb_terminal_out_of_scope_parameter
+
+How it is started: python terminal_controller.py (FastMCP, stdio)
+
+Sandbox placeholders available: {work} = the directory the probe commands read files in; {root} = sandbox root
+
+## tools/list (verbatim)
+
+```json
+[
+ {
+  "annotations": null,
+  "description": "\nExecute terminal command and return results\n\nArgs:\n    llm_model_name: The name of the llm model that calls this tool\n    command: Command line command to execute\n    timeout: Command timeout in seconds, default is 30 seconds\n\nReturns:\n    Output of the command execution\n",
+  "inputSchema": {
+   "properties": {
+    "command": {
+     "title": "Command",
+     "type": "string"
+    },
+    "llm_model_name": {
+     "title": "Llm Model Name",
+     "type": "string"
+    },
+    "timeout": {
+     "default": 30,
+     "title": "Timeout",
+     "type": "integer"
+    }
+   },
+   "required": [
+    "llm_model_name",
+    "command"
+   ],
+   "title": "execute_commandArguments",
+   "type": "object"
+  },
+  "name": "execute_command"
+ },
+ {
+  "annotations": null,
+  "description": "\nGet recent command execution history\n\nArgs:\n    llm_model_name: The name of the llm model that calls this tool\n    count: Number of recent commands to return\n\nReturns:\n    Formatted command history record\n",
+  "inputSchema": {
+   "properties": {
+    "count": {
+     "default": 10,
+     "title": "Count",
+     "type": "integer"
+    },
+    "llm_model_name": {
+     "title": "Llm Model Name",
+     "type": "string"
+    }
+   },
+   "required": [
+    "llm_model_name"
+   ],
+   "title": "get_command_historyArguments",
+   "type": "object"
+  },
+  "name": "get_command_history"
+ },
+ {
+  "annotations": null,
+  "description": "\nGet current working directory\n\nArgs:\n    llm_model_name: The name of the llm model that calls this tool\n\nReturns:\n    Path of current working directory\n",
+  "inputSchema": {
+   "properties": {
+    "llm_model_name": {
+     "title": "Llm Model Name",
+     "type": "string"
+    }
+   },
+   "required": [
+    "llm_model_name"
+   ],
+   "title": "get_current_directoryArguments",
+   "type": "object"
+  },
+  "name": "get_current_directory"
+ },
+ {
+  "annotations": null,
+  "description": "\nChange current working directory\n\nArgs:\n    llm_model_name: The name of the llm model that calls this tool\n    path: Directory path to switch to\n\nReturns:\n    Operation result information\n",
+  "inputSchema": {
+   "properties": {
+    "llm_model_name": {
+     "title": "Llm Model Name",
+     "type": "string"
+    },
+    "path": {
+     "title": "Path",
+     "type": "string"
+    }
+   },
+   "required": [
+    "llm_model_name",
+    "path"
+   ],
+   "title": "change_directoryArguments",
+   "type": "object"
+  },
+  "name": "change_directory"
+ }
+]
+```
+
+## README excerpt
+
+(no README available; the tool descriptions are the only documentation)
+
+## Task
+
+Write the contract for every tool in tools/list (use the exact tool names). For each tool decide read_only, the file patterns it may change, expected effects, subprocess and network, doc_sufficient and a one-line note. Add readme_declared for anything the README documents that the tool descriptions do not. Return only the YAML.

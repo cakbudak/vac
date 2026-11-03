@@ -1,0 +1,30 @@
+{"content": "", "step": 0, "task_id": 0, "tool_calls": [{"arguments": "{\"query\":\"CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT, city TEXT, balance REAL);\"}", "name": "create_table"}]}
+{"content": "", "step": 1, "task_id": 0, "tool_calls": [{"arguments": "{\"query\":\"INSERT INTO customers (name, city, balance) VALUES ('Alice', 'beta', 1200.50), ('Bob', 'forecast', 850.75), ('Charlie', 'ledger', 2300.00), ('Diana', 'roadmap', 1500.25);\"}", "name": "write_query"}]}
+{"content": "Created customers table and inserted four records.", "step": 2, "task_id": 0, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 1, "tool_calls": [{"arguments": "{}", "name": "list_tables"}]}
+{"content": "", "step": 1, "task_id": 1, "tool_calls": [{"arguments": "{\"table_name\":\"customers\"}", "name": "describe_table"}]}
+{"content": "", "step": 2, "task_id": 1, "tool_calls": [{"arguments": "{\"query\":\"SELECT * FROM customers WHERE balance \\u003e 100\"}", "name": "read_query"}]}
+{"content": "Tables: items, customers. Customers schema: id INTEGER PK, name TEXT, city TEXT, balance REAL. Customers with balance > 100: Alice, Bob, Charlie, Diana.", "step": 3, "task_id": 1, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 2, "tool_calls": [{"arguments": "{}", "name": "list_tables"}]}
+{"content": "", "step": 1, "task_id": 2, "tool_calls": [{"arguments": "{\"insight\":\"brief customers have the highest balances\"}", "name": "append_insight"}]}
+{"content": "", "step": 2, "task_id": 2, "tool_calls": [{"arguments": "{\"table_name\":\"customers\"}", "name": "describe_table"}]}
+{"content": "", "step": 3, "task_id": 2, "tool_calls": [{"arguments": "{\"query\":\"SELECT * FROM customers ORDER BY balance DESC\"}", "name": "read_query"}]}
+{"content": "Added insight and listed customers by descending balance.", "step": 4, "task_id": 2, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 3, "tool_calls": [{"arguments": "{}", "name": "list_tables"}]}
+{"content": "", "step": 1, "task_id": 3, "tool_calls": [{"arguments": "{\"table_name\":\"customers\"}", "name": "describe_table"}]}
+{"content": "", "step": 2, "task_id": 3, "tool_calls": [{"arguments": "{\"query\":\"UPDATE customers SET balance = balance + 50 WHERE city = 'forecast';\"}", "name": "write_query"}]}
+{"content": "", "step": 3, "task_id": 3, "tool_calls": [{"arguments": "{\"query\":\"DELETE FROM customers WHERE city = 'roadmap';\"}", "name": "write_query"}]}
+{"content": "", "step": 4, "task_id": 3, "tool_calls": [{"arguments": "{\"query\":\"SELECT * FROM customers;\"}", "name": "read_query"}]}
+{"content": "Remaining customers: Alice (beta, 1200.5), Bob (forecast, 900.75), Charlie (ledger, 2500.0).", "step": 5, "task_id": 3, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 4, "tool_calls": [{"arguments": "{\"query\":\"CREATE TABLE outline_events (id INTEGER PRIMARY KEY, title TEXT, day TEXT);\"}", "name": "create_table"}]}
+{"content": "", "step": 1, "task_id": 4, "tool_calls": [{"arguments": "{\"query\":\"INSERT INTO outline_events (title, day) VALUES ('Meeting', 'Monday'), ('Workshop', 'Wednesday'), ('Conference', 'Friday');\"}", "name": "write_query"}]}
+{"content": "", "step": 2, "task_id": 4, "tool_calls": [{"arguments": "{\"query\":\"SELECT COUNT(*) AS count FROM outline_events;\"}", "name": "read_query"}]}
+{"content": "3 events inserted and counted.", "step": 3, "task_id": 4, "tool_calls": []}
+{"content": "", "step": 0, "task_id": 5, "tool_calls": [{"arguments": "{}", "name": "list_tables"}]}
+{"content": "", "step": 1, "task_id": 5, "tool_calls": [{"arguments": "{\"table_name\":\"items\"}", "name": "describe_table"}]}
+{"content": "", "step": 2, "task_id": 5, "tool_calls": [{"arguments": "{\"query\":\"SELECT COUNT(*) as cnt FROM items\"}", "name": "read_query"}]}
+{"content": "", "step": 3, "task_id": 5, "tool_calls": [{"arguments": "{\"table_name\":\"customers\"}", "name": "describe_table"}]}
+{"content": "", "step": 4, "task_id": 5, "tool_calls": [{"arguments": "{\"query\":\"SELECT COUNT(*) as cnt FROM customers\"}", "name": "read_query"}]}
+{"content": "", "step": 5, "task_id": 5, "tool_calls": [{"arguments": "{\"table_name\":\"outline_events\"}", "name": "describe_table"}]}
+{"content": "", "step": 6, "task_id": 5, "tool_calls": [{"arguments": "{\"query\":\"SELECT COUNT(*) as cnt FROM outline_events\"}", "name": "read_query"}]}
+{"content": "Schema and row counts: items(id INTEGER PK, name TEXT, qty INTEGER) \u2013 7 rows; customers(id INTEGER PK, name TEXT, city TEXT, balance REAL) \u2013 3 rows; outline_events(id INTEGER PK, title TEXT, day TEXT) \u2013 3 rows.", "step": 7, "task_id": 5, "tool_calls": []}

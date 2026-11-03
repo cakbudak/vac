@@ -1,0 +1,80 @@
+```yaml
+server: everything
+scope:
+  roots:
+    - "{root}/**"
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  echo:
+    read_only: true
+    doc_sufficient: true
+    notes: "Echoes input; no side effects documented."
+  get-annotated-message:
+    read_only: true
+    doc_sufficient: true
+    notes: "Returns annotated message; no side effects documented."
+  get-env:
+    read_only: true
+    doc_sufficient: true
+    notes: "Returns environment variables; masks credentials unless GET_ENV_INCLUDE_SECRETS is set."
+  get-header-params:
+    read_only: true
+    doc_sufficient: true
+    notes: "Returns region and header; no side effects."
+  get-resource-links:
+    read_only: true
+    doc_sufficient: true
+    notes: "Returns resource links; no side effects."
+  get-resource-reference:
+    read_only: true
+    doc_sufficient: true
+    notes: "Returns resource reference; no side effects."
+  get-structured-content:
+    read_only: true
+    doc_sufficient: true
+    notes: "Returns structured content; no side effects."
+  get-sum:
+    read_only: true
+    doc_sufficient: true
+    notes: "Returns sum of two numbers; no side effects."
+  get-tiny-image:
+    read_only: true
+    doc_sufficient: true
+    notes: "Returns MCP logo image; no side effects."
+  gzip-file-as-resource:
+    read_only: false
+    network: true
+    network_hosts:
+      - "*"
+    expect_effect:
+      network: true
+    doc_sufficient: false
+    notes: "Fetches URL and returns resource/link; read_only_hint is false but no FS changes documented."
+  trigger-list-changed:
+    read_only: true
+    doc_sufficient: true
+    notes: "Sends list changed notification; no side effects."
+  trigger-log-messages:
+    read_only: true
+    doc_sufficient: true
+    notes: "Sends log messages; no side effects."
+  trigger-long-running-operation:
+    read_only: true
+    doc_sufficient: true
+    notes: "Demonstrates long running operation; no side effects."
+  trigger-resource-update:
+    read_only: true
+    doc_sufficient: true
+    notes: "Sends resource updated notification; no side effects."
+  toggle-simulated-logging:
+    read_only: false
+    doc_sufficient: true
+    notes: "Toggles simulated logging; in-memory state change only."
+  toggle-subscriber-updates:
+    read_only: false
+    doc_sufficient: true
+    notes: "Toggles simulated subscriber updates; in-memory state change only."
+```

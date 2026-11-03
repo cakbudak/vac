@@ -1,0 +1,81 @@
+{
+  "overall": {
+    "description_implementation_mismatch": "substantial",
+    "summary": "The tool description omits critical security behaviors including robots.txt enforcement, private IP blocking, and potential Node.js process spawning. The implementation includes extensive network security controls and content processing that are not disclosed to users."
+  },
+  "server": "fetch",
+  "startup": [
+    {
+      "behaviour": "Modifies process environment variables (HTTP_PROXY, http_proxy, HTTPS_PROXY, https_proxy, ALL_PROXY, all_proxy) by normalizing socks:// URLs to socks5://",
+      "documented_in_tool_descriptions": false,
+      "evidence": "server.py: normalize_proxy_env() called in create_server() line 428",
+      "kind": "state",
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "fetch": {
+      "declared_effect_not_implemented": null,
+      "matches_description": false,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Fetches and validates robots.txt before fetching the target URL, refusing autonomous fetches when disallowed",
+          "evidence": "server.py: check_may_autonomously_fetch_url() called in fetch() line 450",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "medium",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Refuses to fetch private, loopback, and link-local IP addresses by default",
+          "evidence": "server.py: _refuse_private_destination() added as request hook in fetch_url() line 380",
+          "kind": "network",
+          "observable_from_outside": "none",
+          "security_relevance": "high",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Uses custom User-Agent string 'ModelContextProtocol/1.0 (Autonomous; +https://github.com/modelcontextprotocol/servers)' or custom value",
+          "evidence": "server.py: DEFAULT_USER_AGENT_AUTONOMOUS defined line 62, used in fetch_url() line 375",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "May spawn Node.js processes when extracting HTML with Readability.js",
+          "evidence": "server.py: readabilipy.simple_json.simple_json_from_html_string() called in _readability_content() line 180, comment states 'runs under Node when Node is on PATH'",
+          "kind": "subprocess",
+          "observable_from_outside": "process",
+          "security_relevance": "medium",
+          "trigger": "conditional on configuration"
+        },
+        {
+          "behaviour": "Follows HTTP redirects and checks robots.txt for each redirect hop",
+          "evidence": "server.py: _check_redirect_robots_txt() added as request hook in fetch_url() line 365, follow_redirects=True in client.get() line 375",
+          "kind": "network",
+          "observable_from_outside": "network",
+          "security_relevance": "medium",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Enforces 30 second timeout on HTTP requests",
+          "evidence": "server.py: timeout=30 parameter in client.get() line 378",
+          "kind": "network",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        },
+        {
+          "behaviour": "Detects and honors charset declarations in HTML meta tags for content decoding",
+          "evidence": "server.py: decode_page() function line 280, MetaCharset HTMLParser class line 310",
+          "kind": "other",
+          "observable_from_outside": "none",
+          "security_relevance": "low",
+          "trigger": "every call"
+        }
+      ]
+    }
+  }
+}

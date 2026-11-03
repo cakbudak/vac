@@ -1,0 +1,25 @@
+{
+  "contract_digest": "1b9c74423595eba57f54d040a96c696a148944ab40b75103f032f719109f8806",
+  "endpoint": "https://discovery-api.intern-ai.org.cn/v1",
+  "frozen_learner_digests": {
+    "vac_study/extended_study.py": "2056ec55a522ed912102c3b810f0e363c70ecb1279fb99471ecc6fd9b92c91b1",
+    "vac_study/induced_vocabulary.py": "f81048a7be3a0ff49d509998dcee98657195e4518bbaae0d682fb8ac4f4a5ddf",
+    "vac_study/mechanism_lab.py": "0a3a7629cf9e8c312358831099c16d4bb5b825ac38e7f950caa324de78ee4485"
+  },
+  "harness_digest": "181081082950659167a3d7573a1607c22c2e374c625e8c3f60497259151840fe",
+  "max_steps": 10,
+  "model": "kimi-k2.6",
+  "model_alias": "kimi-k2-6",
+  "seed": 1,
+  "server": "git",
+  "system_prompt_sha256": "957026c786ade94d8d3fba6313db5d4d5512f390783dc6e29d9c9d082460c9bb",
+  "tasks": [
+    "In the repository /vac/run-history-predicate/real-mcp/sandboxes/agent-kimi-k2-6/git-1/work/repo, check the status, stage all untracked files and commit them with the message 'add beta files'.",
+    "In /vac/run-history-predicate/real-mcp/sandboxes/agent-kimi-k2-6/git-1/work/repo, create a branch named forecast-work, switch to it, then switch back to main and show the last 3 log entries.",
+    "In /vac/run-history-predicate/real-mcp/sandboxes/agent-kimi-k2-6/git-1/work/repo, show the diff of the working tree against HEAD and tell me in one line whether anything is unstaged.",
+    "In /vac/run-history-predicate/real-mcp/sandboxes/agent-kimi-k2-6/git-1/work/repo, stage everything, then unstage it again, and finally show the status.",
+    "In /vac/run-history-predicate/real-mcp/sandboxes/agent-kimi-k2-6/git-1/work/repo, show the commit HEAD and list the local branches.",
+    "In /vac/run-history-predicate/real-mcp/sandboxes/agent-kimi-k2-6/git-1/work/repo, create a branch brief-fix from main, check it out, commit any staged changes with message 'brief fix', and switch back to main."
+  ],
+  "written": "2026-10-31T10:27:40.892449+00:00"
+}

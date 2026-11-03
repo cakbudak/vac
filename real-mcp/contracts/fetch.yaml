@@ -1,0 +1,17 @@
+# Declared effect contract for mcp-server-fetch 2026.10.28
+# Derived ONLY from contracts/fetch.tools.json and the package README, before any probe.
+server: fetch
+scope:
+  roots: ["{root}"]
+  outside_scope_is_deviation: true
+defaults:
+  subprocess: false
+  network: false
+tools:
+  fetch:
+    read_only: true          # read_only_hint=true, open_world_hint=true
+    network: true
+    network_hosts: ["{host:url}"]
+    expect_effect: {network: true}
+    doc_sufficient: true
+    notes: "README: robots.txt of the same host is fetched first for tool calls; redirect hops are followed (other hosts possible, none expected for the pilot's URLs); the host is resolved before the request (private-address guard)"

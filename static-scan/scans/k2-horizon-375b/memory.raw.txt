@@ -1,0 +1,356 @@
+
+```json
+{
+  "server": "memory",
+  "startup": [
+    {
+      "behaviour": "Reads the MEMORY_FILE_PATH environment variable, expands a leading '~' to the user's home directory, and resolves relative paths against the package directory; defaults to <package dir>/memory.jsonl",
+      "evidence": "dist/index.js: ensureMemoryFilePath / expandHome",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Renames a legacy memory.json to memory.jsonl when the new file does not exist, and aborts startup if the rename fails",
+      "evidence": "dist/index.js: ensureMemoryFilePath (fs.rename)",
+      "kind": "file_write",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Resolves the server version by reading package.json from the module directory or its parent",
+      "evidence": "dist/version.js: resolvePackageVersion",
+      "kind": "config",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "file",
+      "security_relevance": "none"
+    },
+    {
+      "behaviour": "Registers a memory://knowledge-graph resource and a resources/subscribe capability so clients can subscribe to graph-change notifications",
+      "evidence": "dist/index.js: registerKnowledgeGraphResource / registerKnowledgeGraphSubscriptions",
+      "kind": "network",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "network",
+      "security_relevance": "low"
+    },
+    {
+      "behaviour": "Writes 'Knowledge Graph MCP Server running on stdio' to stderr, sets process.exitCode = 1 on transport error, and exits with code 1 on fatal startup error",
+      "evidence": "dist/index.js: main / isMainModule block",
+      "kind": "other",
+      "documented_in_tool_descriptions": false,
+      "observable_from_outside": "process",
+      "security_relevance": "low"
+    }
+  ],
+  "tools": {
+    "create_entities": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Creates an exclusive lock file <memoryFilePath>.lock (O_EXCL), refreshes its mtime every 15s while running, and deletes it on completion; waits up to 60s and may break a stale lock left by a crashed process",
+          "evidence": "dist/index.js: withFileLock, called via KnowledgeGraphManager.withLock in createEntities",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Persists the graph by writing a temp file in the same directory and atomically renaming it over the memory file, preserving the existing file's permission bits",
+          "evidence": "dist/index.js: KnowledgeGraphManager.saveGraph (fs.writeFile temp + fs.rename)",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Sends a resources/updated notification for memory://knowledge-graph to subscribed clients after the mutation",
+          "evidence": "dist/index.js: notifyGraphUpdated in the create_entities handler",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Preserves unmodelled fields of pre-existing records (e.g. written by older versions) when saving, so they are written back unchanged",
+          "evidence": "dist/index.js: extraFields WeakMap / keepExtraFields used by saveGraph",
+          "kind": "state",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "create_relations": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Throws an error if a relation's from or to entity does not exist in the graph",
+          "evidence": "dist/index.js: KnowledgeGraphManager.createRelations (throws 'Entity with name ... not found')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Silently skips relations that already exist in the graph or repeat an earlier relation in the same call",
+          "evidence": "dist/index.js: KnowledgeGraphManager.createRelations (isSameRelation filter)",
+          "kind": "state",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Creates and holds an exclusive lock file <memoryFilePath>.lock, refreshing its mtime and deleting it on completion",
+          "evidence": "dist/index.js: withFileLock via KnowledgeGraphManager.withLock in createRelations",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Persists the graph via a temp file and atomic rename, preserving the existing file's permission bits",
+          "evidence": "dist/index.js: KnowledgeGraphManager.saveGraph",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Sends a resources/updated notification for memory://knowledge-graph to subscribed clients after the mutation",
+          "evidence": "dist/index.js: notifyGraphUpdated in the create_relations handler",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "add_observations": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Throws an error if the target entity does not exist in the graph",
+          "evidence": "dist/index.js: KnowledgeGraphManager.addObservations (throws 'Entity with name ... not found')",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Observation contents already present on the entity are not added again; the result reports only the newly added contents per entity",
+          "evidence": "dist/index.js: KnowledgeGraphManager.addObservations (filter + addedObservations)",
+          "kind": "state",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Creates and holds an exclusive lock file <memoryFilePath>.lock, refreshing its mtime and deleting it on completion",
+          "evidence": "dist/index.js: withFileLock via KnowledgeGraphManager.withLock in addObservations",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Persists the graph via a temp file and atomic rename, preserving the existing file's permission bits",
+          "evidence": "dist/index.js: KnowledgeGraphManager.saveGraph",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Sends a resources/updated notification for memory://knowledge-graph to subscribed clients after the mutation",
+          "evidence": "dist/index.js: notifyGraphUpdated in the add_observations handler",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "delete_entities": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "The result message lists requested entity names that were not found, and reports how many of the requested entities were deleted",
+          "evidence": "dist/index.js: delete_entities handler (notFound message)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Creates and holds an exclusive lock file <memoryFilePath>.lock, refreshing its mtime and deleting it on completion",
+          "evidence": "dist/index.js: withFileLock via KnowledgeGraphManager.withLock in deleteEntities",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Persists the graph via a temp file and atomic rename, preserving the existing file's permission bits",
+          "evidence": "dist/index.js: KnowledgeGraphManager.saveGraph",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Sends a resources/updated notification for memory://knowledge-graph to subscribed clients after the mutation",
+          "evidence": "dist/index.js: notifyGraphUpdated in the delete_entities handler",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "delete_observations": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "The result reports how many of the requested observations were actually deleted and lists entities not found, without failing",
+          "evidence": "dist/index.js: delete_observations handler (deletedCount / missingEntities message)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Creates and holds an exclusive lock file <memoryFilePath>.lock, refreshing its mtime and deleting it on completion",
+          "evidence": "dist/index.js: withFileLock via KnowledgeGraphManager.withLock in deleteObservations",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Persists the graph via a temp file and atomic rename, preserving the existing file's permission bits",
+          "evidence": "dist/index.js: KnowledgeGraphManager.saveGraph",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Sends a resources/updated notification for memory://knowledge-graph to subscribed clients after the mutation",
+          "evidence": "dist/index.js: notifyGraphUpdated in the delete_observations handler",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "delete_relations": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "The result message reports how many of the requested relations matched and were deleted, noting that the rest matched nothing",
+          "evidence": "dist/index.js: delete_relations handler (deletedCount message)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Creates and holds an exclusive lock file <memoryFilePath>.lock, refreshing its mtime and deleting it on completion",
+          "evidence": "dist/index.js: withFileLock via KnowledgeGraphManager.withLock in deleteRelations",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Persists the graph via a temp file and atomic rename, preserving the existing file's permission bits",
+          "evidence": "dist/index.js: KnowledgeGraphManager.saveGraph",
+          "kind": "file_write",
+          "trigger": "every call",
+          "observable_from_outside": "file",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Sends a resources/updated notification for memory://knowledge-graph to subscribed clients after the mutation",
+          "evidence": "dist/index.js: notifyGraphUpdated in the delete_relations handler",
+          "kind": "network",
+          "trigger": "every call",
+          "observable_from_outside": "network",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "read_graph": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Malformed JSON lines, records failing validation, and unknown record types in the memory file are skipped and logged to stderr; they are not surfaced in the result",
+          "evidence": "dist/index.js: KnowledgeGraphManager.loadGraphWithUnreadable (console.error per skipped line)",
+          "kind": "other",
+          "trigger": "conditional on state",
+          "observable_from_outside": "process",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "search_nodes": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "Matching is case-insensitive substring matching against entity names, types, and observation content",
+          "evidence": "dist/index.js: KnowledgeGraphManager.searchNodes (toLowerCase().includes)",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "The result includes relations where at least one endpoint matches the query, not just the matching entities",
+          "evidence": "dist/index.js: KnowledgeGraphManager.searchNodes (filteredRelations)",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    },
+    "open_nodes": {
+      "matches_description": true,
+      "undocumented_behaviours": [
+        {
+          "behaviour": "The result includes relations where at least one endpoint is among the requested names, including relations to nodes that were not requested",
+          "evidence": "dist/index.js: KnowledgeGraphManager.openNodes (filteredRelations)",
+          "kind": "other",
+          "trigger": "every call",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        },
+        {
+          "behaviour": "Requested names with no matching entity are silently omitted from the result",
+          "evidence": "dist/index.js: KnowledgeGraphManager.openNodes (filter by names.includes)",
+          "kind": "other",
+          "trigger": "conditional on input",
+          "observable_from_outside": "none",
+          "security_relevance": "low"
+        }
+      ],
+      "declared_effect_not_implemented": null
+    }
+  },
+  "overall": {
+    "description_implementation_mismatch": "minor",
+    "summary": "Every tool implements the effect its description states, and no described effect is missing. The undocumented behaviours are persistence and concurrency mechanics (lock file, temp-file atomic rename, permission preservation), graph-change notifications to subscribed clients, and small result-shape details such as erroring on missing entities in create_relations/add_observations and including endpoint-matching relations in search_nodes/open_nodes."
+  }
+}
+```
